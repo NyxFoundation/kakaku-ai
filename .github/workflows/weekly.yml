@@ -1,9 +1,10 @@
 name: weekly crawl
 
-# 毎週月曜 04:17 JST（= 日曜 19:17 UTC）。混みやすい正時は避ける。
+# 定期実行はローカルの systemd timer（毎週月曜 04:23 JST）が本番。
+# ここで cron を持つと同じ月曜の朝に二重に走り、同じ snapshot 日付を
+# 両方が commit して push が衝突する。よって手動起動のみにしてある。
+# ローカルが長期間落ちるときの代役として使う。
 on:
-  schedule:
-    - cron: "17 19 * * 0"
   workflow_dispatch:
     inputs:
       only:
@@ -54,7 +55,7 @@ jobs:
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/snapshots data/xlsx
+          git add data/snapshots data/xlsx data/auction_details.jsonl
           if git diff --cached --quiet; then
             echo "変更なし"
           else

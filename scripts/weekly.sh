@@ -25,11 +25,18 @@ echo "==> upload"
 "$PY" -m kakaku_ai.cli -v upload --snapshot "$SNAPSHOT"
 
 echo "==> push"
-git add data/snapshots data/xlsx
+# auction_details.jsonl は落札商品ページの永続キャッシュ。これを持っていくことで
+# 次回以降が新規分だけで済むので、一緒にコミットする。
+git add data/snapshots data/xlsx data/auction_details.jsonl
 if git diff --cached --quiet; then
   echo "変更なし"
 else
   git commit -m "data: snapshot $SNAPSHOT"
+  # 他所（GitHub Actions の手動実行など）が先に push していても落ちないように
+  git pull --rebase --autostash origin main || {
+    echo "rebase に失敗。手で解消してください" >&2
+    exit 1
+  }
   git push origin main
 fi
 

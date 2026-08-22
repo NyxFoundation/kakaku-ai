@@ -104,10 +104,13 @@ systemctl --user disable --now kakaku-ai-weekly.timer # やめる
 
 マシンが落ちていて実行時刻を逃しても `Persistent=true` で次の起動時に追いつく。
 
-### GitHub Actions（バックアップ）
+### GitHub Actions（手動のバックアップ）
 
-`.github/workflows/weekly.yml` が毎週日曜 19:17 UTC に
-`crawl` → `excel` → コミット → push をやる。
+`.github/workflows/weekly.yml` は **cron を持たない**（`workflow_dispatch` のみ）。
+定期実行をここにも置くと、同じ月曜の朝に systemd timer と二重に走り、
+同じ snapshot 日付を両方が commit して push が衝突する。
+ローカルが長期間落ちるときに手で起動する代役として使う。
+
 Drive へのアップロードは rclone の認証情報が要るので、
 `RCLONE_CONFIG_GDRIVE_TOKEN` / `_CLIENT_ID` / `_CLIENT_SECRET` が
 Secrets に設定されているときだけ実行される（未設定ならスキップ）。
