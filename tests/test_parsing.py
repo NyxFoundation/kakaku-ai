@@ -40,6 +40,20 @@ def test_grouped_stats_interpolates_within_bin():
     assert stats["mean"] == pytest.approx((30 * 1 + 50 * 3) / 4)
 
 
+@pytest.mark.parametrize(
+    ("label", "expected"),
+    [
+        ("0.05 万 km未満", (0.0, 0.05)),
+        ("0.5 万 | 0.7 万km", (0.5, 0.7)),
+        ("10 万 | 15 万km", (10.0, 15.0)),
+        ("15 万Km 以上", (15.0, 20.0)),
+        ("合計", None),
+    ],
+)
+def test_mileage_bin(label, expected):
+    assert carsensor._parse_mileage_bin(label) == expected
+
+
 def test_grouped_stats_empty():
     assert carsensor._grouped_stats([])["n"] == 0
     assert carsensor._grouped_stats([((0.0, 20.0), 0)])["median"] is None

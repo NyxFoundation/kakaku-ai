@@ -23,7 +23,7 @@ from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.worksheet import Worksheet
 
-from . import store
+from . import charts, store
 from .vehicles import VehicleSet, load_vehicles
 
 log = logging.getLogger(__name__)
@@ -143,7 +143,10 @@ def _readme_sheet(ws: Worksheet, vehicles: VehicleSet, snapshots: list[str], cou
         ("収録スナップショット", f"{len(snapshots)}件: {', '.join(snapshots)}"),
         ("", ""),
         ("■ シートの読み方", ""),
-        ("相場_最新", "直近スナップショットの 車種×年式 相場。まずここを見る。"),
+        ("グラフ_価格差", "落札価格と店頭価格の差が大きい順の横棒。走行距離も併記。まずここ。"),
+        ("グラフ_車種別", "車種ごとの落札相場と小売相場を並べた棒グラフ。"),
+        ("グラフ_年式別", "車種 × 年式 の落札中央値マトリクス（行内で色分け）と値落ちカーブ。"),
+        ("相場_最新", "直近スナップショットの 車種×年式 相場。数字で見たいときはここ。"),
         ("相場_時系列", "全スナップショットを積んだ long format。ピボットの元データ。"),
         ("推移_落札中央値", "行=車種×年式 / 列=時点。折れ線グラフはここから引く。"),
         ("推移_小売中央値", "同上、小売（カーセンサー掲載）側。"),
@@ -311,6 +314,9 @@ def build(output: Path, *, vehicles: VehicleSet | None = None) -> Path:
 
     _readme_sheet(wb.active, vehicles, snapshots, counts)
     wb.active.title = "README"
+
+    # --- グラフ（断面）。表より先に置いて、開いてすぐ絵が見えるようにする ---
+    charts.build(wb, price_latest, listings_latest, summary_latest, vehicles.model_year_from)
 
     # --- 車種マスタ ---
     ws = wb.create_sheet("車種マスタ")

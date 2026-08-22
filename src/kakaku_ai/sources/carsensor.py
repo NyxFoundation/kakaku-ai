@@ -39,6 +39,24 @@ def _int(s: str) -> int | None:
     return int(m.group(1)) if m else None
 
 
+def _parse_mileage_bin(label: str) -> tuple[float, float] | None:
+    """走行距離ビンの見出しを万km のレンジにする。
+
+    '0.05 万 km未満' -> (0, 0.05) / '0.5 万 | 0.7 万km' -> (0.5, 0.7)
+    '15 万Km 以上'   -> (15, 20)  ※上端不明なので +5万km と仮定
+    """
+    nums = [float(n) for n in re.findall(r"\d+(?:\.\d+)?", label)]
+    if not nums:
+        return None
+    if "未満" in label:
+        return (0.0, nums[-1])
+    if "以上" in label:
+        return (nums[0], nums[0] + 5.0)
+    if len(nums) >= 2:
+        return (nums[0], nums[1])
+    return None
+
+
 def _parse_price_bin(label: str) -> tuple[float, float] | None:
     """'40 万円~' -> (40, 60) / '20 万円未満' -> (0, 20) / '420 万円以上' -> (420, 440)"""
     n = _int(label)
@@ -192,6 +210,24 @@ def _page(fetcher: Fetcher, code: str) -> tuple[dict[str, Any], dict[int, dict[s
     per_year: dict[int, dict[str, Any]] = {}
     if not tables:
         return summary, per_year
+
+    # 2 枚目は「価格帯 × 走行距離」。掲載車の走行距離中央値を出しておくと、
+    # ヤフオク落札車（走行が伸びがち）と条件を揃えて読むときの物差しになる。
+    if len(tables) > 1:
+        mileage_cols, _ = _parse_cross_table(tables[1])
+        head_rows = tables[1].select("thead tr")
+        if len(head_rows) > 1:
+            totals = [_int(_text(th)) or 0 for th in head_rows[1].select("th")][1:]
+            bins = []
+            for i, label in enumerate(mileage_cols):
+                rng = _parse_mileage_bin(label)
+                if rng and i < len(totals) and totals[i] > 0:
+                    bins.append((rng, totals[i]))
+            stats = _grouped_stats(bins)
+            if stats["median"] is not None:
+                # 万km -> km
+                summary["retail_median_mileage_km"] = int(round(stats["median"] * 10_000))
+                summary["retail_mileage_sample"] = stats["n"]
 
     columns, rows = _parse_cross_table(tables[0])
     for col_index, col_label in enumerate(columns):
