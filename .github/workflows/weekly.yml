@@ -1,0 +1,74 @@
+name: weekly crawl
+
+# 毎週月曜 04:17 JST（= 日曜 19:17 UTC）。混みやすい正時は避ける。
+on:
+  schedule:
+    - cron: "17 19 * * 0"
+  workflow_dispatch:
+    inputs:
+      only:
+        description: "車種キーを絞る（スペース区切り、空なら全車種）"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: weekly-crawl
+  cancel-in-progress: false
+
+jobs:
+  crawl:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: install
+        run: uv pip install --system -e .
+
+      - name: crawl
+        run: |
+          if [ -n "${{ github.event.inputs.only }}" ]; then
+            kakaku-ai -v crawl --only ${{ github.event.inputs.only }}
+          else
+            kakaku-ai -v crawl
+          fi
+
+      - name: build xlsx
+        run: kakaku-ai -v excel
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: souba-xlsx
+          path: data/xlsx/*.xlsx
+
+      - name: commit snapshot
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/snapshots data/xlsx
+          if git diff --cached --quiet; then
+            echo "変更なし"
+          else
+            git commit -m "data: snapshot $(date +%F)"
+            git push
+          fi
+
+      # rclone のシークレットが入っているときだけ Drive にも上げる
+      - name: upload to Google Drive
+        if: ${{ env.RCLONE_CONFIG_GDRIVE_TOKEN != '' }}
+        env:
+          RCLONE_CONFIG_GDRIVE_TYPE: drive
+          RCLONE_CONFIG_GDRIVE_SCOPE: drive
+          RCLONE_CONFIG_GDRIVE_TOKEN: ${{ secrets.RCLONE_CONFIG_GDRIVE_TOKEN }}
+          RCLONE_CONFIG_GDRIVE_CLIENT_ID: ${{ secrets.RCLONE_CONFIG_GDRIVE_CLIENT_ID }}
+          RCLONE_CONFIG_GDRIVE_CLIENT_SECRET: ${{ secrets.RCLONE_CONFIG_GDRIVE_CLIENT_SECRET }}
+        run: |
+          curl -fsSL https://rclone.org/install.sh | sudo bash
+          kakaku-ai -v upload

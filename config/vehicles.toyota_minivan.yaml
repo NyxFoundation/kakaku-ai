@@ -1,0 +1,272 @@
+# 2013年以降に流通しているトヨタのミニバン
+#
+# ここが全ソースの結節点。1 車種につき各サイトの ID を持たせて、収集側は
+# この ID を引くだけにしてある。ID の採取方法は docs/crawl-research.md 参照。
+#
+#   yahoo_category   : ヤフオク!「中古車・新車 > トヨタ」配下のリーフカテゴリ ID
+#                      （HV が別カテゴリになっている車種は複数指定して合算する）
+#   carsensor_code   : https://www.carsensor.net/usedcar/souba/<code>/
+#   kakaku_item_id   : https://kakaku.com/item/<id>/
+#   minkara_slug     : https://minkara.carview.co.jp/car/toyota/<slug>/
+#   mlit_common_name : 国交省の「通称名」（不具合情報 API のキー。表記ゆれを列挙）
+#   generations      : 世代。年式レンジと型式（リコール照合とグレード解釈に使う）
+
+meta:
+  maker: トヨタ
+  maker_en: toyota
+  body_type: ミニバン
+  model_year_from: 2013
+
+vehicles:
+  - key: alphard
+    name: アルファード
+    name_en: Alphard
+    yahoo_category: [2084049538, 2084231229] # アルファード / アルファードハイブリッド
+    carsensor_code: null
+    carsensor_names: [アルファード, アルファードハイブリッド]
+    kakaku_item_id: "70100110661"
+    minkara_slug: alphard
+    mlit_common_name: [アルファード, アルファードＶ, アルファードハイブリッド]
+    generations:
+      - code: 20系
+        from: 2008-05
+        to: 2015-01
+        models: [DBA-ANH20W, DBA-ANH25W, DBA-GGH20W, DBA-GGH25W, DAA-ATH20W]
+      - code: 30系前期
+        from: 2015-01
+        to: 2017-12
+        models: [DBA-AGH30W, DBA-AGH35W, DBA-GGH30W, DBA-GGH35W, DAA-AYH30W]
+      - code: 30系後期
+        from: 2017-12
+        to: 2023-06
+        models: [3BA-AGH30W, 3BA-AGH35W, 3BA-GGH30W, 3BA-GGH35W, 6AA-AYH30W]
+      - code: 40系
+        from: 2023-06
+        to: null
+        models: [3BA-AGH40W, 3BA-AGH45W, 6AA-AAHH40W, 6AA-AAHH45W]
+
+  - key: vellfire
+    name: ヴェルファイア
+    name_en: Vellfire
+    yahoo_category: [2084231724, 2084299521]
+    carsensor_code: null
+    carsensor_names: [ヴェルファイア, ヴェルファイアハイブリッド]
+    kakaku_item_id: "70100110662"
+    minkara_slug: vellfire
+    mlit_common_name: [ヴェルファイア, ヴェルファイアハイブリッド]
+    generations:
+      - code: 20系
+        from: 2008-05
+        to: 2015-01
+        models: [DBA-ANH20W, DBA-ANH25W, DBA-GGH20W, DBA-GGH25W, DAA-ATH20W]
+      - code: 30系前期
+        from: 2015-01
+        to: 2017-12
+        models: [DBA-AGH30W, DBA-AGH35W, DBA-GGH30W, DBA-GGH35W, DAA-AYH30W]
+      - code: 30系後期
+        from: 2017-12
+        to: 2023-06
+        models: [3BA-AGH30W, 3BA-AGH35W, 3BA-GGH30W, 3BA-GGH35W, 6AA-AYH30W]
+      - code: 40系
+        from: 2023-06
+        to: null
+        models: [3BA-TAHA40W, 3BA-TAHA45W, 6AA-AAHH40W, 6AA-AAHH45W]
+
+  - key: noah
+    name: ノア
+    name_en: Noah
+    yahoo_category: [2084016682]
+    carsensor_code: null
+    kakaku_item_id: "70100110045"
+    minkara_slug: noah
+    mlit_common_name: [ノア]
+    generations:
+      - code: 70系
+        from: 2007-06
+        to: 2014-01
+        models: [DBA-ZRR70W, DBA-ZRR75W, DBA-ZRR70G, DBA-ZRR75G]
+      - code: 80系
+        from: 2014-01
+        to: 2022-01
+        models:
+          [
+            DBA-ZRR80W,
+            DBA-ZRR85W,
+            DBA-ZRR80G,
+            DBA-ZRR85G,
+            DAA-ZWR80W,
+            DAA-ZWR80G,
+            3BA-ZRR80W,
+            3BA-ZRR85W,
+            3BA-ZRR80G,
+            3BA-ZRR85G,
+            6AA-ZWR80W,
+            6AA-ZWR80G,
+          ]
+      - code: 90系
+        from: 2022-01
+        to: null
+        models: [6BA-MZRA90W, 6BA-MZRA95W, 6AA-ZWR90W, 6AA-ZWR95W]
+
+  - key: voxy
+    name: ヴォクシー
+    name_en: Voxy
+    yahoo_category: [2084049058]
+    carsensor_code: null
+    kakaku_item_id: "70100110019"
+    minkara_slug: voxy
+    mlit_common_name: [ヴォクシー, ヴォクシーハイブリッド]
+    generations:
+      - code: 70系
+        from: 2007-06
+        to: 2014-01
+        models: [DBA-ZRR70W, DBA-ZRR75W, DBA-ZRR70G, DBA-ZRR75G]
+      - code: 80系
+        from: 2014-01
+        to: 2022-01
+        models:
+          [
+            DBA-ZRR80W,
+            DBA-ZRR85W,
+            DBA-ZRR80G,
+            DBA-ZRR85G,
+            DAA-ZWR80W,
+            DAA-ZWR80G,
+            3BA-ZRR80W,
+            3BA-ZRR85W,
+            3BA-ZRR80G,
+            3BA-ZRR85G,
+            6AA-ZWR80W,
+            6AA-ZWR80G,
+          ]
+      - code: 90系
+        from: 2022-01
+        to: null
+        models: [6BA-MZRA90W, 6BA-MZRA95W, 6AA-ZWR90W, 6AA-ZWR95W]
+
+  - key: esquire
+    name: エスクァイア
+    name_en: Esquire
+    yahoo_category: [2084315387, 2084315388]
+    carsensor_code: null
+    kakaku_item_id: null
+    minkara_slug: esquire
+    mlit_common_name: [エスクァイア]
+    generations:
+      - code: 80系
+        from: 2014-10
+        to: 2021-12
+        models: [DBA-ZRR80G, DBA-ZRR85G, DAA-ZWR80G, 3BA-ZRR80G, 3BA-ZRR85G, 6AA-ZWR80G]
+
+  - key: sienta
+    name: シエンタ
+    name_en: Sienta
+    yahoo_category: [2084054059]
+    carsensor_code: null
+    kakaku_item_id: "70100110391"
+    minkara_slug: sienta
+    mlit_common_name: [シエンタ]
+    generations:
+      - code: 80系
+        from: 2003-09
+        to: 2015-06
+        models: [DBA-NCP81G, DBA-NCP85G]
+      - code: 170系
+        from: 2015-07
+        to: 2022-08
+        models:
+          [
+            DBA-NSP170G,
+            DBA-NSP172G,
+            DBA-NCP175G,
+            DAA-NHP170G,
+            5BA-NSP170G,
+            5BA-NSP172G,
+            6AA-NHP170G,
+          ]
+      - code: 10系
+        from: 2022-08
+        to: null
+        models: [5BA-MXPC10G, 5BA-MXPC15G, 6AA-MXPL10G, 6AA-MXPL15G]
+
+  - key: estima
+    name: エスティマ
+    name_en: Estima
+    yahoo_category: [2084016637, 2084231230]
+    carsensor_code: null
+    carsensor_names: [エスティマ, エスティマハイブリッド]
+    kakaku_item_id: "70100110021"
+    minkara_slug: estima
+    mlit_common_name: [エスティマ, エスティマハイブリッド]
+    generations:
+      - code: 50系
+        from: 2006-01
+        to: 2019-10
+        models: [DBA-ACR50W, DBA-ACR55W, DBA-GSR50W, DBA-GSR55W, DAA-AHR20W]
+
+  - key: wish
+    name: ウィッシュ
+    name_en: Wish
+    yahoo_category: [2084051733]
+    carsensor_code: null
+    kakaku_item_id: "70100110323"
+    minkara_slug: wish
+    mlit_common_name: [ウィッシュ, ＷＩＳＨ]
+    generations:
+      - code: 20系
+        from: 2009-04
+        to: 2017-10
+        models: [DBA-ZGE20W, DBA-ZGE20G, DBA-ZGE21G, DBA-ZGE22W, DBA-ZGE25W, DBA-ZGE25G]
+
+  - key: prius_alpha
+    name: プリウスα
+    name_en: Prius Alpha
+    yahoo_category: [2084299524]
+    carsensor_code: null
+    kakaku_item_id: null
+    minkara_slug: prius_alpha
+    mlit_common_name: [プリウスα, プリウスアルファ]
+    generations:
+      - code: 40系
+        from: 2011-05
+        to: 2021-03
+        models: [DAA-ZVW40W, DAA-ZVW41W]
+
+  - key: isis
+    name: アイシス
+    name_en: Isis
+    yahoo_category: [2084058459]
+    carsensor_code: null
+    kakaku_item_id: "70100110472"
+    minkara_slug: isis
+    mlit_common_name: [アイシス]
+    generations:
+      - code: 10系
+        from: 2004-09
+        to: 2017-12
+        models:
+          [
+            DBA-ZGM10W,
+            DBA-ZGM10G,
+            DBA-ZGM11W,
+            DBA-ZGM15W,
+            DBA-ZGM15G,
+            DBA-ANM10W,
+            DBA-ANM10G,
+            DBA-ANM15W,
+            DBA-ANM15G,
+          ]
+
+  - key: granace
+    name: グランエース
+    name_en: Granace
+    yahoo_category: []
+    carsensor_code: null
+    kakaku_item_id: null
+    minkara_slug: granace
+    mlit_common_name: [グランエース]
+    generations:
+      - code: 300系
+        from: 2019-12
+        to: 2024-06
+        models: [3DA-GDH303W]
