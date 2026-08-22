@@ -150,6 +150,7 @@ vehicles:
     yahoo_category: [2084315387, 2084315388]
     carsensor_code: null
     kakaku_item_id: null
+    kakaku_item_id_note: 価格.com のカタログに掲載なし
     minkara_slug: esquire
     mlit_common_name: [エスクァイア]
     generations:
@@ -224,6 +225,7 @@ vehicles:
     yahoo_category: [2084299524]
     carsensor_code: null
     kakaku_item_id: null
+    kakaku_item_id_note: 価格.com のカタログに掲載なし
     minkara_slug: prius_alpha
     mlit_common_name: [プリウスα, プリウスアルファ]
     generations:
@@ -260,9 +262,11 @@ vehicles:
   - key: granace
     name: グランエース
     name_en: Granace
+    # ヤフオク!「中古車・新車 > トヨタ」に車種カテゴリが存在しない（180日間の出品なし）
     yahoo_category: []
     carsensor_code: null
     kakaku_item_id: null
+    kakaku_item_id_note: 価格.com のカタログに掲載なし
     minkara_slug: granace
     mlit_common_name: [グランエース]
     generations:

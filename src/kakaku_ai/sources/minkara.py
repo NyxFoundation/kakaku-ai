@@ -18,15 +18,15 @@ from typing import Any
 
 from bs4 import BeautifulSoup, XMLParsedAsHTMLWarning
 
+from ..http import Fetcher
+
 # ページ末尾に XML 断片が混ざることがあり lxml が毎回警告を出すが、実害はない
 warnings.filterwarnings("ignore", category=XMLParsedAsHTMLWarning)
-
-from ..http import Fetcher
 
 log = logging.getLogger(__name__)
 
 BASE = "https://minkara.carview.co.jp/car/toyota/{slug}/review/"
-DEFAULT_PAGES = 4  # 1ページ 5件。新しい順に 20 件ぶんを毎週サンプルする
+DEFAULT_PAGES = 6  # 1ページ 5件。新しい順に 30 件ぶんを毎週サンプルする
 
 AXES = {
     "デザイン": "design",
@@ -116,10 +116,11 @@ def collect(fetcher: Fetcher, vehicle, snapshot: str, pages: int = DEFAULT_PAGES
         return []
 
     rows: list[dict[str, Any]] = []
+    seen: set[str] = set()
     base_url = BASE.format(slug=vehicle.minkara_slug)
 
     for page in range(1, pages + 1):
-        url = base_url if page == 1 else f"{base_url}?pg={page}"
+        url = base_url if page == 1 else f"{base_url}?pn={page}"
         try:
             soup = BeautifulSoup(fetcher.get_text(url), "lxml")
         except Exception as exc:  # noqa: BLE001 - 1車種のこけで全体を止めない
@@ -129,10 +130,20 @@ def collect(fetcher: Fetcher, vehicle, snapshot: str, pages: int = DEFAULT_PAGES
         cards = soup.select("ul.review-carpage-list > li")
         if not cards:
             break
+        new_on_page = 0
         for card in cards:
             parsed = _parse_card(card, vehicle, snapshot, url)
-            if parsed:
-                rows.append(parsed)
+            if not parsed:
+                continue
+            # ページャが効かず同じページが返ってきたときに水増ししないようにする
+            key = parsed["review_url"] or f'{parsed["review_title"]}|{parsed.get("review_date")}'
+            if key in seen:
+                continue
+            seen.add(key)
+            rows.append(parsed)
+            new_on_page += 1
+        if new_on_page == 0:
+            break
 
     log.info("  minkara %s: %s件", vehicle.name, len(rows))
     return rows

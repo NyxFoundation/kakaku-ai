@@ -17,6 +17,8 @@ from pathlib import Path
 from typing import Any, Iterable, Sequence
 
 from openpyxl import Workbook
+from openpyxl.chart import LineChart, Reference
+from openpyxl.chart.series import SeriesLabel
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.worksheet import Worksheet
@@ -249,7 +251,31 @@ def _pivot(
     ws.column_dimensions["C"].width = 8
     for offset in range(len(snapshots) + 1):
         ws.column_dimensions[get_column_letter(4 + offset)].width = 13
-    ws["A1"].comment = None
+
+    # スナップショットが 2 つ以上たまったら折れ線を置く。
+    # 1 つしかないうちは点しか描けないので出さない。
+    last_row = row_index - 1
+    if len(snapshots) >= 2 and last_row >= 2:
+        rows_to_plot = min(last_row - 1, 20)
+        chart = LineChart()
+        chart.title = f"{value_label}の推移（上位{rows_to_plot}行）"
+        chart.y_axis.title = "万円"
+        chart.x_axis.title = "時点"
+        chart.height = 11
+        chart.width = 24
+        data = Reference(
+            ws,
+            min_col=4,
+            max_col=3 + len(snapshots),
+            min_row=1,
+            max_row=1 + rows_to_plot,
+        )
+        chart.add_data(data, titles_from_data=False, from_rows=True)
+        for series, row_offset in zip(chart.series, range(2, 2 + rows_to_plot)):
+            name = f"{ws.cell(row=row_offset, column=1).value} {ws.cell(row=row_offset, column=3).value}"
+            series.tx = SeriesLabel(v=name)
+        ws.add_chart(chart, f"{get_column_letter(6 + len(snapshots))}2")
+
     log.info("  pivot %s: %s行", value_label, row_index - 2)
 
 
@@ -423,19 +449,19 @@ def build(output: Path, *, vehicles: VehicleSet | None = None) -> Path:
         wb.create_sheet("壊れやすい点"),
         [
             ("vehicle_name", "車種"),
+            ("generation", "世代"),
             ("defective_device", "不具合装置"),
             ("report_count", "通報件数"),
             ("share_pct", "構成比(%)"),
-            ("recall_count_same_device", "同装置の\nリコール数"),
             ("median_mileage_km", "発生時の\n中央走行距離(km)"),
             ("model_year_min", "対象年式\n最古"),
             ("model_year_max", "対象年式\n最新"),
-            ("affected_generations", "該当世代"),
+            ("model_codes", "型式"),
             ("examples", "代表事例（直近3件）"),
         ],
         defects_latest,
         number_formats={"report_count": INT_FMT, "median_mileage_km": INT_FMT, "share_pct": PCT_FMT},
-        wrap_columns={"examples", "affected_generations"},
+        wrap_columns={"examples", "model_codes"},
     )
     _write_table(
         wb.create_sheet("リコール"),

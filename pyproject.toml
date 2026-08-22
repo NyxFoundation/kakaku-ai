@@ -11,6 +11,9 @@ dependencies = [
     "lxml>=5.2",
 ]
 
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
 [project.scripts]
 kakaku-ai = "kakaku_ai.cli:main"
 

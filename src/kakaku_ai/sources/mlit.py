@@ -15,7 +15,6 @@ from __future__ import annotations
 import json
 import logging
 import re
-from collections import Counter
 from typing import Any, Iterator
 
 from ..http import Fetcher
@@ -213,56 +212,71 @@ def fetch_defects(fetcher: Fetcher, vehicle, snapshot: str, maker: str = "トヨ
     return rows
 
 
+ROLLUP = "（車種全体）"
+
+
 def summarize_defects(
     defects: list[dict[str, Any]], recalls: list[dict[str, Any]], vehicle, snapshot: str
 ) -> list[dict[str, Any]]:
-    """装置ごとに件数を数え、代表事例と対応するリコールを添える。
+    """世代 × 装置で件数を数え、代表事例と対応するリコールを添える。
 
-    「この車の壊れやすい点」シートの中身。
+    「この車の壊れやすい点」シートの中身。年式そのままだと 1 件ずつに散って
+    読めなくなるので、車種マスタの世代でまとめる。あわせて車種全体の
+    ロールアップ行（世代 = `（車種全体）`）も出すので、
+    ざっくり見たいときはそこだけ拾えばいい。
     """
     if not defects:
         return []
 
-    by_device: dict[str, list[dict[str, Any]]] = {}
+    def build(generation: str, items: list[dict[str, Any]], denominator: int) -> list[dict[str, Any]]:
+        by_device: dict[str, list[dict[str, Any]]] = {}
+        for d in items:
+            by_device.setdefault((d.get("defective_device") or "不明").strip(), []).append(d)
+
+        rows: list[dict[str, Any]] = []
+        for device, group in sorted(by_device.items(), key=lambda kv: (-len(kv[1]), kv[0])):
+            mileages = sorted(i["mileage_km"] for i in group if i.get("mileage_km"))
+            years = [i["model_year"] for i in group if i.get("model_year")]
+            # 症状は長いので、代表として受付が新しい順に 3 件
+            examples = sorted(group, key=lambda i: i.get("reception_date") or "", reverse=True)[:3]
+
+            rows.append(
+                {
+                    "snapshot_date": snapshot,
+                    "vehicle_key": vehicle.key,
+                    "vehicle_name": vehicle.name,
+                    "generation": generation,
+                    "defective_device": device,
+                    "report_count": len(group),
+                    "share_pct": round(len(group) / denominator * 100, 1) if denominator else None,
+                    "median_mileage_km": mileages[len(mileages) // 2] if mileages else None,
+                    "model_year_min": min(years) if years else None,
+                    "model_year_max": max(years) if years else None,
+                    "model_codes": ", ".join(
+                        sorted({i["model_code"] for i in group if i.get("model_code")})
+                    ),
+                    "examples": "\n".join(
+                        f"[{i.get('reception_date')} {i.get('model_code') or ''} "
+                        f"{i.get('first_registration') or ''} "
+                        f"{i.get('mileage_km') or '?'}km] {i.get('summary') or ''}"
+                        for i in examples
+                    ),
+                }
+            )
+        return rows
+
+    out = build(ROLLUP, defects, len(defects))
+
+    by_generation: dict[str, list[dict[str, Any]]] = {}
     for d in defects:
-        device = (d.get("defective_device") or "不明").strip()
-        by_device.setdefault(device, []).append(d)
+        by_generation.setdefault(d.get("generation") or "不明", []).append(d)
 
-    recall_devices = Counter(
-        (r.get("defective_device") or "").strip() for r in recalls if r.get("defective_device")
-    )
-    total = len(defects)
+    # 世代は車種マスタの並び順（新しい順）で出す
+    order = {gen.code: i for i, gen in enumerate(vehicle.generations)}
+    for generation in sorted(by_generation, key=lambda g: order.get(g, 999)):
+        items = by_generation[generation]
+        out.extend(build(generation, items, len(items)))
 
-    out: list[dict[str, Any]] = []
-    for device, items in sorted(by_device.items(), key=lambda kv: -len(kv[1])):
-        mileages = [i["mileage_km"] for i in items if i.get("mileage_km")]
-        years = [i["model_year"] for i in items if i.get("model_year")]
-        # 症状は長いので、代表として新しい順に 3 件
-        examples = sorted(items, key=lambda i: i.get("reception_date") or "", reverse=True)[:3]
-
-        out.append(
-            {
-                "snapshot_date": snapshot,
-                "vehicle_key": vehicle.key,
-                "vehicle_name": vehicle.name,
-                "defective_device": device,
-                "report_count": len(items),
-                "share_pct": round(len(items) / total * 100, 1),
-                "recall_count_same_device": recall_devices.get(device, 0),
-                "median_mileage_km": int(sorted(mileages)[len(mileages) // 2]) if mileages else None,
-                "model_year_min": min(years) if years else None,
-                "model_year_max": max(years) if years else None,
-                "affected_generations": ", ".join(
-                    sorted({i["generation"] for i in items if i.get("generation")})
-                ),
-                "examples": "\n".join(
-                    f"[{i.get('reception_date')} {i.get('model_code') or ''} "
-                    f"{i.get('first_registration') or ''} "
-                    f"{i.get('mileage_km') or '?'}km] {i.get('summary') or ''}"
-                    for i in examples
-                ),
-            }
-        )
     return out
 
 
