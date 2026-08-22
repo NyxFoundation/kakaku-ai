@@ -49,6 +49,14 @@ def main(argv: list[str] | None = None) -> int:
         help="使うソースを絞る",
     )
     crawl.add_argument("--no-cache", action="store_true", help="キャッシュを無視して取り直す")
+    crawl.add_argument(
+        "--no-detail",
+        action="store_true",
+        help="ヤフオク商品ページの取得をやめる（年式が埋まらない分が残る）",
+    )
+    crawl.add_argument(
+        "--detail-limit", type=int, help="1車種あたりの商品ページ取得件数の上限（試運転用）"
+    )
 
     xl = sub.add_parser("excel", help="xlsx を組み立てる")
     xl.add_argument("-o", "--output")
@@ -75,6 +83,8 @@ def main(argv: list[str] | None = None) -> int:
             only=args.only,
             sources=set(args.sources) if args.sources else None,
             use_cache=not args.no_cache,
+            detail=not args.no_detail,
+            detail_limit=args.detail_limit,
         )
         return 0
 

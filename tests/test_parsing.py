@@ -335,3 +335,81 @@ def test_pivot_chart_spans_missing_snapshots(tmp_path, monkeypatch):
 
     assert len(ws._charts) == 1
     assert ws._charts[0].display_blanks == "span"
+
+
+# ------------------------------------------------------------------ 累計プール
+
+
+def test_pooled_listings_dedupe_and_prefer_richer(tmp_path, monkeypatch):
+    """週をまたいで同じ落札が出てきても 1 件に名寄せし、情報量の多い側を残すこと。
+
+    ヤフオクの落札検索は終了180日ぶんしか返さないので、週次の窓は重なる。
+    ここで重複排除できないと同じ車を何度も数えてしまう。
+    """
+    import json
+
+    from kakaku_ai import store
+
+    monkeypatch.setattr(store, "SNAPSHOT_DIR", tmp_path)
+
+    def put(snap, rows):
+        d = tmp_path / snap
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "auction_listings.jsonl").write_text(
+            "\n".join(json.dumps(r, ensure_ascii=False) for r in rows) + "\n",
+            encoding="utf-8",
+        )
+
+    put("2026-08-01", [
+        {"auction_id": "a1", "snapshot_date": "2026-08-01", "price": 100, "end_time": "2026-07-30T00:00:00+09:00"},
+        {"auction_id": "a2", "snapshot_date": "2026-08-01", "price": 200, "end_time": "2026-07-31T00:00:00+09:00"},
+    ])
+    # a1 は再登場（今度は年式つき）、a3 は新規
+    put("2026-08-08", [
+        {"auction_id": "a1", "snapshot_date": "2026-08-08", "price": 100, "model_year": 2018,
+         "mileage_km": 50_000, "end_time": "2026-07-30T00:00:00+09:00"},
+        {"auction_id": "a3", "snapshot_date": "2026-08-08", "price": 300, "end_time": "2026-08-05T00:00:00+09:00"},
+    ])
+
+    pool = store.pooled_auction_listings()
+    assert len(pool) == 3
+    by_id = {r["auction_id"]: r for r in pool}
+    # 情報量の多い 2 週目の版が残る
+    assert by_id["a1"]["model_year"] == 2018
+    # 初出は 1 週目のまま
+    assert by_id["a1"]["first_seen_snapshot"] == "2026-08-01"
+    assert by_id["a3"]["first_seen_snapshot"] == "2026-08-08"
+    # 終了日時で並ぶ
+    assert [r["auction_id"] for r in pool] == ["a1", "a2", "a3"]
+
+
+def test_detail_apply_fills_only_missing_fields():
+    """検索結果で取れている値は上書きせず、欠けているところだけ詳細で埋めること。"""
+    from kakaku_ai.sources import yahoo_detail
+
+    listings = [
+        {"auction_id": "x1", "model_year": 2020, "mileage_km": 30_000,
+         "mileage_type": "REAL_MILEAGE", "repair_type": "NONE"},
+        {"auction_id": "x2"},
+    ]
+    store_data = {
+        "x1": {"auction_id": "x1", "first_reg_year": 1999, "mileage_km": 999_999,
+               "grade": "Z", "fetched_from": "detail_page"},
+        "x2": {"auction_id": "x2", "first_reg_year": 2015, "first_reg_month": 3,
+               "mileage_km": 80_000, "mileage_status": "メーター交換歴あり",
+               "repair_history": "あり", "grade": "G", "fetched_from": "detail_page"},
+    }
+    yahoo_detail.apply_to(listings, store_data)
+
+    # 既にある値は詳細で上書きされない
+    assert listings[0]["model_year"] == 2020
+    assert listings[0]["mileage_km"] == 30_000
+    # 詳細にしかない項目は足される
+    assert listings[0]["grade"] == "Z"
+
+    # 欠けていたほうは埋まる
+    assert listings[1]["model_year"] == 2015
+    assert listings[1]["model_year_month"] == 201503
+    assert listings[1]["year_source"] == "detail_page"
+    assert listings[1]["mileage_type"] == "METER_REPLACEMENT"
+    assert listings[1]["repair_type"] == "REPAIRED"

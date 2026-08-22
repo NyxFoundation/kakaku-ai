@@ -105,6 +105,54 @@ Allow: /closedsearch/closedsearch
 対象は「終了180日間」。毎週スナップショットを取ると窓が重なるが、
 `auctionId` を持っておけば後から重複排除も差分抽出もできる。
 
+### 落札データを厚くする 3 つの手
+
+180日窓は Yahoo 側の仕様で広げられない。そのうえで取れる量を増やす方法は 3 つある。
+
+**1. 商品ページで年式を埋める**
+
+検索結果の `carSpec` は「中古車・新車」ノードをキーワード検索したときしか付かない。
+車種リーフカテゴリ側でしか見つからない出品（タイトルに車種名がないもの）は
+年式が欠ける。初回計測で 776 件中 134 件（17%）がこれだった。
+
+商品ページ `https://auctions.yahoo.co.jp/jp/auction/<id>` にはもっと詳しい仕様が入っている。
+`page.auctions.yahoo.co.jp` からここへ 301 で飛ぶ。robots.txt の Disallow は
+`/jp/show/` `/show/` などで、`/jp/auction/` は対象外。
+
+```jsonc
+props.pageProps.initialState.item.detail.item.car = {
+  "spec": {
+    "grade": "3.5x",
+    "firstRegYear": 2010, "firstRegMonth": 3,   // ★ 年式
+    "mileage": 96223, "mileageStatus": "メーター交換歴あり",
+    "repairHistory": "わからない",
+    "bodyType": "ミニバン", "transmission": "オートマチック(AT)", "fuel": "ガソリン車",
+    "expirationYear": 8, "expirationMonth": 11  // 車検（令和）
+  },
+  "totalPrice": 318480, "totalCosts": 46480     // 諸費用込み総額
+}
+```
+
+終了から半年経った落札でもページは生きている（2026-02 終了のものを実測で確認）。
+グレードと総額は検索結果には無いので、これで相場の解像度が一段上がる。
+
+**永続キャッシュが要る。** 180日窓は毎週重なるので、素直に実装すると毎週 776 ページを
+取り直すことになる。落札済みの出品はもう変わらないから、パース結果を
+`data/auction_details.jsonl` に貯めて二度と取りに行かない。
+2 週目以降は新しく終了した分（週 30〜60 件）だけで済む。
+
+**2. スナップショットをまたいで名寄せする**
+
+`auction_id` で重複排除すれば、**実効期間は 180 日を超えて伸びる**。
+半年回せば約 1 年ぶんの落札が貯まる。`store.pooled_auction_listings()` がこれをやり、
+xlsx の `相場_累計` と `落札明細` はこのプールを使う。
+断面の系列（`相場_時系列`）はスナップショットごとのまま残す。
+
+**3. 2 パス検索**
+
+キーワード検索（carSpec つき・取りこぼしあり）とカテゴリ直指定（全件・carSpec なし）を
+両方かけて `auction_id` でマージする。詳細は下の「集計方針」の上を参照。
+
 ### 集計方針
 
 年式ごとに `n / min / p25 / median / mean / p75 / max` を出す。

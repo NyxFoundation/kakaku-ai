@@ -11,7 +11,7 @@ from typing import Any
 
 from . import aggregate, store
 from .http import Fetcher
-from .sources import carsensor, kakaku_com, minkara, mlit, yahoo_auction
+from .sources import carsensor, kakaku_com, minkara, mlit, yahoo_auction, yahoo_detail
 from .vehicles import DATA_DIR, VehicleSet, load_vehicles
 
 log = logging.getLogger(__name__)
@@ -26,6 +26,8 @@ def run(
     only: list[str] | None = None,
     sources: set[str] | None = None,
     use_cache: bool = True,
+    detail: bool = True,
+    detail_limit: int | None = None,
 ) -> dict[str, int]:
     snapshot = snapshot or store.today()
     vehicles = vehicles or load_vehicles()
@@ -35,6 +37,10 @@ def run(
     log.info("snapshot=%s 車種=%s ソース=%s", snapshot, len(targets), sorted(sources))
 
     fetcher = Fetcher(cache_dir=CACHE_DIR, snapshot=snapshot, use_cache=use_cache)
+    # 落札商品ページは 1 件 250KB 前後ある。スナップショットごとに生 HTML を貯めると
+    # すぐ GB 単位になるので、こちらはキャッシュせず、パース結果だけを
+    # data/auction_details.jsonl に永続保存する（yahoo_detail 側の責務）。
+    detail_fetcher = Fetcher(use_cache=False)
 
     collected: dict[str, list[dict[str, Any]]] = {name: [] for name in store.DATASETS}
 
@@ -54,6 +60,17 @@ def run(
         if "yahoo" in sources and vehicle.yahoo_categories:
             try:
                 auction_rows = yahoo_auction.collect(fetcher, vehicle, snapshot)
+                if detail:
+                    try:
+                        yahoo_detail.enrich(detail_fetcher, auction_rows, limit=detail_limit)
+                    except Exception as exc:  # noqa: BLE001
+                        log.error("  yahoo detail %s: %s", vehicle.name, exc)
+                else:
+                    yahoo_detail.apply_to(auction_rows)
+                dated = sum(1 for r in auction_rows if r.get("model_year"))
+                log.info(
+                    "  yahoo %s: 年式あり %s/%s件", vehicle.name, dated, len(auction_rows)
+                )
                 auction_by_year = aggregate.yahoo_by_year(auction_rows, vehicle, snapshot)
             except Exception as exc:  # noqa: BLE001
                 log.error("  yahoo %s: %s", vehicle.name, exc)

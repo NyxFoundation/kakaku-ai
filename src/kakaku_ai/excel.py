@@ -23,7 +23,7 @@ from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.worksheet import Worksheet
 
-from . import charts, store
+from . import aggregate, charts, store
 from .vehicles import VehicleSet, load_vehicles
 
 log = logging.getLogger(__name__)
@@ -148,6 +148,12 @@ def _readme_sheet(ws: Worksheet, vehicles: VehicleSet, snapshots: list[str], cou
         ("グラフ_年式別", "車種 × 年式 の落札中央値マトリクス（行内で色分け）と値落ちカーブ。"),
         ("相場_最新", "直近スナップショットの 車種×年式 相場。数字で見たいときはここ。"),
         ("相場_時系列", "全スナップショットを積んだ long format。ピボットの元データ。"),
+        (
+            "相場_累計",
+            "全スナップショットの落札を auction_id で名寄せしてから年式集計したもの。"
+            "ヤフオクは 180 日ぶんしか返さないが、週を重ねるとここだけ期間が伸びて "
+            "n が厚くなる。サンプルが欲しいときはこちら。",
+        ),
         ("推移_落札中央値", "行=車種×年式 / 列=時点。折れ線グラフはここから引く。"),
         ("推移_小売中央値", "同上、小売（カーセンサー掲載）側。"),
         ("車種サマリ", "車種単位の価格レンジ・掲載台数・満足度など。"),
@@ -159,7 +165,12 @@ def _readme_sheet(ws: Worksheet, vehicles: VehicleSet, snapshots: list[str], cou
             "世代 =「（車種全体）」の行は車種まるごとのロールアップ。",
         ),
         ("リコール", "国交省リコール届出。不具合装置・状況・改善措置つき。"),
-        ("落札明細", "ヤフオク!の落札 1 台ずつ。年式・走行距離・修復歴つき。"),
+        (
+            "落札明細",
+            "ヤフオク!の落札 1 台ずつ（全スナップショットを名寄せした累計）。"
+            "年式・走行距離・修復歴に加え、商品ページから取ったグレード・車検・"
+            "諸費用込み総額つき。",
+        ),
         ("車種マスタ", "車種・世代・型式の一覧。"),
         ("", ""),
         ("■ 相場の作り方", ""),
@@ -303,6 +314,9 @@ def build(output: Path, *, vehicles: VehicleSet | None = None) -> Path:
     defects_latest = store.read(latest, "defect_summary")
     recalls_latest = store.read(latest, "recalls")
     listings_latest = store.read(latest, "auction_listings")
+    # 落札は「終了180日間」しか取れないので、全スナップショットを auction_id で
+    # 名寄せして 1 本にする。週を重ねるほど実効期間が伸び、年式ごとの n が増える。
+    listings_pool = store.pooled_auction_listings()
 
     wb = Workbook()
     counts = {
@@ -311,14 +325,15 @@ def build(output: Path, *, vehicles: VehicleSet | None = None) -> Path:
         "口コミ_明細": len(reviews_latest),
         "壊れやすい点": len(defects_latest),
         "リコール": len(recalls_latest),
-        "落札明細": len(listings_latest),
+        "落札明細_累計": len(listings_pool),
+        "落札明細（最新断面のみ）": len(listings_latest),
     }
 
     _readme_sheet(wb.active, vehicles, snapshots, counts)
     wb.active.title = "README"
 
     # --- グラフ（断面）。表より先に置いて、開いてすぐ絵が見えるようにする ---
-    charts.build(wb, price_latest, listings_latest, summary_latest, vehicles.model_year_from)
+    charts.build(wb, price_latest, listings_pool, summary_latest, vehicles.model_year_from)
 
     # --- 車種マスタ ---
     ws = wb.create_sheet("車種マスタ")
@@ -369,6 +384,67 @@ def build(output: Path, *, vehicles: VehicleSet | None = None) -> Path:
         PRICE_COLUMNS,
         price_all,
         number_formats=PRICE_FORMATS,
+    )
+
+    # --- 相場_累計: 全スナップショットの落札を名寄せしてから年式集計 ---
+    # 断面ごとの n が少ない年式でも、週を重ねればここは厚くなっていく。
+    cumulative: list[dict[str, Any]] = []
+    retail_latest = {
+        (r["vehicle_key"], r["model_year"]): r for r in price_latest
+    }
+    by_key: dict[str, list[dict[str, Any]]] = {}
+    for row in listings_pool:
+        by_key.setdefault(row.get("vehicle_key", ""), []).append(row)
+    for vehicle in vehicles:
+        rows = by_key.get(vehicle.key)
+        if not rows:
+            continue
+        ends = sorted(r["end_time"] for r in rows if r.get("end_time"))
+        window = f"{ends[0][:10]}〜{ends[-1][:10]}" if ends else ""
+        for stat in aggregate.yahoo_by_year(rows, vehicle, "累計"):
+            if stat["model_year"] < vehicles.model_year_from:
+                continue
+            retail = retail_latest.get((vehicle.key, stat["model_year"]), {})
+            retail_median = retail.get("retail_median_manyen")
+            auction_median = stat["auction_median_manyen"]
+            stat["retail_n"] = retail.get("retail_n")
+            stat["retail_median_manyen"] = retail_median
+            stat["retail_premium_pct"] = (
+                round((retail_median / auction_median - 1) * 100, 1)
+                if retail_median and auction_median
+                else None
+            )
+            stat["window"] = window
+            cumulative.append(stat)
+
+    _write_table(
+        wb.create_sheet("相場_累計"),
+        [
+            ("vehicle_name", "車種"),
+            ("generation", "世代"),
+            ("model_year", "年式"),
+            ("auction_n", "落札件数\n(累計)"),
+            ("auction_min_manyen", "最安(万円)"),
+            ("auction_p25_manyen", "25%(万円)"),
+            ("auction_median_manyen", "中央値(万円)"),
+            ("auction_mean_manyen", "平均(万円)"),
+            ("auction_p75_manyen", "75%(万円)"),
+            ("auction_max_manyen", "最高(万円)"),
+            ("auction_median_mileage_km", "中央走行距離(km)"),
+            ("excluded_n", "除外件数\n(メーター交換/修復歴)"),
+            ("retail_n", "小売\n掲載台数"),
+            ("retail_median_manyen", "小売中央値\n(万円・最新)"),
+            ("retail_premium_pct", "小売プレミアム\n(%)"),
+            ("window", "落札の対象期間"),
+        ],
+        cumulative,
+        number_formats={
+            k: (INT_FMT if k in ("auction_n", "auction_median_mileage_km", "excluded_n", "retail_n")
+                else MANYEN_FMT)
+            for k in PRICE_FORMATS
+        } | {"retail_premium_pct": PCT_FMT, "auction_n": INT_FMT,
+             "excluded_n": INT_FMT, "retail_n": INT_FMT,
+             "auction_median_mileage_km": INT_FMT},
     )
     _pivot(wb.create_sheet("推移_落札中央値"), price_all, snapshots, "auction_median_manyen", "落札中央値")
     _pivot(wb.create_sheet("推移_小売中央値"), price_all, snapshots, "retail_median_manyen", "小売中央値")
@@ -494,25 +570,37 @@ def build(output: Path, *, vehicles: VehicleSet | None = None) -> Path:
         wrap_columns={"situation", "measures", "models"},
     )
 
-    # --- 落札明細 ---
+    # --- 落札明細（累計） ---
     _write_table(
         wb.create_sheet("落札明細"),
         [
             ("vehicle_name", "車種"),
             ("model_year", "年式"),
             ("generation", "世代"),
+            ("grade", "グレード"),
             ("price", "落札価格(円)"),
+            ("total_price", "諸費用込み\n総額(円)"),
             ("bid_count", "入札数"),
             ("mileage_km", "走行距離(km)"),
             ("mileage_type", "距離区分"),
             ("repair_type", "修復歴"),
-            ("overhead_costs", "諸費用(円)"),
+            ("inspection_until", "車検"),
+            ("transmission", "ミッション"),
+            ("fuel", "燃料"),
+            ("color", "色"),
             ("end_time", "終了日時"),
+            ("first_seen_snapshot", "初出\nスナップショット"),
             ("title", "商品名"),
             ("url", "URL"),
         ],
-        sorted(listings_latest, key=lambda r: (r.get("vehicle_name", ""), -(r.get("model_year") or 0))),
-        number_formats={"price": INT_FMT, "mileage_km": INT_FMT, "overhead_costs": INT_FMT},
+        sorted(
+            listings_pool,
+            key=lambda r: (r.get("vehicle_name", ""), -(r.get("model_year") or 0),
+                           r.get("end_time") or ""),
+        ),
+        number_formats={
+            "price": INT_FMT, "total_price": INT_FMT, "mileage_km": INT_FMT,
+        },
         wrap_columns={"title"},
     )
 

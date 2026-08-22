@@ -66,3 +66,34 @@ def read_all(dataset: str, snapshots: list[str] | None = None) -> list[dict[str,
     for snap in snapshots if snapshots is not None else list_snapshots():
         rows.extend(read(snap, dataset))
     return rows
+
+
+def pooled_auction_listings() -> list[dict[str, Any]]:
+    """全スナップショットの落札明細を `auction_id` で重複排除して 1 本にする。
+
+    ヤフオクの落札検索は「終了180日間」しか返さない。週次で撮り続けると窓は
+    重なるが、`auction_id` で名寄せすれば **実効期間は 180 日を超えて伸びていく**。
+    半年回せば約 1 年ぶんの落札が貯まる計算で、年式ごとのサンプル数がそのぶん増える。
+
+    同じ落札が複数スナップショットに出てきたときは、情報量の多い（= 年式や
+    走行距離が埋まっている）ほうを残す。
+    """
+    pool: dict[str, dict[str, Any]] = {}
+    for snap in list_snapshots():
+        for row in read(snap, "auction_listings"):
+            auction_id = row.get("auction_id")
+            if not auction_id:
+                continue
+            row = dict(row)
+            row.setdefault("first_seen_snapshot", row.get("snapshot_date"))
+            existing = pool.get(auction_id)
+            if existing is None:
+                pool[auction_id] = row
+                continue
+            # 初出の日付は保つ
+            row["first_seen_snapshot"] = existing.get("first_seen_snapshot")
+            filled = sum(1 for k in ("model_year", "mileage_km", "grade") if row.get(k))
+            was = sum(1 for k in ("model_year", "mileage_km", "grade") if existing.get(k))
+            if filled >= was:
+                pool[auction_id] = row
+    return sorted(pool.values(), key=lambda r: r.get("end_time") or "")
