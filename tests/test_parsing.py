@@ -242,3 +242,29 @@ def test_every_vehicle_has_ids():
         assert vehicle.all_models, f"{vehicle.name}: 型式が未設定"
         assert vehicle.carsensor_codes, f"{vehicle.name}: カーセンサーのコードが引けていない"
         assert vehicle.minkara_slug, f"{vehicle.name}: みんカラの slug が未設定"
+
+
+# ------------------------------------------------------------------ みんカラ
+
+
+def test_review_summary_dedupes_identical_text():
+    """別レビューでも本文が丸かぶりのことがある（みんカラに実在）。
+
+    URL が違うので個票としては別物だが、代表コメントに同じ文を並べても意味がない。
+    """
+    from kakaku_ai.sources import minkara
+
+    rows = [
+        {"model_year": 2008, "score_overall": 4, "generation": "50系",
+         "good_points": "車内広く使える", "bad_points": ""},
+        {"model_year": 2008, "score_overall": 5, "generation": "50系",
+         "good_points": "車内広く使える", "bad_points": ""},
+        {"model_year": 2008, "score_overall": 3, "generation": "50系",
+         "good_points": "3列目シートが床下収納になる", "bad_points": "燃費が悪い"},
+    ]
+    out = minkara.summarize(rows, _FakeVehicle(), "2026-08-22")
+    assert len(out) == 1
+    assert out[0]["review_count"] == 3
+    assert out[0]["good_points"] == "車内広く使える / 3列目シートが床下収納になる"
+    assert out[0]["bad_points"] == "燃費が悪い"
+    assert out[0]["score_overall"] == pytest.approx(4.0)

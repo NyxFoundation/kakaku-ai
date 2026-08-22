@@ -159,6 +159,21 @@ def summarize(rows: list[dict[str, Any]], vehicle, snapshot: str) -> list[dict[s
         values = [i[key] for i in items if isinstance(i.get(key), (int, float))]
         return round(sum(values) / len(values), 2) if values else None
 
+    def excerpt(items: list[dict[str, Any]], key: str, limit: int = 3) -> str:
+        """代表コメントを最大 limit 件つなぐ。
+
+        別レビューでも本文が丸かぶりのことがある（同じ人が投稿し直している等）ので、
+        同一文は 1 回だけにする。
+        """
+        picked: list[str] = []
+        for item in items:
+            text = (item.get(key) or "").strip()[:120]
+            if text and text not in picked:
+                picked.append(text)
+            if len(picked) == limit:
+                break
+        return " / ".join(picked)
+
     out: list[dict[str, Any]] = []
     for year in sorted(by_year, key=lambda y: (y is None, y)):
         items = by_year[year]
@@ -173,12 +188,8 @@ def summarize(rows: list[dict[str, Any]], vehicle, snapshot: str) -> list[dict[s
                 "review_count": len(items),
                 "score_overall": mean(items, "score_overall"),
                 **{f"score_{k}": mean(items, f"score_{k}") for k in AXES.values()},
-                "good_points": " / ".join(
-                    filter(None, (i.get("good_points", "")[:120] for i in items[:3]))
-                ),
-                "bad_points": " / ".join(
-                    filter(None, (i.get("bad_points", "")[:120] for i in items[:3]))
-                ),
+                "good_points": excerpt(items, "good_points"),
+                "bad_points": excerpt(items, "bad_points"),
             }
         )
     return out
