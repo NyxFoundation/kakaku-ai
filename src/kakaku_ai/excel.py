@@ -170,6 +170,11 @@ def _readme_sheet(ws: Worksheet, vehicles: VehicleSet, snapshots: list[str], cou
             "国交省に寄せられた不具合通報を 世代 × 装置 で集計。整備観点の弱点はここ。"
             "世代 =「（車種全体）」の行は車種まるごとのロールアップ。",
         ),
+        (
+            "不具合_明細",
+            "国交省に寄せられた不具合通報 1 件ずつ。型式・初度登録年月・走行距離と"
+            "症状の全文つき。「壊れやすい点」の元データ。",
+        ),
         ("リコール", "国交省リコール届出。不具合装置・状況・改善措置つき。"),
         (
             "店頭_成約推定",
@@ -333,6 +338,7 @@ def build(output: Path, *, vehicles: VehicleSet | None = None) -> Path:
     reviews_latest = store.read(latest, "reviews")
     review_summary_latest = store.read(latest, "review_summary")
     defects_latest = store.read(latest, "defect_summary")
+    defect_details = store.read(latest, "defects")
     recalls_latest = store.read(latest, "recalls")
     listings_latest = store.read(latest, "auction_listings")
     # 落札は「終了180日間」しか取れないので、全スナップショットを auction_id で
@@ -347,6 +353,7 @@ def build(output: Path, *, vehicles: VehicleSet | None = None) -> Path:
         "相場_最新": len(price_latest),
         "口コミ_明細": len(reviews_latest),
         "壊れやすい点": len(defects_latest),
+        "不具合_明細": len(defect_details),
         "リコール": len(recalls_latest),
         "落札明細_累計": len(listings_pool),
         "落札明細（最新断面のみ）": len(listings_latest),
@@ -577,6 +584,32 @@ def build(output: Path, *, vehicles: VehicleSet | None = None) -> Path:
         number_formats={"report_count": INT_FMT, "median_mileage_km": INT_FMT, "share_pct": PCT_FMT},
         wrap_columns={"examples", "model_codes"},
     )
+    _write_table(
+        wb.create_sheet("不具合_明細"),
+        [
+            ("vehicle_name", "車種"),
+            ("generation", "世代"),
+            ("model_year", "年式"),
+            ("model_code", "型式"),
+            ("defective_device", "不具合装置"),
+            ("reception_date", "受付日"),
+            ("first_registration", "初度登録"),
+            ("mileage_km", "走行距離(km)"),
+            ("emergence_time", "発生時期"),
+            ("engine_model", "原動機型式"),
+            ("prefecture", "都道府県"),
+            ("summary", "症状"),
+            ("control_no", "管理番号"),
+        ],
+        sorted(
+            defect_details,
+            key=lambda r: (r.get("vehicle_name", ""), r.get("reception_date") or ""),
+            reverse=False,
+        ),
+        number_formats={"mileage_km": INT_FMT},
+        wrap_columns={"summary"},
+    )
+
     _write_table(
         wb.create_sheet("リコール"),
         [
