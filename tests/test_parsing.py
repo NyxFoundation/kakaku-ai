@@ -282,3 +282,56 @@ def test_review_summary_dedupes_identical_text():
     assert out[0]["good_points"] == "車内広く使える / 3列目シートが床下収納になる"
     assert out[0]["bad_points"] == "燃費が悪い"
     assert out[0]["score_overall"] == pytest.approx(4.0)
+
+
+# -------------------------------------------------------------------- グラフ
+
+
+def test_year_chart_spans_missing_years():
+    """落札のない年式でも折れ線が途切れないこと。
+
+    openpyxl の既定は display_blanks='gap' で、空セルのところで線が切れる。
+    年式別の落札は歯抜けになりがちなので 'span' でまたぐ。
+    """
+    from openpyxl import Workbook
+
+    from kakaku_ai import charts
+
+    listings = [
+        {"vehicle_name": "テスト車", "model_year": y, "price": p,
+         "mileage_type": "REAL_MILEAGE", "repair_type": "NONE", "mileage_km": 50_000}
+        # 2015 と 2017 は落札なし = 歯抜け
+        for y, p in [(2013, 500_000), (2014, 700_000), (2016, 1_200_000), (2018, 2_000_000)]
+    ]
+    wb = Workbook()
+    ws = wb.create_sheet("グラフ_年式別")
+    charts.year_sheet(ws, listings, 2013)
+
+    assert len(ws._charts) == 1
+    assert ws._charts[0].display_blanks == "span"
+
+    # 歯抜けの年式は「0」ではなく空セルのまま（0 だと谷があるように見えてしまう）
+    header = [c.value for c in ws[5]]
+    assert header[1:] == ["2013年", "2014年", "2016年", "2018年"]
+
+
+def test_pivot_chart_spans_missing_snapshots(tmp_path, monkeypatch):
+    """取得できなかった週があっても推移の折れ線が途切れないこと。"""
+    from openpyxl import Workbook
+
+    from kakaku_ai import excel
+
+    wb = Workbook()
+    ws = wb.active
+    rows = [
+        {"snapshot_date": "2026-08-01", "vehicle_name": "テスト車", "model_year": 2020,
+         "generation": "1系", "auction_median_manyen": 100.0},
+        # 2026-08-08 は欠測
+        {"snapshot_date": "2026-08-15", "vehicle_name": "テスト車", "model_year": 2020,
+         "generation": "1系", "auction_median_manyen": 90.0},
+    ]
+    excel._pivot(ws, rows, ["2026-08-01", "2026-08-08", "2026-08-15"],
+                 "auction_median_manyen", "落札中央値")
+
+    assert len(ws._charts) == 1
+    assert ws._charts[0].display_blanks == "span"

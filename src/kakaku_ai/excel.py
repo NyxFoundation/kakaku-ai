@@ -265,6 +265,8 @@ def _pivot(
     if len(snapshots) >= 2 and last_row >= 2:
         rows_to_plot = min(last_row - 1, 20)
         chart = LineChart()
+        # 取得できなかった週は空セルになる。そこで線を切らずにまたいで結ぶ。
+        chart.display_blanks = "span"
         chart.title = f"{value_label}の推移（上位{rows_to_plot}行）"
         chart.y_axis.title = "万円"
         chart.x_axis.title = "時点"

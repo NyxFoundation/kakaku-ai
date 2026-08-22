@@ -280,7 +280,11 @@ def year_sheet(
 
     # 値落ちカーブ。年式が横軸、車種がシリーズ。
     chart = LineChart()
-    chart.title = "年式別の落札中央値（値落ちカーブ）"
+    # 落札が 1 件もない年式は空セルになる。既定の 'gap' だとそこで線が切れて
+    # 値落ちカーブが読めないので、空セルをまたいで結ぶ。
+    # 空セルのままなのでマーカーは打たれず、「データがない年」だとは分かる。
+    chart.display_blanks = "span"
+    chart.title = "年式別の落札中央値（値落ちカーブ・データのない年式はまたいで接続）"
     chart.y_axis.title = "万円"
     chart.x_axis.title = "年式"
     chart.height = 13
