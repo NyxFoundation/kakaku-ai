@@ -20,6 +20,7 @@ DATASETS = (
     "auction_listings",  # ヤフオク落札明細（生）
     "price_by_year",  # 車種 × 年式 の相場（メイン系列）
     "vehicle_summary",  # 車種単位のサマリ（カーセンサー + 価格.com）
+    "jmty_listings",  # ジモティー掲載明細（個人売買の売り希望価格）
     "reviews",  # 口コミ明細（みんカラ）
     "review_summary",  # 車種 × 年式 の口コミ集計
     "recalls",  # 国交省リコール

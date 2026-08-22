@@ -75,7 +75,7 @@ def _parse_card(card, vehicle, snapshot: str, url: str) -> dict[str, Any] | None
         ),
         "grade": grade,
         "model_year": year,
-        "generation": vehicle.generation_label(year * 100 + 6 if year else None),
+        "generation": vehicle.generation_for_model_year(year),
         "list_url": url,
     }
 

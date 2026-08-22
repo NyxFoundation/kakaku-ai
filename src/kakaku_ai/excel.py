@@ -108,6 +108,8 @@ PRICE_COLUMNS: list[tuple[str, str]] = [
     ("retail_median_manyen", "小売\n中央値(万円)"),
     ("retail_mean_manyen", "小売\n平均(万円)"),
     ("retail_p75_manyen", "小売\n75%(万円)"),
+    ("jmty_n", "ジモティー\n掲載件数"),
+    ("jmty_median_manyen", "ジモティー\n中央値(万円)"),
     ("retail_minus_auction_manyen", "小売−落札\n(万円)"),
     ("retail_premium_pct", "小売プレミアム\n(%)"),
 ]
@@ -127,6 +129,8 @@ PRICE_FORMATS = {
     "retail_median_manyen": MANYEN_FMT,
     "retail_mean_manyen": MANYEN_FMT,
     "retail_p75_manyen": MANYEN_FMT,
+    "jmty_n": INT_FMT,
+    "jmty_median_manyen": MANYEN_FMT,
     "retail_minus_auction_manyen": MANYEN_FMT,
     "retail_premium_pct": PCT_FMT,
 }
@@ -192,12 +196,19 @@ def _readme_sheet(ws: Worksheet, vehicles: VehicleSet, snapshots: list[str], cou
             "小売プレミアム",
             "(小売中央値 / 落札中央値 - 1) × 100。業販と小売の価格差の目安。",
         ),
+        (
+            "ジモティー掲載",
+            "ジモティーに出ている売り希望額の中央値。**業者と個人が混ざっている**"
+            "（提携サイト＝販売店の在庫フィードが大半で、直接投稿にも業者が多い）。"
+            "成約価格ではないので、落札中央値と同列には比べられない。参考値として置いてある。",
+        ),
         ("", ""),
         ("■ 出典", ""),
         ("ヤフオク!", "https://auctions.yahoo.co.jp/closedsearch/closedsearch （robots.txt で Allow）"),
         ("カーセンサー", "https://www.carsensor.net/usedcar/souba/"),
         ("価格.com", "https://kakaku.com/kuruma/"),
         ("みんカラ", "https://minkara.carview.co.jp/car/toyota/"),
+        ("ジモティー", "https://jmty.jp/all/car-toy/ （掲載価格。業者・個人混在）"),
         ("国土交通省", "https://renrakuda.mlit.go.jp/renrakuda/ （リコール届出情報 / 自動車不具合情報ホットライン）"),
         ("", ""),
         ("■ 注意", ""),
@@ -321,6 +332,7 @@ def build(output: Path, *, vehicles: VehicleSet | None = None) -> Path:
     # 落札は「終了180日間」しか取れないので、全スナップショットを auction_id で
     # 名寄せして 1 本にする。週を重ねるほど実効期間が伸び、年式ごとの n が増える。
     listings_pool = store.pooled_auction_listings()
+    jmty_latest = store.read(latest, "jmty_listings")
 
     wb = Workbook()
     counts = {
@@ -331,6 +343,7 @@ def build(output: Path, *, vehicles: VehicleSet | None = None) -> Path:
         "リコール": len(recalls_latest),
         "落札明細_累計": len(listings_pool),
         "落札明細（最新断面のみ）": len(listings_latest),
+        "参考_ジモティー掲載": len(jmty_latest),
     }
 
     _readme_sheet(wb.active, vehicles, snapshots, counts)
@@ -606,6 +619,29 @@ def build(output: Path, *, vehicles: VehicleSet | None = None) -> Path:
         number_formats={
             "price": INT_FMT, "total_price": INT_FMT, "mileage_km": INT_FMT,
         },
+        wrap_columns={"title"},
+    )
+
+    # --- 参考: ジモティー掲載明細 ---
+    _write_table(
+        wb.create_sheet("参考_ジモティー掲載"),
+        [
+            ("vehicle_name", "車種"),
+            ("model_year", "年式"),
+            ("generation", "世代"),
+            ("asking_price", "掲載価格(円)"),
+            ("mileage_km", "走行距離(km)"),
+            ("region", "地域"),
+            ("is_alliance", "提携サイト\n(販売店フィード)"),
+            ("looks_like_dealer", "業者ワード\nあり"),
+            ("title", "タイトル"),
+            ("url", "URL"),
+        ],
+        sorted(
+            jmty_latest,
+            key=lambda r: (r.get("vehicle_name", ""), -(r.get("model_year") or 0)),
+        ),
+        number_formats={"asking_price": INT_FMT, "mileage_km": INT_FMT},
         wrap_columns={"title"},
     )
 

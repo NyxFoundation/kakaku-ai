@@ -8,6 +8,8 @@
 #   carsensor_code   : https://www.carsensor.net/usedcar/souba/<code>/
 #   kakaku_item_id   : https://kakaku.com/item/<id>/
 #   minkara_slug     : https://minkara.carview.co.jp/car/toyota/<slug>/
+#   jmty_category    : https://jmty.jp/all/car-toy/<g-id>（無い車種は jmty_keyword で検索）
+#   jmty_keyword     : jmty に専用カテゴリが無い車種のキーワード
 #   mlit_common_name : 国交省の「通称名」（不具合情報 API のキー。表記ゆれを列挙）
 #   generations      : 世代。年式レンジと型式（リコール照合とグレード解釈に使う）
 
@@ -26,6 +28,7 @@ vehicles:
     carsensor_names: [アルファード, アルファードハイブリッド]
     kakaku_item_id: "70100110661"
     minkara_slug: alphard
+    jmty_category: g-2310
     mlit_common_name: [アルファード, アルファードＶ, アルファードハイブリッド]
     generations:
       - code: 20系
@@ -53,6 +56,7 @@ vehicles:
     carsensor_names: [ヴェルファイア, ヴェルファイアハイブリッド]
     kakaku_item_id: "70100110662"
     minkara_slug: vellfire
+    jmty_category: g-2313
     mlit_common_name: [ヴェルファイア, ヴェルファイアハイブリッド]
     generations:
       - code: 20系
@@ -79,6 +83,7 @@ vehicles:
     carsensor_code: null
     kakaku_item_id: "70100110045"
     minkara_slug: noah
+    jmty_category: g-2318
     mlit_common_name: [ノア]
     generations:
       - code: 70系
@@ -115,6 +120,7 @@ vehicles:
     carsensor_code: null
     kakaku_item_id: "70100110019"
     minkara_slug: voxy
+    jmty_category: g-2314
     mlit_common_name: [ヴォクシー, ヴォクシーハイブリッド]
     generations:
       - code: 70系
@@ -152,6 +158,7 @@ vehicles:
     kakaku_item_id: null
     kakaku_item_id_note: 価格.com のカタログに掲載なし
     minkara_slug: esquire
+    jmty_keyword: エスクァイア
     mlit_common_name: [エスクァイア]
     generations:
       - code: 80系
@@ -166,6 +173,7 @@ vehicles:
     carsensor_code: null
     kakaku_item_id: "70100110391"
     minkara_slug: sienta
+    jmty_category: g-2592
     mlit_common_name: [シエンタ]
     generations:
       - code: 80系
@@ -198,6 +206,7 @@ vehicles:
     carsensor_names: [エスティマ, エスティマハイブリッド]
     kakaku_item_id: "70100110021"
     minkara_slug: estima
+    jmty_category: g-2315
     mlit_common_name: [エスティマ, エスティマハイブリッド]
     generations:
       - code: 50系
@@ -212,6 +221,7 @@ vehicles:
     carsensor_code: null
     kakaku_item_id: "70100110323"
     minkara_slug: wish
+    jmty_category: g-2311
     mlit_common_name: [ウィッシュ, ＷＩＳＨ]
     generations:
       - code: 20系
@@ -227,6 +237,8 @@ vehicles:
     kakaku_item_id: null
     kakaku_item_id_note: 価格.com のカタログに掲載なし
     minkara_slug: prius_alpha
+    jmty_keyword: プリウスα
+    jmty_title_pattern: プリウス\s*(α|アルファ|ａ|Ａ|a|A)
     mlit_common_name: [プリウスα, プリウスアルファ]
     generations:
       - code: 40系
@@ -241,6 +253,7 @@ vehicles:
     carsensor_code: null
     kakaku_item_id: "70100110472"
     minkara_slug: isis
+    jmty_keyword: アイシス
     mlit_common_name: [アイシス]
     generations:
       - code: 10系
@@ -268,6 +281,7 @@ vehicles:
     kakaku_item_id: null
     kakaku_item_id_note: 価格.com のカタログに掲載なし
     minkara_slug: granace
+    jmty_keyword: グランエース
     mlit_common_name: [グランエース]
     generations:
       - code: 300系

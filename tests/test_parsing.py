@@ -189,6 +189,10 @@ class _FakeVehicle:
     def generation_label(_ym):
         return "1系"
 
+    @staticmethod
+    def generation_for_model_year(_year):
+        return "1系"
+
 
 def test_yahoo_by_year_excludes_tampered_and_repaired():
     rows = [
@@ -444,3 +448,93 @@ def test_detail_apply_fills_only_missing_fields():
     assert listings[1]["year_source"] == "detail_page"
     assert listings[1]["mileage_type"] == "METER_REPLACEMENT"
     assert listings[1]["repair_type"] == "REPAIRED"
+
+
+# ---------------------------------------------------------------- ジモティー
+
+
+def test_jmty_dedupes_repeat_postings():
+    """同じ車の多重投稿を 1 件に落とすこと。
+
+    ジモティーには 1 台を文言だけ変えて何度も出す業者がいる
+    （実データでウィッシュの 1 台が 8 投稿）。
+    """
+    from kakaku_ai.sources import jmty
+
+    rows = [
+        {"asking_price": 1_192_000, "model_year": 2013, "mileage_km": 90_000, "title": "A"},
+        {"asking_price": 1_192_000, "model_year": 2013, "mileage_km": 90_000, "title": "B"},
+        {"asking_price": 1_192_000, "model_year": 2013, "mileage_km": 90_000, "title": "C"},
+        {"asking_price": 770_000, "model_year": 2014, "mileage_km": 66_000, "title": "D"},
+        # 年式・距離が未記入のものは同一判定できないので残す
+        {"asking_price": 500_000, "model_year": None, "mileage_km": None, "title": "E"},
+        {"asking_price": 500_000, "model_year": None, "mileage_km": None, "title": "F"},
+    ]
+    out = jmty._dedupe(rows)
+    assert [r["title"] for r in out] == ["A", "D", "E", "F"]
+
+
+def test_jmty_keyword_search_checks_title():
+    """キーワード検索は本文にも当たるので、タイトルで車種を確かめること。
+
+    「プリウスα」で検索してヴォクシーが混ざった実例がある。
+    """
+    from kakaku_ai.sources import jmty
+    from kakaku_ai.vehicles import load_vehicles
+
+    vehicle = load_vehicles().by_key("prius_alpha")
+    ok = {"title": "H25 プリウスα ５人乗り(ＨＶバッテリー交換済み)"}
+    ng = {"title": "【総額65万円】車検長期ヴォクシーHV/低燃費ハイブリッドミニバン"}
+    plain_prius = {"title": "30プリウス 後期 フルエアロ 90000キロ【美車】"}
+
+    assert jmty._matches_vehicle(ok, vehicle, has_category=False)
+    assert not jmty._matches_vehicle(ng, vehicle, has_category=False)
+    assert not jmty._matches_vehicle(plain_prius, vehicle, has_category=False)
+    # カテゴリ指定なら jmty 側が絞ってくれているので素通し
+    assert jmty._matches_vehicle(ng, vehicle, has_category=True)
+
+
+def test_jmty_by_year_counts_direct_posts_separately():
+    """業者・個人は分けずに集計し、直接投稿の件数だけ内訳として持つこと。"""
+    from kakaku_ai.sources import jmty
+
+    rows = [
+        {"model_year": 2018, "asking_price": 2_000_000, "is_alliance": True},
+        {"model_year": 2018, "asking_price": 2_400_000, "is_alliance": True},
+        {"model_year": 2018, "asking_price": 2_800_000, "is_alliance": False},
+        {"model_year": None, "asking_price": 999_000, "is_alliance": False},
+    ]
+    out = jmty.by_year(rows, _FakeVehicle(), "2026-08-23")
+    assert len(out) == 1
+    assert out[0]["jmty_n"] == 3
+    assert out[0]["jmty_direct_n"] == 1
+    assert out[0]["jmty_median_manyen"] == pytest.approx(240.0)
+
+
+def test_generation_for_model_year_handles_mid_year_changes():
+    """年の途中でモデルチェンジした年式を取りこぼさないこと。
+
+    月が分からない年式を「6月とみなす」だけだと、7月開始の世代（シエンタ170系）や
+    10月開始の世代（エスクァイア80系）が世代なしになる。実データでシエンタ2015が
+    落札12件・掲載378件ありながら世代不明で出ていた。
+    """
+    vs = load_vehicles()
+
+    sienta = vs.by_key("sienta")
+    assert sienta.generation_for_model_year(2014) == "80系"
+    assert sienta.generation_for_model_year(2015) == "80系/170系"  # 7月に交代
+    assert sienta.generation_for_model_year(2016) == "170系"
+
+    esquire = vs.by_key("esquire")
+    assert esquire.generation_for_model_year(2014) == "80系"  # 10月発売でも拾う
+
+    alphard = vs.by_key("alphard")
+    assert alphard.generation_for_model_year(2023) == "30系後期/40系"  # 6月に交代
+    assert alphard.generation_for_model_year(2024) == "40系"
+
+    isis = vs.by_key("isis")
+    assert isis.generation_for_model_year(2017) == "10系"  # 12月終了
+
+    # 生産終了後の年式は該当なし（データの揺れ）
+    assert vs.by_key("prius_alpha").generation_for_model_year(2022) == ""
+    assert alphard.generation_for_model_year(None) == ""

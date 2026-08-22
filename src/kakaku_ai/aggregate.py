@@ -105,7 +105,7 @@ def yahoo_by_year(
                 "vehicle_key": vehicle.key,
                 "vehicle_name": vehicle.name,
                 "model_year": year,
-                "generation": vehicle.generation_label(year * 100 + 6),
+                "generation": vehicle.generation_for_model_year(year),
                 "auction_n": stats["n"],
                 "auction_min_manyen": stats["min"],
                 "auction_p25_manyen": stats["p25"],
@@ -134,8 +134,13 @@ def merge_price_rows(
     snapshot: str,
     *,
     model_year_from: int,
+    private_rows: list[dict[str, Any]] | None = None,
 ) -> list[dict[str, Any]]:
-    """オークション相場と小売相場を年式キーで突き合わせる。
+    """3 系統の相場を年式キーで突き合わせる。
+
+    * オークション（ヤフオク落札）  … 実際に成約した値
+    * ジモティー掲載              … 売り希望額。業者・個人混在で、成約値ではない
+    * 小売（カーセンサー掲載）      … 販売店の売り値
 
     差額（小売 − オークション）と乖離率を出す。中古車屋の粗利や、
     「今このクルマは業販が強いのか小売が強いのか」の目安になる。
@@ -146,6 +151,8 @@ def merge_price_rows(
         by_year.setdefault(row["model_year"], {})["auction"] = row
     for row in retail_rows:
         by_year.setdefault(row["model_year"], {})["retail"] = row
+    for row in private_rows or ():
+        by_year.setdefault(row["model_year"], {})["private"] = row
 
     out: list[dict[str, Any]] = []
     for year in sorted(by_year):
@@ -154,6 +161,7 @@ def merge_price_rows(
         pair = by_year[year]
         auction = pair.get("auction") or {}
         retail = pair.get("retail") or {}
+        private = pair.get("private") or {}
 
         auction_median = auction.get("auction_median_manyen")
         retail_median = retail.get("retail_median_manyen")
@@ -169,7 +177,12 @@ def merge_price_rows(
                 "vehicle_key": vehicle.key,
                 "vehicle_name": vehicle.name,
                 "model_year": year,
-                "generation": (auction.get("generation") or retail.get("generation") or ""),
+                "generation": (
+                    auction.get("generation")
+                    or retail.get("generation")
+                    or private.get("generation")
+                    or vehicle.generation_for_model_year(year)
+                ),
                 # --- オークション相場（ヤフオク!・終了180日） ---
                 "auction_n": auction.get("auction_n"),
                 "auction_min_manyen": auction.get("auction_min_manyen"),
@@ -180,6 +193,10 @@ def merge_price_rows(
                 "auction_max_manyen": auction.get("auction_max_manyen"),
                 "auction_median_mileage_km": auction.get("auction_median_mileage_km"),
                 "auction_unknown_repair_n": auction.get("unknown_repair_n"),
+                # --- ジモティー掲載価格（業者・個人混在の売り希望額） ---
+                "jmty_n": private.get("jmty_n"),
+                "jmty_median_manyen": private.get("jmty_median_manyen"),
+                "jmty_direct_n": private.get("jmty_direct_n"),
                 # --- 小売相場（カーセンサー掲載） ---
                 "retail_n": retail.get("listing_count"),
                 "retail_p25_manyen": retail.get("retail_p25_manyen"),

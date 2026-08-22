@@ -11,7 +11,7 @@ from typing import Any
 
 from . import aggregate, store
 from .http import Fetcher
-from .sources import carsensor, kakaku_com, minkara, mlit, yahoo_auction, yahoo_detail
+from .sources import carsensor, jmty, kakaku_com, minkara, mlit, yahoo_auction, yahoo_detail
 from .vehicles import DATA_DIR, VehicleSet, load_vehicles
 
 log = logging.getLogger(__name__)
@@ -31,7 +31,7 @@ def run(
 ) -> dict[str, int]:
     snapshot = snapshot or store.today()
     vehicles = vehicles or load_vehicles()
-    sources = sources or {"yahoo", "carsensor", "kakaku", "minkara", "mlit"}
+    sources = sources or {"yahoo", "carsensor", "kakaku", "jmty", "minkara", "mlit"}
 
     targets = [v for v in vehicles if not only or v.key in only]
     log.info("snapshot=%s 車種=%s ソース=%s", snapshot, len(targets), sorted(sources))
@@ -113,6 +113,17 @@ def run(
             except Exception as exc:  # noqa: BLE001
                 log.error("  kakaku %s: %s", vehicle.name, exc)
 
+        private_by_year: list[dict[str, Any]] = []
+        if "jmty" in sources:
+            try:
+                jmty_rows = jmty.collect(
+                    fetcher, vehicle, snapshot, model_year_from=vehicles.model_year_from
+                )
+                collected["jmty_listings"].extend(jmty_rows)
+                private_by_year = jmty.by_year(jmty_rows, vehicle, snapshot)
+            except Exception as exc:  # noqa: BLE001
+                log.error("  jmty %s: %s", vehicle.name, exc)
+
         collected["vehicle_summary"].append(summary)
         collected["price_by_year"].extend(
             aggregate.merge_price_rows(
@@ -121,6 +132,7 @@ def run(
                 vehicle,
                 snapshot,
                 model_year_from=vehicles.model_year_from,
+                private_rows=private_by_year,
             )
         )
 

@@ -308,7 +308,7 @@ def collect(fetcher: Fetcher, vehicle, snapshot: str) -> dict[str, Any] | None:
                 "model_year": year,
                 "year_label": label,
                 "is_open_bucket": ("以前" in label or "以降" in label),
-                "generation": vehicle.generation_label(year * 100 + 6),
+                "generation": vehicle.generation_for_model_year(year),
                 "listing_count": stats["n"],
                 "retail_median_manyen": stats["median"],
                 "retail_mean_manyen": stats["mean"],

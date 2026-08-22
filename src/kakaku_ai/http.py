@@ -37,6 +37,7 @@ HOST_DELAY: dict[str, float] = {
     "minkara.carview.co.jp": 2.5,
     "renrakuda.mlit.go.jp": 1.5,
     "www.goo-net.com": 2.5,
+    "jmty.jp": 2.0,
 }
 
 MAX_RETRIES = 3

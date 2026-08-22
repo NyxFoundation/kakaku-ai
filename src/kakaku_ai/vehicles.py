@@ -55,6 +55,9 @@ class Vehicle:
     carsensor_codes: tuple[str, ...]
     kakaku_item_id: str | None
     minkara_slug: str | None
+    jmty_category: str | None
+    jmty_keyword: str | None
+    jmty_title_pattern: str | None
     mlit_common_names: tuple[str, ...]
     generations: tuple[Generation, ...] = field(default=())
 
@@ -69,6 +72,37 @@ class Vehicle:
     def generation_label(self, year_month: int | None) -> str:
         gen = self.generation_for(year_month)
         return gen.code if gen else ""
+
+    def generation_for_model_year(self, year: int | None) -> str:
+        """年式（月が分からない）から世代を決める。
+
+        「6月とみなして判定」だと年の途中でモデルチェンジした年式が落ちる。
+        シエンタ 2015 は 170系が 7月 開始なので 6月判定では世代なしになり、
+        落札 12 件・掲載 378 件が世代不明のまま出ていた。
+
+        そこで、その暦年 12 か月のうち各世代が何か月ぶんを覆うかを数え、
+        いちばん長い世代を採る。年をまたいで拮抗しているとき（アルファード 2023 の
+        30系後期 5か月 / 40系 7か月 など）は、どちらか一方に決めると嘘になるので
+        `30系後期/40系` のように併記する。
+        """
+        if not year:
+            return ""
+
+        overlap: list[tuple[Generation, int]] = []
+        for gen in self.generations:
+            months = sum(1 for m in range(1, 13) if gen.covers(year * 100 + m))
+            if months:
+                overlap.append((gen, months))
+        if not overlap:
+            return ""
+
+        overlap.sort(key=lambda x: -x[1])
+        total = sum(m for _, m in overlap)
+        if overlap[0][1] / total >= 0.8:
+            return overlap[0][0].code
+        # 世代交代の年。定義順（古い順）に並べ直して併記する
+        codes = [g.code for g in self.generations if any(g is o for o, _ in overlap)]
+        return "/".join(codes)
 
     @property
     def all_models(self) -> list[str]:
@@ -141,6 +175,9 @@ def load_vehicles(path: Path | None = None) -> VehicleSet:
                 ),
                 kakaku_item_id=item.get("kakaku_item_id"),
                 minkara_slug=item.get("minkara_slug"),
+                jmty_category=item.get("jmty_category"),
+                jmty_keyword=item.get("jmty_keyword"),
+                jmty_title_pattern=item.get("jmty_title_pattern"),
                 mlit_common_names=tuple(item.get("mlit_common_name") or (item["name"],)),
                 generations=gens,
             )
