@@ -13,5 +13,6 @@ jobs:
       - uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
-      - run: uv pip install --system -e ".[dev]"
-      - run: pytest -q
+      - run: uv venv
+      - run: uv pip install -e ".[dev]"
+      - run: uv run pytest -q
