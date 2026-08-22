@@ -67,6 +67,10 @@ def run(
                         log.error("  yahoo detail %s: %s", vehicle.name, exc)
                 else:
                     yahoo_detail.apply_to(auction_rows)
+                # 商品ページで年式が埋まった行は世代が空のままなので引き直す
+                for row in auction_rows:
+                    if not row.get("generation") and row.get("model_year_month"):
+                        row["generation"] = vehicle.generation_label(row["model_year_month"])
                 dated = sum(1 for r in auction_rows if r.get("model_year"))
                 log.info(
                     "  yahoo %s: 年式あり %s/%s件", vehicle.name, dated, len(auction_rows)

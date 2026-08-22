@@ -22,6 +22,8 @@ from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.worksheet import Worksheet
 
+from .aggregate import is_usable
+
 log = logging.getLogger(__name__)
 
 HEADER_FILL = PatternFill("solid", fgColor="1F3864")
@@ -97,14 +99,11 @@ def _title(ws: Worksheet, text: str, note: str) -> None:
 
 
 def _clean_listings(listings: list[dict[str, Any]], model_year_from: int) -> list[dict[str, Any]]:
-    """実走行・修復歴なし・対象年式以降の落札だけを残す。"""
+    """価格集計に使える落札だけを残す（判定は aggregate と共通）。"""
     return [
         r
         for r in listings
-        if (r.get("model_year") or 0) >= model_year_from
-        and r.get("mileage_type") in (None, "REAL_MILEAGE")
-        and r.get("repair_type") in (None, "NONE")
-        and r.get("price")
+        if (r.get("model_year") or 0) >= model_year_from and r.get("price") and is_usable(r)
     ]
 
 

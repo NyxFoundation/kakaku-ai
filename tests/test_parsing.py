@@ -202,7 +202,38 @@ def test_yahoo_by_year_excludes_tampered_and_repaired():
     assert out[0]["auction_n"] == 2
     assert out[0]["auction_median_manyen"] == pytest.approx(150.0)
     assert out[0]["excluded_n"] == 1
-    assert out[0]["basis"] == "実走行・修復歴なし"
+    assert out[0]["basis"] == "実走行・修復歴あり以外"
+
+
+def test_yahoo_by_year_keeps_unknown_repair_history():
+    """修復歴「わからない」は主系列に残し、件数だけ別に持つこと。
+
+    個人出品では普通の申告で、落とすとサンプルが 2 割以上痩せる。
+    一方で「あり」は価格が下振れするので外す。
+    """
+    rows = [
+        {"model_year": 2018, "price": 1_000_000, "mileage_type": "REAL_MILEAGE", "repair_type": "NONE"},
+        {"model_year": 2018, "price": 1_200_000, "mileage_type": "REAL_MILEAGE", "repair_type": "UNKNOWN"},
+        {"model_year": 2018, "price": 300_000, "mileage_type": "REAL_MILEAGE", "repair_type": "EXISTS"},
+        {"model_year": 2018, "price": 400_000, "mileage_type": "REAL_MILEAGE", "repair_type": "REPAIRED"},
+    ]
+    out = aggregate.yahoo_by_year(rows, _FakeVehicle(), "2026-08-22")
+    assert out[0]["auction_n"] == 2          # なし + わからない
+    assert out[0]["unknown_repair_n"] == 1
+    assert out[0]["excluded_n"] == 2         # EXISTS / REPAIRED
+    assert out[0]["auction_median_manyen"] == pytest.approx(110.0)
+
+
+def test_is_usable_predicate():
+    from kakaku_ai.aggregate import is_usable
+
+    assert is_usable({"repair_type": "NONE", "mileage_type": "REAL_MILEAGE"})
+    assert is_usable({"repair_type": "UNKNOWN", "mileage_type": "REAL_MILEAGE"})
+    assert is_usable({})  # 何も分かっていないものは残す
+    assert not is_usable({"repair_type": "EXISTS"})
+    assert not is_usable({"repair_type": "REPAIRED"})
+    assert not is_usable({"mileage_type": "METER_REPLACEMENT"})
+    assert not is_usable({"mileage_type": "UNKNOWN_MILEAGE"})
 
 
 def test_yahoo_by_year_falls_back_when_all_flagged():

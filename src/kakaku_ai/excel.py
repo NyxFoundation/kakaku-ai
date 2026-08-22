@@ -102,6 +102,7 @@ PRICE_COLUMNS: list[tuple[str, str]] = [
     ("auction_p75_manyen", "ヤフオク\n75%(万円)"),
     ("auction_max_manyen", "ヤフオク\n最高(万円)"),
     ("auction_median_mileage_km", "落札車の\n中央走行距離(km)"),
+    ("auction_unknown_repair_n", "うち修復歴\n不明の件数"),
     ("retail_n", "小売\n掲載台数"),
     ("retail_p25_manyen", "小売\n25%(万円)"),
     ("retail_median_manyen", "小売\n中央値(万円)"),
@@ -120,6 +121,7 @@ PRICE_FORMATS = {
     "auction_p75_manyen": MANYEN_FMT,
     "auction_max_manyen": MANYEN_FMT,
     "auction_median_mileage_km": INT_FMT,
+    "auction_unknown_repair_n": INT_FMT,
     "retail_n": INT_FMT,
     "retail_p25_manyen": MANYEN_FMT,
     "retail_median_manyen": MANYEN_FMT,
@@ -177,7 +179,9 @@ def _readme_sheet(ws: Worksheet, vehicles: VehicleSet, snapshots: list[str], cou
         (
             "オークション相場",
             "ヤフオク!「中古車・新車」カテゴリの終了180日間の落札から、"
-            "carSpec.modelDate を年式として集計。メーター交換車・修復歴ありは除外（除外件数は別途保持）。",
+            "商品ページの firstRegYear（無ければ検索結果の carSpec.modelDate）を年式として集計。"
+            "メーター交換車と修復歴ありは除外し、件数は別列に残す。"
+            "修復歴『わからない』は個人出品では普通の申告なので残している（列で件数が見える）。",
         ),
         (
             "小売相場",
@@ -431,7 +435,8 @@ def build(output: Path, *, vehicles: VehicleSet | None = None) -> Path:
             ("auction_p75_manyen", "75%(万円)"),
             ("auction_max_manyen", "最高(万円)"),
             ("auction_median_mileage_km", "中央走行距離(km)"),
-            ("excluded_n", "除外件数\n(メーター交換/修復歴)"),
+            ("unknown_repair_n", "うち修復歴\n不明"),
+            ("excluded_n", "除外件数\n(メーター交換/修復歴あり)"),
             ("retail_n", "小売\n掲載台数"),
             ("retail_median_manyen", "小売中央値\n(万円・最新)"),
             ("retail_premium_pct", "小売プレミアム\n(%)"),

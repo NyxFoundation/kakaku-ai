@@ -9,6 +9,32 @@ from typing import Any, Iterable
 
 MANYEN = 10_000  # 1万円
 
+# 修復歴。検索結果は NONE / EXISTS、商品ページは なし / あり / わからない を返すので、
+# yahoo_detail 側で NONE / REPAIRED / UNKNOWN に寄せてある。
+REPAIRED = frozenset({"EXISTS", "REPAIRED"})
+# メーター交換・不明。距離が信用できないので価格の集計から外す。
+BAD_MILEAGE = frozenset({"METER_REPLACEMENT", "UNKNOWN_MILEAGE"})
+
+
+def is_usable(row: dict[str, Any]) -> bool:
+    """価格集計に使ってよい落札か。
+
+    外すのは「修復歴あり」と「メーター交換・距離不明」だけ。
+
+    修復歴 **わからない** は外さない。個人出品では珍しくない申告で、
+    これを落とすとサンプルが痩せる（2026-08-22 の実測で、2013年式以降が
+    243 件 → 299 件。除外すると 23% 失う）。件数は `unknown_repair_n` に
+    残してあるので、気になるときはそこで割り引いて読める。
+
+    なお商品ページを取るまでは修復歴が空欄で、空欄は「あり」ではないので
+    通っていた。詳細取得で「わからない」と判明した途端に落ちる、という
+    取りこぼしを避ける意味もある。
+    """
+    return (
+        row.get("mileage_type") not in BAD_MILEAGE
+        and row.get("repair_type") not in REPAIRED
+    )
+
 
 def _quantile(sorted_values: list[float], q: float) -> float:
     if not sorted_values:
@@ -40,8 +66,8 @@ def yahoo_by_year(
 ) -> list[dict[str, Any]]:
     """ヤフオクの落札明細を年式ごとに集計する。
 
-    主系列は「実走行・修復歴なし」に絞る。メーター交換車と修復歴あり車は
-    価格が大きく下振れして年式別の相場を歪めるため、件数だけ別に残す。
+    主系列は `is_usable()` を通ったものだけ。メーター交換車と修復歴あり車は
+    価格が大きく下振れして年式別の相場を歪めるため、件数だけ `excluded_n` に残す。
     """
     buckets: dict[int, dict[str, list[Any]]] = {}
     for row in rows:
@@ -49,17 +75,18 @@ def yahoo_by_year(
         price = row.get("price")
         if not year or not price:
             continue
-        slot = buckets.setdefault(year, {"clean": [], "all": [], "mileage": [], "bids": [], "flagged": []})
+        slot = buckets.setdefault(
+            year,
+            {"clean": [], "all": [], "mileage": [], "bids": [], "flagged": [], "unknown": 0},
+        )
         slot["all"].append(price / MANYEN)
         slot["bids"].append(row.get("bid_count") or 0)
-        is_clean = (
-            row.get("mileage_type") in (None, "REAL_MILEAGE")
-            and row.get("repair_type") in (None, "NONE")
-        )
-        if is_clean:
+        if is_usable(row):
             slot["clean"].append(price / MANYEN)
             if row.get("mileage_km"):
                 slot["mileage"].append(row["mileage_km"])
+            if row.get("repair_type") == "UNKNOWN":
+                slot["unknown"] += 1
         else:
             slot["flagged"].append(price / MANYEN)
 
@@ -91,7 +118,10 @@ def yahoo_by_year(
                     round(sum(slot["bids"]) / len(slot["bids"]), 1) if slot["bids"] else None
                 ),
                 "excluded_n": len(slot["flagged"]),
-                "basis": "実走行・修復歴なし" if slot["clean"] else "全件（実走行の該当なし）",
+                "unknown_repair_n": slot["unknown"],
+                "basis": (
+                    "実走行・修復歴あり以外" if slot["clean"] else "全件（実走行の該当なし）"
+                ),
             }
         )
     return out
@@ -149,6 +179,7 @@ def merge_price_rows(
                 "auction_p75_manyen": auction.get("auction_p75_manyen"),
                 "auction_max_manyen": auction.get("auction_max_manyen"),
                 "auction_median_mileage_km": auction.get("auction_median_mileage_km"),
+                "auction_unknown_repair_n": auction.get("unknown_repair_n"),
                 # --- 小売相場（カーセンサー掲載） ---
                 "retail_n": retail.get("listing_count"),
                 "retail_p25_manyen": retail.get("retail_p25_manyen"),
