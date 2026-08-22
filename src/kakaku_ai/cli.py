@@ -45,7 +45,7 @@ def main(argv: list[str] | None = None) -> int:
     crawl.add_argument(
         "--sources",
         nargs="*",
-        choices=["yahoo", "carsensor", "kakaku", "jmty", "minkara", "mlit"],
+        choices=["yahoo", "carsensor", "kakaku", "jmty", "minkara", "mlit", "stock"],
         help="使うソースを絞る",
     )
     crawl.add_argument("--no-cache", action="store_true", help="キャッシュを無視して取り直す")

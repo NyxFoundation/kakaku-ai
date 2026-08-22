@@ -11,12 +11,23 @@ from typing import Any
 
 from . import aggregate, store
 from .http import Fetcher
-from .sources import carsensor, jmty, kakaku_com, minkara, mlit, yahoo_auction, yahoo_detail
+from .sources import (
+    carsensor,
+    carsensor_listings,
+    jmty,
+    kakaku_com,
+    minkara,
+    mlit,
+    yahoo_auction,
+    yahoo_detail,
+)
 from .vehicles import DATA_DIR, VehicleSet, load_vehicles
 
 log = logging.getLogger(__name__)
 
 CACHE_DIR = DATA_DIR / "cache"
+
+ALL_SOURCES = frozenset({"yahoo", "carsensor", "kakaku", "jmty", "minkara", "mlit", "stock"})
 
 
 def run(
@@ -31,10 +42,14 @@ def run(
 ) -> dict[str, int]:
     snapshot = snapshot or store.today()
     vehicles = vehicles or load_vehicles()
-    sources = sources or {"yahoo", "carsensor", "kakaku", "jmty", "minkara", "mlit"}
+    sources = sources or set(ALL_SOURCES)
 
     targets = [v for v in vehicles if not only or v.key in only]
-    log.info("snapshot=%s 車種=%s ソース=%s", snapshot, len(targets), sorted(sources))
+    partial = bool(only) or sources != ALL_SOURCES
+    log.info(
+        "snapshot=%s 車種=%s ソース=%s%s",
+        snapshot, len(targets), sorted(sources), "（部分実行: 既存を保持）" if partial else "",
+    )
 
     fetcher = Fetcher(cache_dir=CACHE_DIR, snapshot=snapshot, use_cache=use_cache)
     # 落札商品ページは 1 件 250KB 前後ある。スナップショットごとに生 HTML を貯めると
@@ -157,8 +172,49 @@ def run(
                 mlit.summarize_defects(defects, recalls, vehicle, snapshot)
             )
 
+    # 店頭在庫の個体追跡。消えた＝売れたとみなして成約価格を推定する。
+    # 全車種ぶんまとめて 1 回。結果が出るのは 2 週目から。
+    if "stock" in sources:
+        try:
+            carsensor_listings.track(
+                fetcher,
+                targets,
+                snapshot,
+                model_year_from=vehicles.model_year_from,
+                model_year_to=int(snapshot[:4]),
+            )
+            collected["carsensor_delisted"] = carsensor_listings.delisted_rows(snapshot)
+        except Exception as exc:  # noqa: BLE001
+            log.error("carsensor在庫の追跡に失敗: %s", exc)
+
     counts: dict[str, int] = {}
     for dataset in store.DATASETS:
-        counts[dataset] = store.write(snapshot, dataset, collected[dataset])
+        rows = collected[dataset]
+        if partial:
+            rows = _merge_with_existing(snapshot, dataset, rows, only)
+        counts[dataset] = store.write(snapshot, dataset, rows)
     log.info("snapshot %s 書き出し完了: %s", snapshot, counts)
     return counts
+
+
+def _merge_with_existing(
+    snapshot: str, dataset: str, rows: list[dict[str, Any]], only: list[str] | None
+) -> list[dict[str, Any]]:
+    """一部のソース／車種だけ回したときに、既存のスナップショットを消さない。
+
+    `--sources jmty` のように絞って実行すると、回さなかったデータセットは
+    空のまま書き出されて、その日のスナップショットが壊れる。実際に一度やった。
+    そこで部分実行のときは、
+      * そのデータセットを 1 行も作っていなければ既存をそのまま残す
+      * `--only` で車種を絞ったなら、対象外の車種の行は既存から引き継ぐ
+    """
+    existing = store.read(snapshot, dataset)
+    if not existing:
+        return rows
+    if not rows:
+        return existing
+    if only:
+        targeted = set(only)
+        kept = [r for r in existing if r.get("vehicle_key") not in targeted]
+        return kept + rows
+    return rows

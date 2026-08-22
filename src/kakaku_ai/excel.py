@@ -172,6 +172,12 @@ def _readme_sheet(ws: Worksheet, vehicles: VehicleSet, snapshots: list[str], cou
         ),
         ("リコール", "国交省リコール届出。不具合装置・状況・改善措置つき。"),
         (
+            "店頭_成約推定",
+            "カーセンサーの在庫を個体で追い、掲載が消えたもの＝売れたとみなしたもの。"
+            "店頭の成約価格はどこにも公開されていないので、これが唯一の手がかり。"
+            "2 回目のクロールから貯まりはじめる。",
+        ),
+        (
             "落札明細",
             "ヤフオク!の落札 1 台ずつ（全スナップショットを名寄せした累計）。"
             "年式・走行距離・修復歴に加え、商品ページから取ったグレード・車検・"
@@ -333,6 +339,7 @@ def build(output: Path, *, vehicles: VehicleSet | None = None) -> Path:
     # 名寄せして 1 本にする。週を重ねるほど実効期間が伸び、年式ごとの n が増える。
     listings_pool = store.pooled_auction_listings()
     jmty_latest = store.read(latest, "jmty_listings")
+    delisted = store.read(latest, "carsensor_delisted")
 
     wb = Workbook()
     counts = {
@@ -344,6 +351,7 @@ def build(output: Path, *, vehicles: VehicleSet | None = None) -> Path:
         "落札明細_累計": len(listings_pool),
         "落札明細（最新断面のみ）": len(listings_latest),
         "参考_ジモティー掲載": len(jmty_latest),
+        "店頭_成約推定": len(delisted),
     }
 
     _readme_sheet(wb.active, vehicles, snapshots, counts)
@@ -621,6 +629,53 @@ def build(output: Path, *, vehicles: VehicleSet | None = None) -> Path:
         },
         wrap_columns={"title"},
     )
+
+    # --- 店頭_成約推定（掲載が消えた個体） ---
+    ws = wb.create_sheet("店頭_成約推定")
+    if delisted:
+        _write_table(
+            ws,
+            [
+                ("vehicle_name", "車種"),
+                ("model_year", "年式"),
+                ("generation", "世代"),
+                ("delisted_on", "掲載が\n消えた日"),
+                ("first_seen", "初めて\n見た日"),
+                ("first_price_manyen", "初回の\n総額(万円)"),
+                ("last_price_manyen", "最後の\n総額(万円)"),
+                ("price_cut_manyen", "値下げ幅\n(万円)"),
+                ("mileage_km", "走行距離(km)"),
+                ("repair_history", "修復歴"),
+                ("listing_id", "掲載ID"),
+                ("url", "URL"),
+            ],
+            delisted,
+            number_formats={
+                "first_price_manyen": MANYEN_FMT,
+                "last_price_manyen": MANYEN_FMT,
+                "price_cut_manyen": MANYEN_FMT,
+                "mileage_km": INT_FMT,
+            },
+        )
+    else:
+        ws.column_dimensions["A"].width = 100
+        ws["A1"] = "店頭の成約推定（掲載が消えた個体）"
+        ws["A1"].font = TITLE_FONT
+        for i, line in enumerate(
+            [
+                "店頭でいくらで売れたかは、どのサイトも公開していない。",
+                "そこでカーセンサーの在庫を個体 ID で毎週追いかけ、"
+                "先週まであった掲載が消えたら「売れた」とみなして、そのときの掲載価格を記録する。",
+                "",
+                "いまは 1 回目の観測を取ったところなので、まだ空。次回のクロールから貯まりはじめる。",
+                "",
+                "読むときの注意: 掲載終了は取り下げや掲載期限切れでも起きるし、"
+                "実際の成約額は値引きぶん掲載価格より下がるのが普通。あくまで上限の目安。",
+            ],
+            start=3,
+        ):
+            cell = ws.cell(row=i, column=1, value=line)
+            cell.alignment = Alignment(wrap_text=True, vertical="top")
 
     # --- 参考: ジモティー掲載明細 ---
     _write_table(

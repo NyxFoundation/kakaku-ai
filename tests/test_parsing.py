@@ -538,3 +538,152 @@ def test_generation_for_model_year_handles_mid_year_changes():
     # 生産終了後の年式は該当なし（データの揺れ）
     assert vs.by_key("prius_alpha").generation_for_model_year(2022) == ""
     assert alphard.generation_for_model_year(None) == ""
+
+
+# ------------------------------------------------------- 店頭在庫の個体追跡
+
+
+def test_stock_tracking_marks_disappeared_listings(tmp_path, monkeypatch):
+    """先週まであった掲載が今週消えたら「売れた」印をつけること。
+
+    店頭の成約価格はどこも公開していないので、これが唯一の手がかりになる。
+    """
+    from kakaku_ai.sources import carsensor_listings as cl
+
+    monkeypatch.setattr(cl, "STORE_PATH", tmp_path / "stock.jsonl")
+
+    class _V:
+        key = "test"
+        name = "テスト車"
+        carsensor_codes = ("TO_S001",)
+
+        @staticmethod
+        def generation_for_model_year(_y):
+            return "1系"
+
+    week1 = [
+        {"listing_id": "AU1", "vehicle_key": "test", "vehicle_name": "テスト車",
+         "carsensor_code": "TO_S001", "model_year": 2018, "generation": "1系",
+         "total_price_manyen": 300.0, "base_price_manyen": 290.0, "mileage_km": 50000,
+         "inspection": "", "repair_history": "なし", "warranty": "", "url": "u1"},
+        {"listing_id": "AU2", "vehicle_key": "test", "vehicle_name": "テスト車",
+         "carsensor_code": "TO_S001", "model_year": 2018, "generation": "1系",
+         "total_price_manyen": 320.0, "base_price_manyen": 310.0, "mileage_km": 40000,
+         "inspection": "", "repair_history": "なし", "warranty": "", "url": "u2"},
+    ]
+    # 2週目: AU1 は値下げして残り、AU2 は消える
+    week2 = [dict(week1[0], total_price_manyen=285.0)]
+
+    def fake_fetch(rows):
+        return lambda fetcher, vehicle, code, year: rows if year == 2018 else []
+
+    monkeypatch.setattr(cl, "_fetch_year", fake_fetch(week1))
+    c1 = cl.track(None, [_V()], "2026-08-23", model_year_from=2018, model_year_to=2018)
+    assert c1 == {"tracked": 2, "seen_this_week": 2, "newly_delisted": 0}
+    assert cl.delisted_rows("2026-08-23") == []
+
+    monkeypatch.setattr(cl, "_fetch_year", fake_fetch(week2))
+    c2 = cl.track(None, [_V()], "2026-08-30", model_year_from=2018, model_year_to=2018)
+    assert c2["newly_delisted"] == 1
+
+    gone = cl.delisted_rows("2026-08-30")
+    assert len(gone) == 1
+    assert gone[0]["listing_id"] == "AU2"
+    assert gone[0]["last_price_manyen"] == pytest.approx(320.0)
+    assert gone[0]["delisted_on"] == "2026-08-30"
+
+    # 残ったほうは値下げが履歴に残る
+    store = cl.load_store()
+    assert store["AU1"]["price_history"] == [["2026-08-23", 300.0], ["2026-08-30", 285.0]]
+    assert store["AU1"]["delisted_on"] is None
+
+
+def test_stock_tracking_undoes_delisting_on_relist(tmp_path, monkeypatch):
+    """一度消えた掲載が戻ってきたら「売れた」を取り消すこと。"""
+    from kakaku_ai.sources import carsensor_listings as cl
+
+    monkeypatch.setattr(cl, "STORE_PATH", tmp_path / "stock.jsonl")
+
+    class _V:
+        key = "test"
+        name = "テスト車"
+        carsensor_codes = ("TO_S001",)
+
+        @staticmethod
+        def generation_for_model_year(_y):
+            return "1系"
+
+    row = {"listing_id": "AU9", "vehicle_key": "test", "vehicle_name": "テスト車",
+           "carsensor_code": "TO_S001", "model_year": 2019, "generation": "1系",
+           "total_price_manyen": 200.0, "base_price_manyen": 195.0, "mileage_km": 60000,
+           "inspection": "", "repair_history": "なし", "warranty": "", "url": "u9"}
+
+    monkeypatch.setattr(cl, "_fetch_year", lambda f, v, c, y: [row] if y == 2019 else [])
+    cl.track(None, [_V()], "2026-08-23", model_year_from=2019, model_year_to=2019)
+
+    monkeypatch.setattr(cl, "_fetch_year", lambda f, v, c, y: [])
+    cl.track(None, [_V()], "2026-08-30", model_year_from=2019, model_year_to=2019)
+    assert len(cl.delisted_rows("2026-08-30")) == 1
+
+    monkeypatch.setattr(cl, "_fetch_year", lambda f, v, c, y: [row] if y == 2019 else [])
+    cl.track(None, [_V()], "2026-09-06", model_year_from=2019, model_year_to=2019)
+    assert cl.delisted_rows("2026-09-06") == []
+
+
+def test_partial_run_keeps_untouched_datasets(tmp_path, monkeypatch):
+    """--sources で絞って回しても、回さなかったデータセットを消さないこと。
+
+    実際に `--sources stock` だけ回してその日のスナップショットを
+    全部 0 にしてしまったことがある。
+    """
+    import json
+
+    from kakaku_ai import pipeline, store
+
+    monkeypatch.setattr(store, "SNAPSHOT_DIR", tmp_path)
+    snap = "2026-08-23"
+    d = tmp_path / snap
+    d.mkdir(parents=True)
+    (d / "auction_listings.jsonl").write_text(
+        json.dumps({"auction_id": "a1", "vehicle_key": "alphard"}) + "\n", encoding="utf-8"
+    )
+
+    # 何も作らなかったデータセットは既存が残る
+    kept = pipeline._merge_with_existing(snap, "auction_listings", [], None)
+    assert [r["auction_id"] for r in kept] == ["a1"]
+
+    # 作ったなら差し替わる
+    fresh = pipeline._merge_with_existing(
+        snap, "auction_listings", [{"auction_id": "a2", "vehicle_key": "alphard"}], None
+    )
+    assert [r["auction_id"] for r in fresh] == ["a2"]
+
+
+def test_partial_run_with_only_keeps_other_vehicles(tmp_path, monkeypatch):
+    """--only で車種を絞ったとき、対象外の車種の行を消さないこと。"""
+    import json
+
+    from kakaku_ai import pipeline, store
+
+    monkeypatch.setattr(store, "SNAPSHOT_DIR", tmp_path)
+    snap = "2026-08-23"
+    d = tmp_path / snap
+    d.mkdir(parents=True)
+    (d / "price_by_year.jsonl").write_text(
+        "\n".join(
+            json.dumps(r)
+            for r in [
+                {"vehicle_key": "alphard", "model_year": 2018},
+                {"vehicle_key": "noah", "model_year": 2018},
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    merged = pipeline._merge_with_existing(
+        snap, "price_by_year", [{"vehicle_key": "alphard", "model_year": 2019}], ["alphard"]
+    )
+    keys = sorted((r["vehicle_key"], r["model_year"]) for r in merged)
+    # ノアは残り、アルファードだけ差し替わる
+    assert keys == [("alphard", 2019), ("noah", 2018)]
