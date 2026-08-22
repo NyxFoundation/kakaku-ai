@@ -57,15 +57,39 @@ uv run kakaku-ai list                   # 収録済みスナップショット�
 
 ## 週次で回す
 
-`.github/workflows/weekly.yml` が毎週月曜に `crawl` → `excel` → コミット → push までやる。
-Drive へのアップロードは rclone の認証情報が要るので、
-`RCLONE_CONFIG_GDRIVE_*` 系のシークレットが設定されているときだけ実行される。
+### ローカル（systemd user timer）— こちらが本番
 
-ローカルから手で回すなら:
+毎週月曜 04:23 に `scripts/weekly.sh` が走り、
+**crawl → xlsx 生成 → Drive アップロード → main へ push** までを通す。
+rclone の認証情報がローカルにあるので、これがいちばん素直。
 
 ```bash
-uv run kakaku-ai weekly
-git add data/snapshots && git commit -m "data: snapshot $(date +%F)" && git push
+mkdir -p ~/.config/systemd/user
+cp scripts/systemd/kakaku-ai-weekly.{service,timer} ~/.config/systemd/user/
+systemctl --user daemon-reload
+systemctl --user enable --now kakaku-ai-weekly.timer
+
+systemctl --user list-timers kakaku-ai-weekly.timer   # 次回の実行予定
+systemctl --user start kakaku-ai-weekly.service       # 今すぐ 1 回まわす
+journalctl --user -u kakaku-ai-weekly -f              # ログ
+systemctl --user disable --now kakaku-ai-weekly.timer # やめる
+```
+
+マシンが落ちていて実行時刻を逃しても `Persistent=true` で次の起動時に追いつく。
+
+### GitHub Actions（バックアップ）
+
+`.github/workflows/weekly.yml` が毎週日曜 19:17 UTC に
+`crawl` → `excel` → コミット → push をやる。
+Drive へのアップロードは rclone の認証情報が要るので、
+`RCLONE_CONFIG_GDRIVE_TOKEN` / `_CLIENT_ID` / `_CLIENT_SECRET` が
+Secrets に設定されているときだけ実行される（未設定ならスキップ）。
+
+### 手で回す
+
+```bash
+uv run kakaku-ai weekly    # crawl → excel → upload
+./scripts/weekly.sh        # 上に加えて git push まで
 ```
 
 ---

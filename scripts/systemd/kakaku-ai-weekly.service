@@ -1,0 +1,11 @@
+[Unit]
+Description=kakaku-ai 週次クロール（相場スナップショット → xlsx → Drive → GitHub）
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/workspace/kakaku.ai
+ExecStart=%h/workspace/kakaku.ai/scripts/weekly.sh
+TimeoutStartSec=5400
+Nice=10

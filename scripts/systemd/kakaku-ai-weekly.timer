@@ -1,0 +1,12 @@
+[Unit]
+Description=kakaku-ai を毎週まわす
+
+[Timer]
+# 毎週月曜の 04:23。混みやすい正時は避ける。
+OnCalendar=Mon *-*-* 04:23:00
+# マシンが落ちていて取り逃したら、次に起きたときに実行する
+Persistent=true
+RandomizedDelaySec=900
+
+[Install]
+WantedBy=timers.target
