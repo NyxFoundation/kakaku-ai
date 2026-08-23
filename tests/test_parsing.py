@@ -490,8 +490,33 @@ def test_jmty_keyword_search_checks_title():
     assert jmty._matches_vehicle(ok, vehicle, has_category=False)
     assert not jmty._matches_vehicle(ng, vehicle, has_category=False)
     assert not jmty._matches_vehicle(plain_prius, vehicle, has_category=False)
-    # カテゴリ指定なら jmty 側が絞ってくれているので素通し
-    assert jmty._matches_vehicle(ng, vehicle, has_category=True)
+    # タイトルパターンが指定されていればカテゴリ指定でも照合する。
+    # jmty のカテゴリは車種より粗いことがあり、三菱の「デリカ」には
+    # D:5 / D:2 / ミニ が同居していて、カテゴリを信じると別車種が混ざる。
+    assert not jmty._matches_vehicle(ng, vehicle, has_category=True)
+
+
+def test_jmty_category_without_pattern_is_trusted():
+    """パターン未指定ならカテゴリを信じる（アルファード等）。"""
+    from kakaku_ai.sources import jmty
+    from kakaku_ai.vehicles import load_vehicles
+
+    vehicle = load_vehicles().by_key("alphard")
+    assert vehicle.jmty_title_pattern is None
+    assert jmty._matches_vehicle({"title": "何でもよい"}, vehicle, has_category=True)
+
+
+def test_jmty_delica_pattern_separates_d5_from_d2():
+    """デリカは D:5 だけを拾い、D:2 / ミニ を弾くこと。"""
+    import re
+
+    from kakaku_ai.vehicles import load_vehicles
+
+    pat = load_vehicles().by_key("delica_d5").jmty_title_pattern
+    assert all(re.search(pat, t) for t in
+               ["即乗りＯＫ デリカD5 Dパワーパッケージ", "三菱 デリカD:5 2.2", "デリカＤ５ ジャスパー"])
+    assert not any(re.search(pat, t) for t in
+                   ["三菱 デリカＤ：２ Ｘ", "三菱 デリカミニ", "デリカD2 1.2"])
 
 
 def test_jmty_by_year_counts_direct_posts_separately():

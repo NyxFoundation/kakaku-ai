@@ -22,7 +22,7 @@ data/
 │  ├─ 2026-08-29/
 │  └─ …
 ├─ cache/                        取得した生レスポンス（git 管理外）
-└─ xlsx/toyota_minivan_souba.xlsx
+└─ xlsx/minivan_souba.xlsx
 ```
 
 JSONL にしたのは、1 行 1 レコードで追記・grep・部分再処理がやりやすいから。

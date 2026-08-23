@@ -18,7 +18,7 @@ from . import drive, excel, pipeline, store
 from .vehicles import DATA_DIR, load_vehicles
 
 OUTPUT_DIR = DATA_DIR / "xlsx"
-OUTPUT_NAME = "toyota_minivan_souba.xlsx"
+OUTPUT_NAME = "minivan_souba.xlsx"
 
 
 def _setup_logging(verbose: bool) -> None:

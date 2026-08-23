@@ -147,10 +147,12 @@ vehicles:
     carsensor_code: [MI_S089]
     kakaku_item_id: "70100410131"
     minkara_slug: delica_d5
-    jmty_keyword: デリカD
-    jmty_title_pattern: デリカ\s*D\s*[:：]?\s*5
+    # jmty の「デリカ」カテゴリは D:5 / D:2 / ミニ が同居するのでタイトルで絞る
+    jmty_category: g-2389
+    jmty_title_pattern: デリカ\s*[DＤ]\s*[:：]?\s*[5５]
     jmty_maker: mit
-    mlit_common_name: [デリカＤ：５, デリカD:5]
+    # 国交省の主表記はコロン無しの「デリカＤ５」（205件）。コロン付きは 4件しかない
+    mlit_common_name: [デリカＤ５, デリカＤ：５]
     generations:
       - code: 前期
         from: 2007-01

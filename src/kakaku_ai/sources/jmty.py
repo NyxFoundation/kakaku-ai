@@ -192,12 +192,18 @@ def _matches_vehicle(row: dict[str, Any], vehicle, has_category: bool) -> bool:
     カテゴリ指定なら jmty 側が絞ってくれている。キーワード検索は本文にも当たるので
     （「プリウスα」で検索してヴォクシーが出た）、タイトルで車種名を確かめる。
     """
+    pattern = getattr(vehicle, "jmty_title_pattern", None)
+    if pattern:
+        # カテゴリが車種より粗いことがある（三菱の「デリカ」は D:5 / D:2 / ミニ が同居）。
+        # パターンが指定されていればカテゴリ指定でも必ずタイトルで確かめる。
+        return bool(re.search(pattern, row["title"]))
     if has_category:
         return True
-    pattern = getattr(vehicle, "jmty_title_pattern", None) or re.escape(
-        getattr(vehicle, "jmty_keyword", None) or vehicle.name
+    return bool(
+        re.search(
+            re.escape(getattr(vehicle, "jmty_keyword", None) or vehicle.name), row["title"]
+        )
     )
-    return bool(re.search(pattern, row["title"]))
 
 
 def _dedupe(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
