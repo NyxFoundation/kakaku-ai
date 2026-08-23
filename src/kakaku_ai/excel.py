@@ -140,12 +140,20 @@ def _readme_sheet(ws: Worksheet, vehicles: VehicleSet, snapshots: list[str], cou
     ws.column_dimensions["A"].width = 26
     ws.column_dimensions["B"].width = 110
 
-    ws["A1"] = f"{vehicles.maker} {vehicles.body_type} 中古車相場データベース"
+    makers = []
+    for v in vehicles:
+        if v.maker not in makers:
+            makers.append(v.maker)
+    ws["A1"] = f"{vehicles.body_type} 中古車相場データベース（{'・'.join(makers)}）"
     ws["A1"].font = TITLE_FONT
 
     lines: list[tuple[str, str]] = [
         ("生成日時", datetime.now().strftime("%Y-%m-%d %H:%M")),
-        ("対象", f"{vehicles.maker}の{vehicles.body_type} {len(vehicles)}車種 / {vehicles.model_year_from}年式以降"),
+        (
+            "対象",
+            f"{vehicles.body_type} {len(vehicles)}車種（{'・'.join(makers)}）/ "
+            f"{vehicles.model_year_from}年式以降 / 全国",
+        ),
         ("収録スナップショット", f"{len(snapshots)}件: {', '.join(snapshots)}"),
         ("", ""),
         ("■ シートの読み方", ""),
@@ -374,7 +382,7 @@ def build(output: Path, *, vehicles: VehicleSet | None = None) -> Path:
         for gen in v.generations:
             master_rows.append(
                 {
-                    "maker": vehicles.maker,
+                    "maker": v.maker,
                     "vehicle_name": v.name,
                     "vehicle_key": v.key,
                     "generation": gen.code,

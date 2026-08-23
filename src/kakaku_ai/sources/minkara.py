@@ -1,6 +1,6 @@
 """みんカラのクルマレビューを年式つきで取る。
 
-`https://minkara.carview.co.jp/car/toyota/<slug>/review/` の 1 レビューに
+`https://minkara.carview.co.jp/car/<メーカー>/<slug>/review/` の 1 レビューに
 
 * グレードと年式（`Z(CVT_2.5_ガソリン) (2025年)`）
 * おすすめ度 + デザイン / 走行性能 / 乗り心地 / 積載性 / 燃費 / 価格
@@ -25,7 +25,7 @@ warnings.filterwarnings("ignore", category=XMLParsedAsHTMLWarning)
 
 log = logging.getLogger(__name__)
 
-BASE = "https://minkara.carview.co.jp/car/toyota/{slug}/review/"
+BASE = "https://minkara.carview.co.jp/car/{maker}/{slug}/review/"
 DEFAULT_PAGES = 6  # 1ページ 5件。新しい順に 30 件ぶんを毎週サンプルする
 
 AXES = {
@@ -117,7 +117,7 @@ def collect(fetcher: Fetcher, vehicle, snapshot: str, pages: int = DEFAULT_PAGES
 
     rows: list[dict[str, Any]] = []
     seen: set[str] = set()
-    base_url = BASE.format(slug=vehicle.minkara_slug)
+    base_url = BASE.format(maker=vehicle.minkara_maker, slug=vehicle.minkara_slug)
 
     for page in range(1, pages + 1):
         url = base_url if page == 1 else f"{base_url}?pn={page}"

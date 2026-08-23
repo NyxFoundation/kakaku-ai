@@ -1,6 +1,6 @@
 """ジモティーの中古車の**掲載価格**を取る。
 
-`https://jmty.jp/all/car-toy/g-2310`（アルファード）のように車種カテゴリがある。
+`https://jmty.jp/all/car-<メーカー>/g-2310`（トヨタ アルファード）のように車種カテゴリがある。
 一覧ページの 1 件に価格・走行距離・年式・車種・地域が構造化されて載っているので、
 明細ページを開かなくても集計できる。
 robots.txt は `User-agent: * / Allow: /` で全面的に許可されている。
@@ -36,8 +36,8 @@ from ..http import Fetcher
 
 log = logging.getLogger(__name__)
 
-CATEGORY_URL = "https://jmty.jp/all/car-toy/{category}"
-KEYWORD_URL = "https://jmty.jp/all/car-toy"
+CATEGORY_URL = "https://jmty.jp/all/car-{maker}/{category}"
+KEYWORD_URL = "https://jmty.jp/all/car-{maker}"
 DEFAULT_PAGES = 6  # 1ページ 50件（+ PR枠。PR は落とす）
 
 MANYEN = 10_000
@@ -142,9 +142,9 @@ def collect(
     for page in range(1, pages + 1):
         params: dict[str, Any] = {}
         if category:
-            url = CATEGORY_URL.format(category=category)
+            url = CATEGORY_URL.format(maker=vehicle.jmty_maker, category=category)
         else:
-            url = KEYWORD_URL
+            url = KEYWORD_URL.format(maker=vehicle.jmty_maker)
             params["keyword"] = keyword
         if model_year_from:
             params["model_year[min]"] = model_year_from

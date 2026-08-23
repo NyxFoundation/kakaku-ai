@@ -46,11 +46,24 @@ class Generation:
         return True
 
 
+# 国交省の「車名」表記はメーカーの一般表記とずれる（日産 → ニッサン）
+MLIT_MAKER = {"日産": "ニッサン"}
+# みんカラ / ジモティー の URL に使うメーカー識別子
+MINKARA_MAKER = {
+    "トヨタ": "toyota", "ホンダ": "honda", "日産": "nissan",
+    "三菱": "mitsubishi", "マツダ": "mazda",
+}
+JMTY_MAKER = {
+    "トヨタ": "toy", "ホンダ": "hon", "日産": "nis", "三菱": "mit", "マツダ": "maz",
+}
+
+
 @dataclass(frozen=True)
 class Vehicle:
     key: str
     name: str
     name_en: str
+    maker: str
     yahoo_categories: tuple[int, ...]
     carsensor_codes: tuple[str, ...]
     kakaku_item_id: str | None
@@ -58,6 +71,9 @@ class Vehicle:
     jmty_category: str | None
     jmty_keyword: str | None
     jmty_title_pattern: str | None
+    jmty_maker: str
+    minkara_maker: str
+    mlit_maker: str
     mlit_common_names: tuple[str, ...]
     generations: tuple[Generation, ...] = field(default=())
 
@@ -128,6 +144,15 @@ class VehicleSet:
     def __len__(self) -> int:
         return len(self.vehicles)
 
+    @property
+    def mlit_makers(self) -> list[str]:
+        """国交省のリコール検索に投げるメーカー名（重複なし）。"""
+        out: list[str] = []
+        for v in self.vehicles:
+            if v.mlit_maker not in out:
+                out.append(v.mlit_maker)
+        return out
+
     def by_key(self, key: str) -> Vehicle:
         for v in self.vehicles:
             if v.key == key:
@@ -135,10 +160,41 @@ class VehicleSet:
         raise KeyError(key)
 
 
-def load_vehicles(path: Path | None = None) -> VehicleSet:
-    path = path or CONFIG_DIR / "vehicles.toyota_minivan.yaml"
-    raw: dict[str, Any] = yaml.safe_load(path.read_text(encoding="utf-8"))
-    meta = raw["meta"]
+def load_vehicles(paths: Path | list[Path] | None = None) -> VehicleSet:
+    """車種マスタを読む。複数ファイルを渡すと連結する。
+
+    メーカーをまたぐので、`meta.maker` は既定値でしかなく、
+    実際に使うのは車種ごとの `maker`。
+    """
+    if paths is None:
+        paths = sorted(CONFIG_DIR.glob("vehicles.*.yaml"))
+    elif isinstance(paths, Path):
+        paths = [paths]
+
+    vehicles: list[Vehicle] = []
+    meta: dict[str, Any] = {}
+    for path in paths:
+        raw: dict[str, Any] = yaml.safe_load(path.read_text(encoding="utf-8"))
+        meta = meta or raw["meta"]
+        vehicles.extend(_parse_vehicles(raw, raw["meta"]))
+
+    seen: set[str] = set()
+    unique: list[Vehicle] = []
+    for v in vehicles:
+        if v.key not in seen:
+            seen.add(v.key)
+            unique.append(v)
+
+    return VehicleSet(
+        maker=meta["maker"],
+        maker_en=meta["maker_en"],
+        body_type=meta["body_type"],
+        model_year_from=int(meta["model_year_from"]),
+        vehicles=tuple(unique),
+    )
+
+
+def _parse_vehicles(raw: dict[str, Any], meta: dict[str, Any]) -> list[Vehicle]:
 
     # カーセンサーのコードは scripts/scan_carsensor_codes.py が作った表から車種名で引く。
     # YAML 側に明示指定があればそちらを優先する。
@@ -159,11 +215,13 @@ def load_vehicles(path: Path | None = None) -> VehicleSet:
             )
             for g in item.get("generations") or ()
         )
+        maker = item.get("maker") or meta["maker"]
         vehicles.append(
             Vehicle(
                 key=item["key"],
                 name=item["name"],
                 name_en=item["name_en"],
+                maker=maker,
                 yahoo_categories=tuple(item.get("yahoo_category") or ()),
                 carsensor_codes=tuple(
                     code
@@ -178,15 +236,12 @@ def load_vehicles(path: Path | None = None) -> VehicleSet:
                 jmty_category=item.get("jmty_category"),
                 jmty_keyword=item.get("jmty_keyword"),
                 jmty_title_pattern=item.get("jmty_title_pattern"),
+                jmty_maker=item.get("jmty_maker") or JMTY_MAKER.get(maker, "toy"),
+                minkara_maker=item.get("minkara_maker") or MINKARA_MAKER.get(maker, "toyota"),
+                mlit_maker=item.get("mlit_maker") or MLIT_MAKER.get(maker, maker),
                 mlit_common_names=tuple(item.get("mlit_common_name") or (item["name"],)),
                 generations=gens,
             )
         )
 
-    return VehicleSet(
-        maker=meta["maker"],
-        maker_en=meta["maker_en"],
-        body_type=meta["body_type"],
-        model_year_from=int(meta["model_year_from"]),
-        vehicles=tuple(vehicles),
-    )
+    return vehicles

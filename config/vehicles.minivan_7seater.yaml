@@ -1,0 +1,213 @@
+# 全国で買える 7人乗りミニバン（トヨタ以外）
+#
+# grandchildrice/life#16 の条件が「全国 / ミニバン7人乗り / 支払総額200万円以内」に
+# なったのを受けて、トヨタ以外の主要どころを足したもの。
+# 列の意味は config/vehicles.toyota_minivan.yaml のヘッダを参照。
+#
+# 収録の基準:
+#   * 3列シートで 7人乗りの設定があること
+#   * 2013年式以降の個体が中古市場に流通していること
+#   * ヤフオクの「中古車・新車」に車種カテゴリがあること（＝落札相場が取れる）
+#
+# 入れなかったもの:
+#   ホンダ エリシオン（2013年に販売終了。落札 7件）、日産 ラフェスタ（同 11件）、
+#   三菱 グランディス（2009年終了）— いずれも 2013年式以降がほぼ流通していない。
+
+meta:
+  maker: 各社
+  maker_en: multi
+  body_type: ミニバン
+  model_year_from: 2013
+
+vehicles:
+  - key: stepwgn
+    name: ステップワゴン
+    name_en: Step WGN
+    maker: ホンダ
+    yahoo_category: [2084023046]
+    carsensor_code: [HO_S003]
+    kakaku_item_id: "70100210084"
+    minkara_slug: step_wagon
+    jmty_category: g-2342
+    jmty_maker: hon
+    mlit_common_name: [ステップワゴン, ステップワゴンスパーダ]
+    generations:
+      - code: RK系
+        from: 2009-10
+        to: 2015-04
+        models: [DBA-RK1, DBA-RK2, DBA-RK5, DBA-RK6, DBA-RK7]
+      - code: RP系
+        from: 2015-04
+        to: 2022-05
+        models:
+          [DBA-RP1, DBA-RP2, DBA-RP3, DBA-RP4, DAA-RP5, 6BA-RP1, 6BA-RP2, 6BA-RP3, 6BA-RP4, 6AA-RP5]
+      - code: RP6系
+        from: 2022-05
+        to: null
+        models: [6BA-RP6, 6BA-RP7, 6AA-RP8]
+
+  - key: freed
+    name: フリード
+    name_en: Freed
+    maker: ホンダ
+    yahoo_category: [2084243774]
+    carsensor_code: [HO_S083, HO_S092]
+    kakaku_item_id: "70100210664"
+    minkara_slug: freed
+    jmty_category: g-2347
+    jmty_maker: hon
+    mlit_common_name: [フリード, フリードハイブリッド, フリード＋]
+    generations:
+      - code: GB3系
+        from: 2008-05
+        to: 2016-09
+        models: [DBA-GB3, DBA-GB4, DAA-GP3]
+      - code: GB5系
+        from: 2016-09
+        to: 2024-06
+        models: [DBA-GB5, DBA-GB6, DAA-GB7, DAA-GB8, 6BA-GB5, 6BA-GB6, 6AA-GB7, 6AA-GB8]
+      - code: GT系
+        from: 2024-06
+        to: null
+        models: [6BA-GT1, 6BA-GT3, 6AA-GT5, 6AA-GT7]
+
+  - key: odyssey
+    name: オデッセイ
+    name_en: Odyssey
+    maker: ホンダ
+    yahoo_category: [2084023033]
+    carsensor_code: [HO_S002]
+    kakaku_item_id: "70100210078"
+    minkara_slug: odyssey
+    jmty_category: g-2340
+    jmty_maker: hon
+    mlit_common_name: [オデッセイ, オデッセイハイブリッド]
+    generations:
+      - code: RB3系
+        from: 2008-10
+        to: 2013-10
+        models: [DBA-RB3, DBA-RB4]
+      - code: RC系
+        from: 2013-10
+        to: 2021-12
+        models: [DBA-RC1, DBA-RC2, DAA-RC4, 6BA-RC1, 6BA-RC2, 6AA-RC4]
+      - code: RC系再販
+        from: 2023-12
+        to: null
+        models: [6AA-RC4]
+
+  - key: serena
+    name: セレナ
+    name_en: Serena
+    maker: 日産
+    yahoo_category: [2084022948, 2084317093]
+    carsensor_code: [NI_S012]
+    kakaku_item_id: "70100310109"
+    minkara_slug: serena
+    jmty_category: g-2329
+    jmty_maker: nis
+    mlit_common_name: [セレナ]
+    generations:
+      - code: C26系
+        from: 2010-11
+        to: 2016-08
+        models: [DBA-C26, DBA-FC26, DBA-NC26, DBA-FNC26, HFC26, HC26]
+      - code: C27系
+        from: 2016-08
+        to: 2022-11
+        models:
+          [DAA-GFC27, DAA-GC27, DAA-GNC27, DAA-GFNC27, DAA-HC27, DAA-HFC27, 5AA-GFC27, 5AA-GC27]
+      - code: C28系
+        from: 2022-11
+        to: null
+        models: [5BA-FC28, 5BA-NC28, 6AA-GFC28, 6AA-GC28]
+
+  - key: elgrand
+    name: エルグランド
+    name_en: Elgrand
+    maker: 日産
+    yahoo_category: [2084022933]
+    carsensor_code: [NI_S019]
+    kakaku_item_id: "70100310098"
+    minkara_slug: elgrand
+    jmty_category: g-2326
+    jmty_maker: nis
+    mlit_common_name: [エルグランド]
+    generations:
+      - code: E52系
+        from: 2010-08
+        to: null
+        models: [DBA-TE52, DBA-TNE52, DBA-PE52, DBA-PNE52, 3BA-TE52, 3BA-TNE52, 3BA-PE52, 3BA-PNE52]
+
+  - key: delica_d5
+    name: デリカD:5
+    name_en: Delica D5
+    maker: 三菱
+    yahoo_category: [2084231249]
+    carsensor_code: [MI_S089]
+    kakaku_item_id: "70100410131"
+    minkara_slug: delica_d5
+    jmty_keyword: デリカD
+    jmty_title_pattern: デリカ\s*D\s*[:：]?\s*5
+    jmty_maker: mit
+    mlit_common_name: [デリカＤ：５, デリカD:5]
+    generations:
+      - code: 前期
+        from: 2007-01
+        to: 2019-02
+        models: [DBA-CV5W, DBA-CV4W, DBA-CV2W, LDA-CV1W]
+      - code: 後期
+        from: 2019-02
+        to: null
+        models: [3DA-CV1W]
+
+  - key: biante
+    name: ビアンテ
+    name_en: Biante
+    maker: マツダ
+    yahoo_category: [2084299556]
+    carsensor_code: [MA_S085]
+    kakaku_item_id: "70100510663"
+    minkara_slug: biante
+    jmty_keyword: ビアンテ
+    jmty_maker: maz
+    mlit_common_name: [ビアンテ]
+    generations:
+      - code: CC系
+        from: 2008-07
+        to: 2018-03
+        models: [DBA-CCEFW, DBA-CCEAW, DBA-CC3FW]
+
+  - key: premacy
+    name: プレマシー
+    name_en: Premacy
+    maker: マツダ
+    yahoo_category: [2084048076]
+    carsensor_code: [MA_S015]
+    kakaku_item_id: "70100510153"
+    minkara_slug: premacy
+    jmty_category: g-2357
+    jmty_maker: maz
+    mlit_common_name: [プレマシー]
+    generations:
+      - code: CW系
+        from: 2010-07
+        to: 2018-03
+        models: [DBA-CWEFW, DBA-CWFFW, DBA-CWEAW]
+
+  - key: mpv
+    name: MPV
+    name_en: MPV
+    maker: マツダ
+    yahoo_category: [2084048066]
+    carsensor_code: [MA_S001]
+    kakaku_item_id: "70100510142"
+    minkara_slug: mpv
+    jmty_category: g-2355
+    jmty_maker: maz
+    mlit_common_name: [ＭＰＶ, MPV]
+    generations:
+      - code: LY系
+        from: 2006-02
+        to: 2016-03
+        models: [DBA-LY3P]

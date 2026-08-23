@@ -60,12 +60,14 @@ def run(
     collected: dict[str, list[dict[str, Any]]] = {name: [] for name in store.DATASETS}
 
     # リコールは車種ごとではなくメーカー単位で 1 回だけ引いて、あとでローカルに振り分ける
-    all_recalls: list[dict[str, Any]] = []
+    recalls_by_maker: dict[str, list[dict[str, Any]]] = {}
     if "mlit" in sources:
-        try:
-            all_recalls = mlit.fetch_recalls(fetcher, vehicles.maker)
-        except Exception as exc:  # noqa: BLE001
-            log.error("mlit recall 取得に失敗: %s", exc)
+        for maker in {v.mlit_maker for v in targets}:
+            try:
+                recalls_by_maker[maker] = mlit.fetch_recalls(fetcher, maker)
+            except Exception as exc:  # noqa: BLE001
+                log.error("mlit recall (%s) 取得に失敗: %s", maker, exc)
+                recalls_by_maker[maker] = []
 
     for vehicle in targets:
         log.info("● %s", vehicle.name)
@@ -100,7 +102,7 @@ def run(
             "snapshot_date": snapshot,
             "vehicle_key": vehicle.key,
             "vehicle_name": vehicle.name,
-            "maker": vehicles.maker,
+            "maker": vehicle.maker,
             "body_type": vehicles.body_type,
             "generations": " / ".join(g.label for g in vehicle.generations),
         }
@@ -160,10 +162,12 @@ def run(
                 log.error("  minkara %s: %s", vehicle.name, exc)
 
         if "mlit" in sources:
-            recalls = mlit.normalize_recalls(all_recalls, vehicle, snapshot)
+            recalls = mlit.normalize_recalls(
+                recalls_by_maker.get(vehicle.mlit_maker, []), vehicle, snapshot
+            )
             collected["recalls"].extend(recalls)
             try:
-                defects = mlit.fetch_defects(fetcher, vehicle, snapshot, vehicles.maker)
+                defects = mlit.fetch_defects(fetcher, vehicle, snapshot, vehicle.mlit_maker)
             except Exception as exc:  # noqa: BLE001
                 log.error("  mlit defect %s: %s", vehicle.name, exc)
                 defects = []
