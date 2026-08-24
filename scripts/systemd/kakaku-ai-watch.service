@@ -1,0 +1,11 @@
+[Unit]
+Description=kakaku-ai 出品監視（相場との乖離とリスクを見て Slack へ）
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/workspace/kakaku.ai
+ExecStart=%h/workspace/kakaku.ai/scripts/watch.sh
+TimeoutStartSec=1800
+Nice=10

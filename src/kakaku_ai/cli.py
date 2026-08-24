@@ -14,7 +14,7 @@ import logging
 import sys
 from pathlib import Path
 
-from . import drive, excel, pipeline, store
+from . import drive, excel, notify, pipeline, store, watch
 from .vehicles import DATA_DIR, load_vehicles
 
 OUTPUT_DIR = DATA_DIR / "xlsx"
@@ -72,6 +72,15 @@ def main(argv: list[str] | None = None) -> int:
     wk.add_argument("--folder-id", default=drive.DEFAULT_FOLDER_ID)
     wk.add_argument("--no-upload", action="store_true")
 
+    wa = sub.add_parser("watch", help="出品中のオークションを監視して Slack に通知する")
+    wa.add_argument("--only", nargs="*", help="車種キーを絞る")
+    wa.add_argument("--budget", type=float, help="支払総額の上限（万円）")
+    wa.add_argument("--individual-only", action="store_true", help="個人出品だけに絞る")
+    wa.add_argument("--channel", default=notify.DEFAULT_CHANNEL)
+    wa.add_argument("--dry-run", action="store_true", help="Slack に送らず内容だけ表示")
+    wa.add_argument("--all", action="store_true", help="既に通知したものも対象にする")
+    wa.add_argument("--year-from", type=int, help="対象年式の下限（既定=車種マスタの設定）")
+
     sub.add_parser("list", help="収録済みスナップショットを表示する")
 
     args = parser.parse_args(argv)
@@ -110,6 +119,41 @@ def main(argv: list[str] | None = None) -> int:
         path = excel.build(_output_path(args))
         if not args.no_upload:
             drive.upload(path, folder_id=args.folder_id, snapshot=snapshot)
+        return 0
+
+    if args.command == "watch":
+        from .http import Fetcher
+        from .sources import yahoo_open
+
+        models, defects, vehicles = watch.load_context()
+        targets = [v for v in vehicles if (not args.only or v.key in args.only) and v.yahoo_categories]
+        fetcher = Fetcher(use_cache=False)
+
+        listings: list[dict] = []
+        snapshot = store.today()
+        for vehicle in targets:
+            try:
+                listings.extend(yahoo_open.collect(fetcher, vehicle, snapshot))
+            except Exception as exc:  # noqa: BLE001 - 1車種のこけで止めない
+                logging.getLogger(__name__).error("  %s: %s", vehicle.name, exc)
+
+        picked = watch.pick(
+            watch.evaluate(listings, models, defects),
+            budget_manyen=args.budget,
+            individual_only=args.individual_only,
+            model_year_from=args.year_from or vehicles.model_year_from,
+        )
+
+        seen = set() if args.all else notify.load_seen()
+        fresh = [r for r in picked if r["auction_id"] not in seen]
+        logging.getLogger(__name__).info(
+            "出品 %s件 → 該当 %s件 → 未通知 %s件", len(listings), len(picked), len(fresh)
+        )
+
+        notify.post(fresh, channel=args.channel, dry_run=args.dry_run,
+                    header=f"気になる出品 {len(fresh)}件")
+        if not args.dry_run:
+            notify.save_seen(seen | {r["auction_id"] for r in listings})
         return 0
 
     if args.command == "list":

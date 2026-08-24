@@ -743,3 +743,89 @@ def test_yahoo_search_warns_when_truncated(caplog, monkeypatch):
 
     assert len(got) == ya.MAX_PAGES * ya.PAGE_SIZE
     assert any("打ち切った" in r.getMessage() for r in caplog.records)
+
+
+# ------------------------------------------------------- 出品中オークション監視
+
+
+def test_open_search_uses_brand_id_not_auccat():
+    """出品中の検索は brand_id を使うこと。
+
+    /carsearch?auccat=... は auccat を黙って無視して全車種59,000件を返す。
+    これに気づかず組んだせいで、セレナのつもりで全車種の先頭6ページを拾い、
+    同じ出品が複数車種に重複して出ていた。
+    """
+    import inspect
+
+    from kakaku_ai.sources import yahoo_open
+
+    src = inspect.getsource(yahoo_open._search)
+    assert '"brand_id"' in src
+    assert '"auccat"' not in src
+
+
+def test_price_judgement_ignores_pre_bidding_price():
+    """競り上がる前の現在価格では相場判定しないこと。
+
+    ¥1スタートの新規出品が「相場より99%安い」として 300件中220件ヒットし、
+    通知が使い物にならなかった。判定してよいのは即決価格か終了間際だけ。
+    """
+    from datetime import datetime, timedelta, timezone
+
+    from kakaku_ai.watch import _judgeable_price
+
+    now = datetime(2026, 8, 24, 12, 0, tzinfo=timezone.utc)
+    far = (now + timedelta(days=5)).isoformat()
+    soon = (now + timedelta(hours=3)).isoformat()
+
+    # 出品直後で入札前 → 判定しない
+    price, kind, _ = _judgeable_price(
+        {"current_price": 1000, "end_time": far, "buy_now_price": None}, now
+    )
+    assert price is None and "保留" in kind
+
+    # 即決があるなら、いつでも判定してよい
+    price, kind, _ = _judgeable_price(
+        {"current_price": 1000, "end_time": far, "buy_now_price": 1_800_000}, now
+    )
+    assert price == 180.0 and kind == "即決"
+
+    # 終了間際なら現在価格で判定してよい
+    price, kind, _ = _judgeable_price(
+        {"current_price": 1_500_000, "end_time": soon, "buy_now_price": None}, now
+    )
+    assert price == 150.0 and kind.startswith("終了")
+
+
+def test_threshold_widens_when_model_is_weak():
+    """当てはまりの悪い車種では「相場より安い」と言い切らないこと。
+
+    実測で R² は ノア 0.84 〜 エルグランド 0.29 まで開きがある。
+    弱いモデルで同じしきい値を使うと、ノイズを掘り出し物として流してしまう。
+    """
+    from kakaku_ai.watch import CHEAP_PCT, PriceModel
+
+    strong = PriceModel.__new__(PriceModel)
+    strong._coef, strong.r2, strong.n = (1.0, 0.0, 0.0), 0.85, 100
+    weak = PriceModel.__new__(PriceModel)
+    weak._coef, weak.r2, weak.n = (1.0, 0.0, 0.0), 0.25, 100
+    none_model = PriceModel.__new__(PriceModel)
+    none_model._coef, none_model.r2, none_model.n = None, 0.0, 5
+
+    assert strong.slack == 1.0
+    assert weak.slack > strong.slack
+    assert none_model.slack >= weak.slack
+    assert CHEAP_PCT * weak.slack < CHEAP_PCT  # より大きな乖離を要求する
+
+
+def test_pick_requires_a_judgeable_price():
+    """価格を判定できない出品は通知しないこと。"""
+    from kakaku_ai.watch import pick
+
+    rows = [
+        {"auction_id": "a", "deviation_pct": None, "risk_strong": ["修復歴あり"],
+         "cheap_threshold_pct": -25.0, "pricey_threshold_pct": 30.0, "seller_is_store": False},
+        {"auction_id": "b", "deviation_pct": -40.0, "risk_strong": [],
+         "cheap_threshold_pct": -25.0, "pricey_threshold_pct": 30.0, "seller_is_store": False},
+    ]
+    assert [r["auction_id"] for r in pick(rows)] == ["b"]

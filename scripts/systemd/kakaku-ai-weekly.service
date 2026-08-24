@@ -7,5 +7,8 @@ After=network-online.target
 Type=oneshot
 WorkingDirectory=%h/workspace/kakaku.ai
 ExecStart=%h/workspace/kakaku.ai/scripts/weekly.sh
-TimeoutStartSec=5400
+# 車種20・在庫追跡・詳細取得まで入れると 90分では足りず、実際に一度
+# タイムアウトで殺されて当日のスナップショットが不完全になった。
+# 定常でおよそ 60〜90分、新規車種を足した直後はもっとかかるので広く取る。
+TimeoutStartSec=21600
 Nice=10

@@ -137,6 +137,36 @@ Drive へのアップロードは rclone の認証情報が要るので、
 `RCLONE_CONFIG_GDRIVE_TOKEN` / `_CLIENT_ID` / `_CLIENT_SECRET` が
 Secrets に設定されているときだけ実行される（未設定ならスキップ）。
 
+### 出品監視（1日4回）— Slack 通知
+
+出品中のオークションを見て、相場から外れているものを `#notif-car-auction` に流す。
+落札の積み上げ（週次）とは別物で、こちらは**速報**。ヤフオクの出品期間は数日〜1週間
+なので週次だと終わってから気づくことになる。
+
+```bash
+cp scripts/systemd/kakaku-ai-watch.{service,timer} ~/.config/systemd/user/
+systemctl --user daemon-reload
+systemctl --user enable --now kakaku-ai-watch.timer   # 毎日 07/12/18/22 時台
+
+uv run kakaku-ai watch --budget 200 --dry-run   # 送らずに中身だけ見る
+uv run kakaku-ai watch --budget 200             # 実際に流す
+```
+
+判定の中身は [`src/kakaku_ai/watch.py`](src/kakaku_ai/watch.py) の docstring に書いてある。
+要点だけ:
+
+- **価格を判定するのは「即決価格がある」か「終了24時間以内」のときだけ。**
+  出品直後の現在価格は競り上がる前なので相場と比べても意味がない。
+  これを入れずに動かしたら ¥1スタートの新規出品が「相場より99%安い」として
+  300件中220件ヒットした。
+- **モデルの当てはまりが悪い車種では、しきい値を広げて言い切らない。**
+  R² は ノア 0.84 〜 エルグランド 0.29 まで開きがある。
+- **「壊れやすさ n%」は出さない。** 検証する手段がないから。
+  代わりに国交省データから「この世代の通報1位の装置」「故障発生の中央走行距離を
+  超えているか」など、数えられる事実だけをフラグで出す。
+
+Slack トークンは hermes の `~/.hermes/.env` の `SLACK_BOT_TOKEN` を借りている。
+
 ### 手で回す
 
 ```bash

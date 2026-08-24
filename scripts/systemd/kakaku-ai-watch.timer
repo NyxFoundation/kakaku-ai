@@ -1,0 +1,12 @@
+[Unit]
+Description=kakaku-ai 出品監視（ヤフオクの新着を Slack に通知）
+
+[Timer]
+# 1日4回。ヤフオクの出品期間は数日〜1週間で、終了間際に判定するので
+# 週次だと終わってから気づくことになる。正時は避ける。
+OnCalendar=*-*-* 07,12,18,22:07:00
+Persistent=false
+RandomizedDelaySec=300
+
+[Install]
+WantedBy=timers.target
