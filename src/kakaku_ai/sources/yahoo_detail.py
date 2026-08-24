@@ -36,6 +36,21 @@ BASE = "https://auctions.yahoo.co.jp/jp/auction/{auction_id}"
 NEXT_DATA = re.compile(r'<script id="__NEXT_DATA__"[^>]*>(.*?)</script>', re.S)
 STORE_PATH = DATA_DIR / "auction_details.jsonl"
 
+# 説明文に出てきたら整備上の含みがある語。本文そのものは長いので保存せず、
+# どれが出たかだけ残す。買い手が個別に確認すべき点を洗い出すのが目的で、
+# これ自体が良し悪しの判定ではない。
+DESCRIPTION_FLAGS = {
+    "現状渡し": ("現状渡し", "現状販売", "ノークレーム", "ノーリターン"),
+    "警告灯": ("警告灯", "チェックランプ", "エンジンチェック"),
+    "オイル漏れ": ("オイル漏れ", "オイルにじみ", "オイル滲み"),
+    "異音": ("異音", "コトコト", "カタカタ", "ガラガラ"),
+    "エアコン不調": ("エアコン効かない", "エアコン不良", "エアコン故障"),
+    "スライドドア不調": ("スライドドア不良", "スライドドア故障", "パワスラ不良"),
+    "修復・板金歴": ("修復歴", "板金", "全塗装", "事故歴"),
+    "車検切れ": ("車検切れ", "車検なし", "抹消"),
+    "不具合明記": ("不具合", "故障", "要修理", "訳あり"),
+}
+
 # 本文（description）は長いうえに相場計算には要らないので保存しない
 KEEP = (
     "auction_id",
@@ -53,6 +68,9 @@ KEEP = (
     "total_price",
     "total_costs",
     "recycling_deposit",
+    "image_count",
+    "description_flags",
+    "description_len",
     "fetched_from",
 )
 
@@ -95,9 +113,17 @@ def _parse(auction_id: str, html: str) -> dict[str, Any] | None:
         # 和暦（令和）で入っている
         inspection = f"R{spec['expirationYear']}/{spec['expirationMonth']:02d}"
 
+    description = str(car.get("description") or "")
+    hits = sorted(
+        label for label, words in DESCRIPTION_FLAGS.items() if any(w in description for w in words)
+    )
+
     return {
         "auction_id": auction_id,
         "grade": spec.get("grade"),
+        "image_count": len(item.get("img") or []),
+        "description_flags": hits,
+        "description_len": len(description),
         "first_reg_year": spec.get("firstRegYear"),
         "first_reg_month": spec.get("firstRegMonth"),
         "mileage_km": spec.get("mileage"),
@@ -193,6 +219,7 @@ def apply_to(listings: list[dict[str, Any]], store: dict[str, dict[str, Any]] | 
             )
 
         for key in ("grade", "body_type", "transmission", "fuel", "color",
-                    "inspection_until", "total_price", "total_costs"):
+                    "inspection_until", "total_price", "total_costs",
+                    "image_count", "description_flags", "description_len"):
             if detail.get(key) is not None:
                 row.setdefault(key, detail[key])

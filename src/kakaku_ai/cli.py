@@ -80,6 +80,7 @@ def main(argv: list[str] | None = None) -> int:
     wa.add_argument("--dry-run", action="store_true", help="Slack に送らず内容だけ表示")
     wa.add_argument("--all", action="store_true", help="既に通知したものも対象にする")
     wa.add_argument("--year-from", type=int, help="対象年式の下限（既定=車種マスタの設定）")
+    wa.add_argument("--no-detail", action="store_true", help="商品ページを開かない（写真枚数と説明文の記載を省く）")
 
     sub.add_parser("list", help="収録済みスナップショットを表示する")
 
@@ -146,14 +147,28 @@ def main(argv: list[str] | None = None) -> int:
 
         seen = set() if args.all else notify.load_seen()
         fresh = [r for r in picked if r["auction_id"] not in seen]
+
+        # 通知する分だけ商品ページを開いて、写真の枚数と説明文の記載を足す。
+        # 一覧には入っていない情報で、拾うと注意点がだいぶ具体的になる。
+        # 全件やると重いので、実際に流す上限のぶんだけ。
+        head = fresh[: notify.MAX_PER_RUN]
+        if head and not args.no_detail:
+            from .sources import yahoo_detail
+
+            yahoo_detail.enrich(Fetcher(use_cache=False), head)
+            head = watch.evaluate(head, models, defects)
+            fresh = head + fresh[notify.MAX_PER_RUN :]
         logging.getLogger(__name__).info(
             "出品 %s件 → 該当 %s件 → 未通知 %s件", len(listings), len(picked), len(fresh)
         )
 
-        notify.post(fresh, channel=args.channel, dry_run=args.dry_run,
-                    header=f"気になる出品 {len(fresh)}件")
+        result = notify.post(fresh, channel=args.channel, dry_run=args.dry_run,
+                             header=f"気になる出品 {len(fresh)}件")
         if not args.dry_run:
-            notify.save_seen(seen | {r["auction_id"] for r in listings})
+            # 実際に流したものだけを既読にする。スキャンした全件を既読にすると、
+            # 今日はまだ競り上がり前で判定保留だった出品が、終了間際になっても
+            # 二度と通知されなくなる。
+            notify.save_seen(seen | {r["auction_id"] for r in fresh[: notify.MAX_PER_RUN]})
         return 0
 
     if args.command == "list":

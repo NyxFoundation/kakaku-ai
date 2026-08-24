@@ -186,8 +186,21 @@ def risk_flags(
     elif mt == "UNKNOWN_MILEAGE":
         strong.append("走行距離不明")
 
-    if listing.get("repair_type") == "EXISTS":
+    repair = listing.get("repair_type")
+    if repair in ("EXISTS", "REPAIRED"):
         strong.append("修復歴あり")
+    elif repair == "UNKNOWN":
+        # 落札実績では 2,375件中 416件（17%）がこれ。「なし」ではないので黙らせない
+        notes.append("修復歴『わからない』（申告なし）")
+    elif repair == "NONE":
+        notes.append("修復歴なし（申告）")
+
+    count = listing.get("image_count")
+    if count is not None and count <= 3:
+        strong.append(f"写真が{count}枚しかない")
+
+    for flag in listing.get("description_flags") or []:
+        strong.append(f"説明文に「{flag}」")
 
     year = listing.get("model_year")
     if year and today.year - year >= HEAVY_TAX_YEARS:
