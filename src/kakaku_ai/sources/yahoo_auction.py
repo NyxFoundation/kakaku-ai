@@ -76,7 +76,11 @@ def _model_year_month(model_date: Any) -> int | None:
 
 
 def _search(fetcher: Fetcher, params: dict[str, Any]) -> Iterator[dict[str, Any]]:
-    """落札検索を全ページ舐める。"""
+    """落札検索を全ページ舐める。
+
+    `MAX_PAGES` で頭打ちになったら警告を出す。黙って切り捨てると
+    「全部取れている」と誤解したまま相場を出すことになる。
+    """
     total: int | None = None
     for page in range(MAX_PAGES):
         query = dict(params)
@@ -94,6 +98,15 @@ def _search(fetcher: Fetcher, params: dict[str, Any]) -> Iterator[dict[str, Any]
         yield from items
         if (page + 1) * PAGE_SIZE >= (total or 0):
             return
+
+    if total and total > MAX_PAGES * PAGE_SIZE:
+        log.warning(
+            "  yahoo: %s 件のうち先頭 %s 件で打ち切った（params=%s）。"
+            "MAX_PAGES を上げないと取りこぼす。",
+            total,
+            MAX_PAGES * PAGE_SIZE,
+            {k: v for k, v in params.items() if k != "b"},
+        )
 
 
 def _normalize(item: dict[str, Any], vehicle, snapshot: str) -> dict[str, Any] | None:

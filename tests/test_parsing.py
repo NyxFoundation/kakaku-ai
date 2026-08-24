@@ -712,3 +712,34 @@ def test_partial_run_with_only_keeps_other_vehicles(tmp_path, monkeypatch):
     keys = sorted((r["vehicle_key"], r["model_year"]) for r in merged)
     # ノアは残り、アルファードだけ差し替わる
     assert keys == [("alphard", 2019), ("noah", 2018)]
+
+
+def test_yahoo_search_warns_when_truncated(caplog, monkeypatch):
+    """ページ上限で打ち切ったら黙らずに警告すること。
+
+    黙って切ると「全部取れている」と思ったまま相場を出してしまう。
+    """
+    import json
+    import logging
+
+    from kakaku_ai.sources import yahoo_auction as ya
+
+    total = ya.MAX_PAGES * ya.PAGE_SIZE + 500
+
+    class _F:
+        def get_text(self, url, params=None):
+            return (
+                '<script id="__NEXT_DATA__">'
+                + json.dumps({"props": {"pageProps": {"initialState": {"search": {"items": {
+                    "listing": {
+                        "totalResultsAvailable": total,
+                        "items": [{"auctionId": f"x{i}"} for i in range(ya.PAGE_SIZE)],
+                    }}}}}}})
+                + "</script>"
+            )
+
+    with caplog.at_level(logging.WARNING):
+        got = list(ya._search(_F(), {"auccat": 26360, "p": "テスト"}))
+
+    assert len(got) == ya.MAX_PAGES * ya.PAGE_SIZE
+    assert any("打ち切った" in r.getMessage() for r in caplog.records)
