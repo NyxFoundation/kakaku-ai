@@ -10,7 +10,8 @@ PY="$(pwd)/.venv/bin/python"
 # 支払総額の上限。life#16 の条件に合わせてある。
 BUDGET="${KAKAKU_BUDGET_MANYEN:-200}"
 
-"$PY" -m kakaku_ai.cli -v watch --budget "$BUDGET"
+# 既定で修復歴「なし」の申告があるものだけに絞る
+"$PY" -m kakaku_ai.cli -v watch --budget "$BUDGET" --repair none
 
 # 既読リストが無限に伸びないよう、たまに整理する（出品は数日で消える）
 git add data/watch_seen.json config/yahoo_brand_ids.json 2>/dev/null || true

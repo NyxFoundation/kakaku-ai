@@ -829,3 +829,38 @@ def test_pick_requires_a_judgeable_price():
          "cheap_threshold_pct": -25.0, "pricey_threshold_pct": 30.0, "seller_is_store": False},
     ]
     assert [r["auction_id"] for r in pick(rows)] == ["b"]
+
+
+def test_repair_filter_excludes_unknown_as_well_as_exists():
+    """修復歴「なし」で絞るとき、「わからない」は通さないこと。
+
+    「なし」と「わからない」は買い手にとって別物。落札実績では 2,375件中
+    416件（17%）が「わからない」で、これを「なし」に含めると意味が変わる。
+    """
+    from kakaku_ai.watch import repair_ok
+
+    assert repair_ok({"repair_type": "NONE"}, "none")
+    assert not repair_ok({"repair_type": "EXISTS"}, "none")
+    assert not repair_ok({"repair_type": "REPAIRED"}, "none")
+    assert not repair_ok({"repair_type": "UNKNOWN"}, "none")
+
+    # 一覧に記載が無い段階では保留して残し、商品ページで確認したあとに落とす
+    assert repair_ok({}, "none", resolved=False)
+    assert not repair_ok({}, "none", resolved=True)
+
+    # any なら何も落とさない
+    assert all(repair_ok({"repair_type": v}, "any") for v in ("NONE", "EXISTS", "UNKNOWN", None))
+
+
+def test_pick_applies_repair_filter():
+    from kakaku_ai.watch import pick
+
+    base = {"deviation_pct": -40.0, "cheap_threshold_pct": -25.0,
+            "pricey_threshold_pct": 30.0, "seller_is_store": False, "risk_strong": []}
+    rows = [
+        {**base, "auction_id": "ok", "repair_type": "NONE"},
+        {**base, "auction_id": "ng", "repair_type": "EXISTS"},
+        {**base, "auction_id": "unk", "repair_type": "UNKNOWN"},
+    ]
+    assert [r["auction_id"] for r in pick(rows, repair="none")] == ["ok"]
+    assert len(pick(rows, repair="any")) == 3

@@ -81,6 +81,12 @@ def main(argv: list[str] | None = None) -> int:
     wa.add_argument("--all", action="store_true", help="既に通知したものも対象にする")
     wa.add_argument("--year-from", type=int, help="対象年式の下限（既定=車種マスタの設定）")
     wa.add_argument("--no-detail", action="store_true", help="商品ページを開かない（写真枚数と説明文の記載を省く）")
+    wa.add_argument(
+        "--repair",
+        choices=watch.REPAIR_MODES,
+        default="none",
+        help="修復歴の絞り方。none=申告が「なし」のものだけ（既定） / any=絞らない",
+    )
 
     sub.add_parser("list", help="収録済みスナップショットを表示する")
 
@@ -143,6 +149,7 @@ def main(argv: list[str] | None = None) -> int:
             budget_manyen=args.budget,
             individual_only=args.individual_only,
             model_year_from=args.year_from or vehicles.model_year_from,
+            repair=args.repair,
         )
 
         seen = set() if args.all else notify.load_seen()
@@ -157,6 +164,13 @@ def main(argv: list[str] | None = None) -> int:
 
             yahoo_detail.enrich(Fetcher(use_cache=False), head)
             head = watch.evaluate(head, models, defects)
+            # 一覧に修復歴が無かったものは、商品ページで分かった値で判定し直す
+            before = len(head)
+            head = [r for r in head if watch.repair_ok(r, args.repair, resolved=True)]
+            if len(head) < before:
+                logging.getLogger(__name__).info(
+                    "  修復歴の確認で %s件 除外", before - len(head)
+                )
             fresh = head + fresh[notify.MAX_PER_RUN :]
         logging.getLogger(__name__).info(
             "出品 %s件 → 該当 %s件 → 未通知 %s件", len(listings), len(picked), len(fresh)

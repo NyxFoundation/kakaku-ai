@@ -303,12 +303,34 @@ def _judgeable_price(
     return None, "保留（競り上がり前）", hours
 
 
+# 修復歴の絞り方。出品中の一覧では repair_type が 99% 埋まっている
+# （実測 901件中 NONE 819 / EXISTS 70 / 未記載 12）ので、一覧の値でほぼ判定できる。
+# 未記載の分だけは商品ページを開いたあとに再判定する。
+REPAIR_MODES = ("none", "any")
+
+
+def repair_ok(row: dict[str, Any], mode: str, *, resolved: bool = False) -> bool:
+    """修復歴のフィルタ。
+
+    `mode="none"` は**申告が「なし」のものだけ**。「わからない」は「なし」ではないので
+    通さない（落札実績では 17% がこれ）。まだ商品ページを開いていない段階で
+    値が無いものは、判定を保留して残しておく。
+    """
+    if mode == "any":
+        return True
+    repair = row.get("repair_type")
+    if repair is None:
+        return not resolved  # 未確認のうちは残し、確認後に落とす
+    return repair == "NONE"
+
+
 def pick(
     evaluated: list[dict[str, Any]],
     *,
     budget_manyen: float | None = None,
     individual_only: bool = False,
     model_year_from: int | None = None,
+    repair: str = "any",
 ) -> list[dict[str, Any]]:
     """通知に値するものだけ残す。
 
@@ -322,6 +344,8 @@ def pick(
         # 対象年式より古いものは流さない。古い個体は相場モデルの外挿になりやすく、
         # そもそも 13年超は自動車税が重課で選択肢から外れる。
         if model_year_from and (r.get("model_year") or 0) < model_year_from:
+            continue
+        if not repair_ok(r, repair):
             continue
         if budget_manyen is not None:
             total = (r.get("judge_manyen") or r.get("current_manyen") or 0) + (

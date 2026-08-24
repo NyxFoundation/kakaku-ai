@@ -149,8 +149,14 @@ systemctl --user daemon-reload
 systemctl --user enable --now kakaku-ai-watch.timer   # 毎日 07/12/18/22 時台
 
 uv run kakaku-ai watch --budget 200 --dry-run   # 送らずに中身だけ見る
-uv run kakaku-ai watch --budget 200             # 実際に流す
+uv run kakaku-ai watch --budget 200             # 実際に流す（既定で修復歴なしのみ）
+uv run kakaku-ai watch --repair any             # 修復歴で絞らない
 ```
+
+既定は `--repair none` で、**修復歴「なし」の申告があるものだけ**を流す。
+「わからない」は「なし」ではないので通さない（落札実績では 17% がこれ）。
+出品中の一覧は修復歴が 99% 埋まっている（実測 901件中 NONE 819 / EXISTS 70 /
+未記載 12）ので、一覧の値でほぼ判定でき、未記載の分だけ商品ページで確認して落とす。
 
 判定の中身は [`src/kakaku_ai/watch.py`](src/kakaku_ai/watch.py) の docstring に書いてある。
 要点だけ:
