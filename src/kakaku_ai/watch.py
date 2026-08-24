@@ -37,15 +37,11 @@ from .vehicles import VehicleSet, load_vehicles
 
 log = logging.getLogger(__name__)
 
-# 回帰を張るのに最低限ほしい落札件数。これ未満の車種は年式中央値にフォールバックする
-MIN_FIT_SAMPLES = 15
-# 「相場より安い/高い」と言い切るしきい値（想定落札額からの乖離率）。
-# モデルの当てはまりが悪い車種でこれを使うと、ただのノイズを「掘り出し物」として
-# 流してしまう。実測でも R² は ノア 0.84 から エルグランド 0.29 まで開きがあるので、
-# 精度に応じてしきい値を広げる。
+# 「相場より安い/高い」と言い切るしきい値（想定落札額からの乖離率）
 CHEAP_PCT = -25.0
 PRICEY_PCT = 30.0
-CONFIDENCE_BANDS = ((0.6, 1.0), (0.4, 1.4), (0.0, 1.8))  # (R²の下限, しきい値の倍率)
+# (その年式の落札件数の下限, しきい値の倍率)。実績が薄い年式ほど広く取る。
+CONFIDENCE_BANDS = ((15, 1.0), (8, 1.3), (0, 1.7))
 # 競り上がる前の現在価格は相場と比べても意味がない。終了までこの時間を切ったものだけ見る。
 # （最初これを入れずに動かしたら、¥1スタートの新規出品が「相場より99%安い」として
 #   300件中220件ヒットして使い物にならなかった）
@@ -54,96 +50,97 @@ ENDING_SOON_HOURS = 24
 HEAVY_TAX_YEARS = 13
 
 
+def _median(values: list[float]) -> float:
+    values = sorted(values)
+    mid = len(values) // 2
+    return values[mid] if len(values) % 2 else (values[mid - 1] + values[mid]) / 2
+
+
 # --------------------------------------------------------------- 相場モデル
 
 
 class PriceModel:
-    """車種ごとに log(落札価格) ~ 年式 + 走行距離 の直線を引く。
+    """車種ごとの想定落札額。**年式は実績の中央値をそのまま使い、距離だけ回帰する。**
 
-    件数が少ない車種が多いので、凝ったモデルは置かない。年式と距離という
-    効き方の大きい 2 つだけを見る。決定係数と件数を一緒に返して、
-    当てにならないときは当てにならないと分かるようにする。
+    最初は log(価格) ~ 年式 + 走行距離 の直線を張ったが、これが盛大に外れた。
+    値落ちは 30年スパンで見ると対数直線ではないので、直線を当てると
+    古い年式は高すぎ・新しい年式は安すぎに出る。学習データ自身で検証した
+    セレナの残差がこれ:
+
+        2013年 -21.6% / 2015年 -10.7% / 2017年 +27.5% / 2018年 +51.3%
+
+    出品は新しい年式に偏るので、この歪みのせいで**ほぼ全部が「相場より高い」**
+    と判定されていた（終了間際のものですら中央値 +31%）。
+
+    そこで年式の効き方は仮定せず、**その年式の落札中央値をそのまま基準**にする。
+    走行距離だけ、同一年式内の偏差に対する 1 次回帰で拾う。
+    実績が薄い年式は判定しない（外挿しない）。
     """
+
+    MIN_YEAR_SAMPLES = 3  # この件数に満たない年式は判定しない
 
     def __init__(self, vehicle_key: str, rows: list[dict[str, Any]]) -> None:
         self.vehicle_key = vehicle_key
-        self.n = 0
-        self.r2 = 0.0
-        self._coef: tuple[float, float, float] | None = None
-        self._median_by_year: dict[int, float] = {}
+        self.mileage_coef = 0.0
+        self._median_price: dict[int, float] = {}
+        self._median_mileage: dict[int, float] = {}
+        self._count: dict[int, int] = {}
 
         samples = [
             (r["model_year"], (r.get("mileage_km") or 0) / 10_000, r["price"] / MANYEN)
             for r in rows
             if r.get("model_year") and r.get("price") and r.get("mileage_km") and is_usable(r)
         ]
-        by_year: dict[int, list[float]] = {}
-        for year, _, price in samples:
-            by_year.setdefault(year, []).append(price)
-        self._median_by_year = {
-            y: sorted(v)[len(v) // 2] for y, v in by_year.items() if v
-        }
+        by_year: dict[int, list[tuple[float, float]]] = {}
+        for year, mileage, price in samples:
+            by_year.setdefault(year, []).append((mileage, price))
+
+        for year, vals in by_year.items():
+            self._count[year] = len(vals)
+            if len(vals) >= self.MIN_YEAR_SAMPLES:
+                self._median_price[year] = _median([p for _, p in vals])
+                self._median_mileage[year] = _median([m for m, _ in vals])
+
+        # 「距離が伸びるほど安い」傾きは全年式まとめて 1 本だけ推定する。
+        # 年式ごとに張るとサンプルが足りない。年式内偏差に対する原点通過の回帰。
+        num = den = 0.0
+        for year, vals in by_year.items():
+            if year not in self._median_price:
+                continue
+            mp, mm = self._median_price[year], self._median_mileage[year]
+            for mileage, price in vals:
+                dx = mileage - mm
+                num += dx * (math.log(price) - math.log(mp))
+                den += dx * dx
+        if den > 0:
+            self.mileage_coef = num / den
 
         self.n = len(samples)
-        if self.n >= MIN_FIT_SAMPLES:
-            self._coef, self.r2 = _fit(samples)
+        self.judgeable_years = sorted(self._median_price)
 
     def expected_manyen(self, year: int | None, mileage_km: int | None) -> float | None:
-        """年式と走行距離を揃えたときの想定落札額（万円）。"""
-        if not year:
+        """その年式・その距離での想定落札額（万円）。実績が薄い年式は None。"""
+        if not year or year not in self._median_price:
             return None
-        if self._coef and mileage_km is not None:
-            a, b, c = self._coef
-            return math.exp(a + b * year + c * (mileage_km / 10_000))
-        # 回帰が張れないときは、その年式の落札中央値で代用する（距離は揃わない）
-        return self._median_by_year.get(year)
+        base = self._median_price[year]
+        if mileage_km is None:
+            return base
+        dx = mileage_km / 10_000 - self._median_mileage[year]
+        return base * math.exp(self.mileage_coef * dx)
 
-    @property
-    def basis(self) -> str:
-        if self._coef:
-            return f"回帰 n={self.n} R²={self.r2:.2f}"
-        return f"年式中央値 n={self.n}（距離補正なし）"
+    def samples_for(self, year: int | None) -> int:
+        return self._count.get(year or 0, 0)
 
-    @property
-    def slack(self) -> float:
-        """当てはまりが悪いほどしきい値を広げる倍率。"""
-        r2 = self.r2 if self._coef else 0.0
+    def basis(self, year: int | None = None) -> str:
+        return f"{year}年の落札 {self.samples_for(year)}件 + 距離補正"
+
+    def slack(self, year: int | None = None) -> float:
+        """その年式の実績が薄いほどしきい値を広げる。"""
+        n = self.samples_for(year)
         for floor, factor in CONFIDENCE_BANDS:
-            if r2 >= floor:
+            if n >= floor:
                 return factor
         return CONFIDENCE_BANDS[-1][1]
-
-
-def _fit(samples: list[tuple[int, float, float]]) -> tuple[tuple[float, float, float], float]:
-    """log(price) = a + b*year + c*mileage を正規方程式で解く。"""
-    xs = [(1.0, float(y), m) for y, m, _ in samples]
-    ys = [math.log(p) for _, _, p in samples]
-    k = 3
-    ata = [[sum(xs[i][r] * xs[i][c] for i in range(len(xs))) for c in range(k)] for r in range(k)]
-    atb = [sum(xs[i][r] * ys[i] for i in range(len(xs))) for r in range(k)]
-
-    # ガウスの消去法（3x3 なのでこれで十分）
-    m = [row[:] + [atb[r]] for r, row in enumerate(ata)]
-    for col in range(k):
-        pivot = max(range(col, k), key=lambda r: abs(m[r][col]))
-        if abs(m[pivot][col]) < 1e-12:
-            return (0.0, 0.0, 0.0), 0.0
-        m[col], m[pivot] = m[pivot], m[col]
-        for r in range(k):
-            if r == col:
-                continue
-            f = m[r][col] / m[col][col]
-            for c in range(col, k + 1):
-                m[r][c] -= f * m[col][c]
-    coef = tuple(m[r][k] / m[r][r] for r in range(k))  # type: ignore[assignment]
-
-    mean = sum(ys) / len(ys)
-    ss_tot = sum((y - mean) ** 2 for y in ys)
-    ss_res = sum(
-        (ys[i] - (coef[0] + coef[1] * xs[i][1] + coef[2] * xs[i][2])) ** 2 for i in range(len(xs))
-    )
-    r2 = 1 - ss_res / ss_tot if ss_tot else 0.0
-    return coef, r2  # type: ignore[return-value]
 
 
 def build_models(pool: list[dict[str, Any]]) -> dict[str, PriceModel]:
@@ -151,6 +148,7 @@ def build_models(pool: list[dict[str, Any]]) -> dict[str, PriceModel]:
     for r in pool:
         by_vehicle.setdefault(r.get("vehicle_key", ""), []).append(r)
     return {k: PriceModel(k, v) for k, v in by_vehicle.items()}
+
 
 
 # ------------------------------------------------------------------ リスク
@@ -237,6 +235,19 @@ def evaluate(
     defects: dict[tuple[str, str], list[dict[str, Any]]],
     today: date | None = None,
 ) -> list[dict[str, Any]]:
+    """出品を相場と突き合わせる。
+
+    比較の相手を揃えるのが肝。相場モデルは**落札価格**で作ってあるので、
+
+    * 終了間際の現在価格 → そのまま落札想定と比べてよい（実測で中央値 +3.3%）
+    * **即決価格 → そのままでは比べられない**。実測で個人 +32.5% / ストア +32.9% と、
+      落札想定より一律に高く出る。これは「今すぐ確実に買える」ことへの上乗せで、
+      モデルの誤差ではない。この上乗せぶんを差し引いてから比べないと、
+      即決は全部「相場より高い」になってしまう。
+
+    そこで即決は、同じ回で観測した即決全体の上乗せ幅（中央値）を基準にして
+    「即決の中で安いか」を見る。
+    """
     today = today or date.today()
     out: list[dict[str, Any]] = []
 
@@ -250,8 +261,17 @@ def evaluate(
         if expected and judge:
             deviation = round((judge / expected - 1) * 100, 1)
 
+        # 現在の入札額が落札相場に対してどこにいるかは、いつでも計算できる。
+        # ただし終了までまだ間があるうちは**必ず競り上がる**ので、これは
+        # 「いまのところ」の下限でしかない。判定の引き金には使わず、参考として出す。
+        current = (r.get("current_price") or 0) / MANYEN
+        current_dev = None
+        if expected and current:
+            current_dev = round((current / expected - 1) * 100, 1)
+
         strong, notes = risk_flags(r, defects, today)
-        slack = model.slack if model else CONFIDENCE_BANDS[-1][1]
+        year = r.get("model_year")
+        slack = model.slack(year) if model else CONFIDENCE_BANDS[-1][1]
         out.append(
             {
                 **r,
@@ -260,15 +280,57 @@ def evaluate(
                 "expected_manyen": round(expected, 1) if expected else None,
                 "current_manyen": round((r.get("current_price") or 0) / MANYEN, 1),
                 "judge_manyen": round(judge, 1) if judge else None,
+                "current_vs_hammer_pct": current_dev,
+                "will_rise": bool(hours is not None and hours > ENDING_SOON_HOURS),
                 "judge_kind": kind,
                 "hours_left": round(hours, 1) if hours is not None else None,
                 "deviation_pct": deviation,
-                "price_basis": model.basis if model else "相場データなし",
+                "price_basis": model.basis(year) if model and expected else "相場データなし",
                 "risk_strong": strong,
                 "risk_notes": notes,
             }
         )
+
+    _rebase_buy_now(out)
     return out
+
+
+def _rebase_buy_now(rows: list[dict[str, Any]]) -> None:
+    """即決の乖離を「即決どうしの比較」に置き直す。
+
+    落札想定に対する上乗せ幅の中央値を引く。車種ごとに 10件以上あればその車種の
+    中央値、足りなければ全体の中央値を使う。基準が変わるので `benchmark` に
+    どちらで見たかを残す。
+    """
+    # 二度掛けを防ぐ。詳細取得のあとに一部だけ評価し直すと、その少数から
+    # 基準を計算し直してしまい、表示と抽出条件が食い違う（実際にやらかした）。
+    if any(r.get("benchmark") for r in rows):
+        return
+
+    buy_now = [r for r in rows if (r.get("judge_kind") == "即決") and r.get("deviation_pct") is not None]
+    if not buy_now:
+        for r in rows:
+            r.setdefault("benchmark", "落札想定")
+        return
+
+    overall = _median([r["deviation_pct"] for r in buy_now])
+    per_vehicle: dict[str, float] = {}
+    grouped: dict[str, list[float]] = {}
+    for r in buy_now:
+        grouped.setdefault(r.get("vehicle_key", ""), []).append(r["deviation_pct"])
+    for key, vals in grouped.items():
+        if len(vals) >= 10:
+            per_vehicle[key] = _median(vals)
+
+    for r in rows:
+        if r.get("judge_kind") == "即決" and r.get("deviation_pct") is not None:
+            premium = per_vehicle.get(r.get("vehicle_key", ""), overall)
+            r["buy_now_premium_pct"] = round(premium, 1)
+            r["deviation_vs_hammer_pct"] = r["deviation_pct"]
+            r["deviation_pct"] = round(r["deviation_pct"] - premium, 1)
+            r["benchmark"] = "即決どうし"
+        else:
+            r["benchmark"] = "落札想定"
 
 
 def _judgeable_price(
@@ -331,6 +393,7 @@ def pick(
     individual_only: bool = False,
     model_year_from: int | None = None,
     repair: str = "any",
+    cheap_only: bool = False,
 ) -> list[dict[str, Any]]:
     """通知に値するものだけ残す。
 
@@ -357,12 +420,31 @@ def pick(
         dev = r.get("deviation_pct")
         if dev is None:
             continue
-        if dev <= r["cheap_threshold_pct"] or dev >= r["pricey_threshold_pct"]:
+        if dev <= r["cheap_threshold_pct"]:
+            picked.append(r)
+        elif not cheap_only and dev >= r["pricey_threshold_pct"]:
             picked.append(r)
 
     # 安い順に並べる。乖離が出せなかったものは末尾へ。
     picked.sort(key=lambda r: (r.get("deviation_pct") is None, r.get("deviation_pct") or 0.0))
     return picked
+
+
+def refresh_risk(
+    rows: list[dict[str, Any]],
+    defects: dict[tuple[str, str], list[dict[str, Any]]],
+    today: date | None = None,
+) -> None:
+    """リスクのフラグだけ付け直す。価格の判定には触らない。
+
+    商品ページを開いて写真の枚数や説明文の記載が増えたあとに使う。
+    ここで `evaluate()` を丸ごと掛け直すと即決の基準が計算し直されて壊れる。
+    """
+    today = today or date.today()
+    for r in rows:
+        strong, notes = risk_flags(r, defects, today)
+        r["risk_strong"] = strong
+        r["risk_notes"] = notes
 
 
 def load_context(vehicles: VehicleSet | None = None):

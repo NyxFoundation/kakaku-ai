@@ -79,16 +79,45 @@ def _format(row: dict[str, Any]) -> dict[str, Any]:
     total = row.get("judge_manyen") or row.get("current_manyen") or 0
     overhead = (row.get("overhead_costs") or 0) / 10_000
 
+    hours = row.get("hours_left")
+    if hours is None:
+        left = ""
+    elif hours < 24:
+        left = f"残り{hours:.0f}時間"
+    else:
+        left = f"残り{hours/24:.0f}日"
+
     lines = [
         f"*<{row['url']}|{row['title'][:70]}>*",
         f"{row['vehicle_name']} {row.get('model_year') or '?'}年 "
         f"{row.get('generation') or ''} / {mileage_s} / 出品者: {seller} 評価{rating}"
         + (f" / {row['seller_city']}" if row.get("seller_city") else ""),
-        f"{row.get('judge_kind') or '現在'} *{total:.1f}万円*"
-        + (f"（諸費用 {overhead:.1f}万）" if overhead else "")
-        + f" ・ 入札 {row.get('bid_count', 0)} ・ 終了 {(row.get('end_time') or '')[:16].replace('T',' ')}",
-        f"想定落札 {row.get('expected_manyen')}万円 → *{headline}*  _{row.get('price_basis')}_",
     ]
+
+    # いまの入札額が落札相場に対してどこにいるか。これは常に出す。
+    current = (row.get("current_manyen") or 0)
+    cur_dev = row.get("current_vs_hammer_pct")
+    if cur_dev is not None:
+        note = "（まだ競り上がる）" if row.get("will_rise") else ""
+        lines.append(
+            f"現在 *{current:.1f}万円* ← 落札相場 {row.get('expected_manyen')}万円 比 "
+            f"*{cur_dev:+.0f}%*{note} ・ 入札 {row.get('bid_count', 0)} ・ {left}"
+        )
+    else:
+        lines.append(f"現在 {current:.1f}万円 ・ 入札 {row.get('bid_count', 0)} ・ {left}")
+
+    # 即決があるなら、即決どうしで比べた結果も出す
+    if row.get("benchmark") == "即決どうし":
+        lines.append(
+            f"即決 *{total:.1f}万円*"
+            + (f"（諸費用 {overhead:.1f}万）" if overhead else "")
+            + f" ← 即決相場 比 *{headline}*  _{row.get('price_basis')}_"
+        )
+    else:
+        lines.append(
+            f"{row.get('judge_kind') or ''} 判定: *{headline}*  _{row.get('price_basis')}_"
+        )
+
     if row.get("risk_strong"):
         lines.append("⚠️ " + " / ".join(row["risk_strong"]))
     if row.get("risk_notes"):

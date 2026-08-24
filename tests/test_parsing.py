@@ -797,25 +797,67 @@ def test_price_judgement_ignores_pre_bidding_price():
     assert price == 150.0 and kind.startswith("終了")
 
 
-def test_threshold_widens_when_model_is_weak():
-    """当てはまりの悪い車種では「相場より安い」と言い切らないこと。
+def test_threshold_widens_when_year_has_few_samples():
+    """実績の薄い年式では「相場より安い」と言い切らないこと。
 
-    実測で R² は ノア 0.84 〜 エルグランド 0.29 まで開きがある。
-    弱いモデルで同じしきい値を使うと、ノイズを掘り出し物として流してしまう。
+    年式ごとの落札件数はまちまちで、n=3 の年式と n=83 の年式を同じしきい値で
+    扱うとノイズを掘り出し物として流してしまう。
     """
     from kakaku_ai.watch import CHEAP_PCT, PriceModel
 
-    strong = PriceModel.__new__(PriceModel)
-    strong._coef, strong.r2, strong.n = (1.0, 0.0, 0.0), 0.85, 100
-    weak = PriceModel.__new__(PriceModel)
-    weak._coef, weak.r2, weak.n = (1.0, 0.0, 0.0), 0.25, 100
-    none_model = PriceModel.__new__(PriceModel)
-    none_model._coef, none_model.r2, none_model.n = None, 0.0, 5
+    m = PriceModel.__new__(PriceModel)
+    m._count = {2017: 83, 2019: 9, 2023: 3}
 
-    assert strong.slack == 1.0
-    assert weak.slack > strong.slack
-    assert none_model.slack >= weak.slack
-    assert CHEAP_PCT * weak.slack < CHEAP_PCT  # より大きな乖離を要求する
+    assert m.slack(2017) == 1.0
+    assert m.slack(2019) > m.slack(2017)
+    assert m.slack(2023) > m.slack(2019)
+    assert CHEAP_PCT * m.slack(2023) < CHEAP_PCT  # より大きな乖離を要求する
+
+
+def test_price_model_uses_per_year_median_not_a_line():
+    """年式は実績の中央値をそのまま使い、直線で外挿しないこと。
+
+    log(価格)~年式 の直線を張ったら、学習データ自身での残差が
+    2013年 -21.6% 〜 2018年 +51.3% と大きく歪み、出品のほぼ全部が
+    「相場より高い」と判定された。
+    """
+    from kakaku_ai.watch import PriceModel
+
+    rows = []
+    for year, price in ((2015, 60.0), (2016, 80.0), (2017, 200.0)):  # 直線では表せない上がり方
+        for i in range(4):
+            rows.append({"model_year": year, "mileage_km": 100_000, "price": price * 10_000,
+                         "mileage_type": "REAL_MILEAGE", "repair_type": "NONE"})
+    m = PriceModel("t", rows)
+
+    for year, price in ((2015, 60.0), (2016, 80.0), (2017, 200.0)):
+        assert m.expected_manyen(year, 100_000) == pytest.approx(price, rel=0.01)
+    # 実績の無い年式は判定しない（外挿しない）
+    assert m.expected_manyen(2020, 100_000) is None
+
+
+def test_buy_now_is_compared_against_buy_now():
+    """即決は落札想定ではなく即決どうしで比べること。
+
+    即決は実測で落札想定より一律 +33% 高い（今すぐ買える確実性への上乗せ）。
+    そのまま比べると即決が全部「相場より高い」になり、
+    実際に通知が「相場より XX% 高い」ばかりになった。
+    """
+    from kakaku_ai.watch import _rebase_buy_now
+
+    rows = [{"judge_kind": "即決", "vehicle_key": "v", "deviation_pct": d} for d in
+            (10.0, 30.0, 33.0, 36.0, 60.0)]
+    rows.append({"judge_kind": "終了3h前", "vehicle_key": "v", "deviation_pct": 5.0})
+    _rebase_buy_now(rows)
+
+    # 即決の中央値（33%）が基準になり、そこからの差に置き換わる
+    assert rows[0]["deviation_pct"] == pytest.approx(-23.0)
+    assert rows[2]["deviation_pct"] == pytest.approx(0.0)
+    assert rows[0]["benchmark"] == "即決どうし"
+    assert rows[0]["deviation_vs_hammer_pct"] == 10.0
+    # 終了間際は落札想定のまま
+    assert rows[-1]["deviation_pct"] == 5.0
+    assert rows[-1]["benchmark"] == "落札想定"
 
 
 def test_pick_requires_a_judgeable_price():
@@ -864,3 +906,18 @@ def test_pick_applies_repair_filter():
     ]
     assert [r["auction_id"] for r in pick(rows, repair="none")] == ["ok"]
     assert len(pick(rows, repair="any")) == 3
+
+
+def test_rebase_buy_now_is_not_applied_twice():
+    """即決の基準を二度掛けしないこと。
+
+    詳細取得のあとに一部だけ評価し直したら、その3件から基準を計算し直して
+    通知の表示と抽出条件が食い違った（「相場より11%高い」が安い側として出た）。
+    """
+    from kakaku_ai.watch import _rebase_buy_now
+
+    rows = [{"judge_kind": "即決", "vehicle_key": "v", "deviation_pct": d} for d in (10.0, 30.0, 50.0)]
+    _rebase_buy_now(rows)
+    once = [r["deviation_pct"] for r in rows]
+    _rebase_buy_now(rows)  # 二度目は何もしない
+    assert [r["deviation_pct"] for r in rows] == once
