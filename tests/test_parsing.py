@@ -921,3 +921,79 @@ def test_rebase_buy_now_is_not_applied_twice():
     once = [r["deviation_pct"] for r in rows]
     _rebase_buy_now(rows)  # 二度目は何もしない
     assert [r["deviation_pct"] for r in rows] == once
+
+
+# ---------------------------------------------------------------- 既読管理
+
+
+def test_seen_list_prunes_only_finished_auctions(tmp_path, monkeypatch):
+    """終了して十分に経った出品だけ既読から落とすこと。
+
+    まだ終わっていないものを落とすと再通知してしまう。
+    """
+    from datetime import datetime, timedelta, timezone
+
+    from kakaku_ai import notify
+
+    monkeypatch.setattr(notify, "SEEN_PATH", tmp_path / "seen.json")
+    now = datetime.now(timezone.utc)
+    seen = {
+        "live": (now + timedelta(days=3)).isoformat(),      # まだ出品中
+        "recent": (now - timedelta(days=2)).isoformat(),    # 終了直後
+        "old": (now - timedelta(days=60)).isoformat(),      # とっくに終了
+        "unknown": "",                                       # 終了日時が分からない
+    }
+    notify.save_seen(seen)
+    kept = notify.load_seen()
+    assert set(kept) == {"live", "recent", "unknown"}
+
+
+def test_seen_list_reads_old_list_format(tmp_path, monkeypatch):
+    """旧形式（ただのIDリスト）も読めること。"""
+    import json
+
+    from kakaku_ai import notify
+
+    path = tmp_path / "seen.json"
+    path.write_text(json.dumps({"auction_ids": ["a", "b"]}), encoding="utf-8")
+    monkeypatch.setattr(notify, "SEEN_PATH", path)
+    assert set(notify.load_seen()) == {"a", "b"}
+
+
+def test_channel_history_extracts_auction_ids(monkeypatch):
+    """Slack の履歴から auction_id を拾えること。
+
+    ローカルの既読ファイルを消してしまい、投稿済み64件のうち28件が
+    既読から抜けたことがある。履歴が拾えれば、それでも再通知しない。
+    """
+    from kakaku_ai import notify
+
+    class _Resp:
+        @staticmethod
+        def json():
+            return {
+                "ok": True,
+                "messages": [
+                    {"attachments": [{"blocks": [{"text": {
+                        "text": "<https://page.auctions.yahoo.co.jp/jp/auction/k1241772531|車>"}}]}]},
+                    {"text": "https://page.auctions.yahoo.co.jp/jp/auction/c1240157168"},
+                ],
+                "response_metadata": {},
+            }
+
+    monkeypatch.setattr(notify, "_token", lambda: "x")
+    monkeypatch.setattr(notify.requests, "get", lambda *a, **k: _Resp())
+    assert notify.posted_in_channel("C") == {"k1241772531", "c1240157168"}
+
+
+def test_channel_history_failure_does_not_block(monkeypatch):
+    """履歴が読めなくても通知そのものは止めないこと。"""
+    from kakaku_ai import notify
+
+    monkeypatch.setattr(notify, "_token", lambda: "x")
+
+    def boom(*a, **k):
+        raise RuntimeError("network down")
+
+    monkeypatch.setattr(notify.requests, "get", boom)
+    assert notify.posted_in_channel("C") == set()

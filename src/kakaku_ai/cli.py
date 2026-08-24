@@ -154,8 +154,21 @@ def main(argv: list[str] | None = None) -> int:
             cheap_only=not args.include_pricey,
         )
 
-        seen = set() if args.all else notify.load_seen()
-        fresh = [r for r in picked if r["auction_id"] not in seen]
+        seen = {} if args.all else notify.load_seen()
+        # ローカルの既読が失われていても二度流さないよう、Slack の履歴も突き合わせる
+        already = set(seen)
+        if not args.all:
+            from_channel = notify.posted_in_channel(args.channel)
+            new_to_file = from_channel - already
+            if new_to_file:
+                logging.getLogger(__name__).info(
+                    "  Slack 履歴から既読 %s件を回収（ローカルに無かった分）", len(new_to_file)
+                )
+                for auction_id in new_to_file:
+                    seen[auction_id] = ""
+            already |= from_channel
+
+        fresh = [r for r in picked if r["auction_id"] not in already]
 
         # 通知する分だけ商品ページを開いて、写真の枚数と説明文の記載を足す。
         # 一覧には入っていない情報で、拾うと注意点がだいぶ具体的になる。
@@ -199,8 +212,10 @@ def main(argv: list[str] | None = None) -> int:
         if not args.dry_run:
             # 実際に流したものだけを既読にする。スキャンした全件を既読にすると、
             # 今日はまだ競り上がり前で判定保留だった出品が、終了間際になっても
-            # 二度と通知されなくなる。
-            notify.save_seen(seen | {r["auction_id"] for r in fresh[: notify.MAX_PER_RUN]})
+            # 二度と通知されなくなる。終了日時も残して、終わったものは後で整理する。
+            for r in fresh[: notify.MAX_PER_RUN]:
+                seen[r["auction_id"]] = r.get("end_time") or ""
+            notify.save_seen(seen)
         return 0
 
     if args.command == "list":

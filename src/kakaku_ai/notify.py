@@ -3,8 +3,18 @@
 hermes が使っている Bot トークン（`~/.hermes/.env` の `SLACK_BOT_TOKEN`）を
 そのまま借りる。投稿先は既定で `#notif-car-auction`。
 
-新着の判定は `data/watch_seen.json` に出した `auction_id` を残しておくだけ。
-同じ出品を毎回流さないためで、これがないと通知が読まれなくなる。
+同じ出品を二度流さないための既読管理を持つ。ここは**ローカルのファイルだけに
+頼らない**。実際にファイルを消してしまって、投稿済み 64件のうち 28件が
+既読から抜け、再通知され得る状態になったことがある。
+
+そこで
+1. `data/watch_seen.json` に「出した auction_id → 終了日時」を残し（git 管理下）、
+2. **投稿前に Slack のチャンネル履歴も読んで**、そこに出ている auction_id も
+   既読として扱う。
+
+こうしておけば、ローカルの状態が壊れても Slack 自身が真実の記録になる。
+終了日時を持たせているのは、終わった出品を既読から落として
+リストが際限なく伸びるのを防ぐため（終了済みの ID は二度と出品されない）。
 """
 
 from __future__ import annotations
@@ -13,6 +23,7 @@ import json
 import logging
 import os
 import re
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -46,18 +57,72 @@ def _token() -> str:
 # ------------------------------------------------------------------ 既読管理
 
 
-def load_seen() -> set[str]:
+HISTORY_URL = "https://slack.com/api/conversations.history"
+AUCTION_ID = re.compile(r"/jp/auction/([a-z]?\d+)")
+# 終了からこの日数が過ぎた出品は既読から落とす（同じIDで再出品されることはない）
+SEEN_RETENTION_DAYS = 14
+
+
+def load_seen() -> dict[str, str]:
+    """{auction_id: 終了日時} を返す。古い形式（ただのリスト）も読める。"""
     if not SEEN_PATH.exists():
-        return set()
-    return set(json.loads(SEEN_PATH.read_text(encoding="utf-8")).get("auction_ids", []))
+        return {}
+    raw = json.loads(SEEN_PATH.read_text(encoding="utf-8")).get("auction_ids", {})
+    if isinstance(raw, list):  # 旧形式
+        return {i: "" for i in raw}
+    return dict(raw)
 
 
-def save_seen(ids: set[str]) -> None:
+def save_seen(seen: dict[str, str]) -> None:
+    """終了して十分に時間が経ったものを落としてから書く。"""
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=SEEN_RETENTION_DAYS)).isoformat()
+    kept = {
+        auction_id: end
+        for auction_id, end in seen.items()
+        if not end or end >= cutoff  # 終了日時が分からないものは残す
+    }
     SEEN_PATH.parent.mkdir(parents=True, exist_ok=True)
     SEEN_PATH.write_text(
-        json.dumps({"auction_ids": sorted(ids)}, ensure_ascii=False, indent=0) + "\n",
+        json.dumps({"auction_ids": dict(sorted(kept.items()))}, ensure_ascii=False, indent=0)
+        + "\n",
         encoding="utf-8",
     )
+    dropped = len(seen) - len(kept)
+    if dropped:
+        log.info("  既読リストから終了済み %s件を整理（残り %s件）", dropped, len(kept))
+
+
+def posted_in_channel(channel: str = DEFAULT_CHANNEL, limit: int = 400) -> set[str]:
+    """チャンネルに実際に流れた auction_id を読む。
+
+    ローカルの既読ファイルが失われても、ここが効いていれば再通知しない。
+    取得に失敗したら空を返す（通知そのものは止めない）。
+    """
+    found: set[str] = set()
+    cursor = None
+    try:
+        while len(found) < limit:
+            params: dict[str, Any] = {"channel": channel, "limit": 200}
+            if cursor:
+                params["cursor"] = cursor
+            resp = requests.get(
+                HISTORY_URL,
+                headers={"Authorization": f"Bearer {_token()}"},
+                params=params,
+                timeout=30,
+            )
+            data = resp.json()
+            if not data.get("ok"):
+                log.warning("  Slack 履歴の取得に失敗: %s", data.get("error"))
+                break
+            for message in data.get("messages") or []:
+                found |= set(AUCTION_ID.findall(json.dumps(message, ensure_ascii=False)))
+            cursor = (data.get("response_metadata") or {}).get("next_cursor")
+            if not cursor:
+                break
+    except Exception as exc:  # noqa: BLE001 - 履歴が読めなくても通知は続ける
+        log.warning("  Slack 履歴の取得に失敗: %s", exc)
+    return found
 
 
 # -------------------------------------------------------------------- 整形
