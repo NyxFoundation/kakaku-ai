@@ -63,67 +63,116 @@ def save_seen(ids: set[str]) -> None:
 # -------------------------------------------------------------------- 整形
 
 
-def _format(row: dict[str, Any]) -> dict[str, Any]:
+# 割安度で色分けする。Slack は attachment の color で左に縦棒が出るので、
+# 一覧をスクロールしたときにこれだけで拾える。
+COLOR_GREAT = "#2eb886"  # 相場より大幅に安い
+COLOR_GOOD = "#ecb22e"   # そこそこ安い
+COLOR_PLAIN = "#8d8d8d"  # それ以外（高い側を出しているとき）
+
+
+def _left(hours: float | None) -> str:
+    if hours is None:
+        return "不明"
+    if hours < 1:
+        return "まもなく終了"
+    if hours < 24:
+        return f"残り{hours:.0f}時間"
+    return f"残り{hours / 24:.0f}日"
+
+
+def _headline(row: dict[str, Any]) -> tuple[str, str, str]:
+    """(見出し, 色, 絵文字) を返す。"""
     dev = row.get("deviation_pct")
     if dev is None:
-        headline = "相場比 不明"
-    elif dev <= 0:
-        headline = f"相場より {abs(dev):.0f}% 安い"
-    else:
-        headline = f"相場より {dev:.0f}% 高い"
+        return "相場比 不明", COLOR_PLAIN, "▫️"
+    if dev <= -40:
+        return f"相場より {abs(dev):.0f}% 安い", COLOR_GREAT, "🟢"
+    if dev < 0:
+        return f"相場より {abs(dev):.0f}% 安い", COLOR_GOOD, "🟡"
+    return f"相場より {dev:.0f}% 高い", COLOR_PLAIN, "🔺"
 
-    seller = "個人" if not row.get("seller_is_store") else "ストア"
-    rating = row.get("seller_rating") or "-"
-    mileage = row.get("mileage_km")
-    mileage_s = f"{mileage/10000:.1f}万km" if mileage else "距離不明"
-    total = row.get("judge_manyen") or row.get("current_manyen") or 0
-    overhead = (row.get("overhead_costs") or 0) / 10_000
 
+def _format(row: dict[str, Any]) -> dict[str, Any]:
+    """1 出品を 1 attachment にする。左の色棒＋右にサムネイル。"""
+    headline, color, mark = _headline(row)
     hours = row.get("hours_left")
-    if hours is None:
-        left = ""
-    elif hours < 24:
-        left = f"残り{hours:.0f}時間"
-    else:
-        left = f"残り{hours/24:.0f}日"
+    ending_soon = hours is not None and hours <= 24
 
-    lines = [
-        f"*<{row['url']}|{row['title'][:70]}>*",
-        f"{row['vehicle_name']} {row.get('model_year') or '?'}年 "
-        f"{row.get('generation') or ''} / {mileage_s} / 出品者: {seller} 評価{rating}"
-        + (f" / {row['seller_city']}" if row.get("seller_city") else ""),
-    ]
-
-    # いまの入札額が落札相場に対してどこにいるか。これは常に出す。
-    current = (row.get("current_manyen") or 0)
+    mileage = row.get("mileage_km")
+    mileage_s = f"{mileage / 10000:.1f}万km" if mileage else "距離不明"
+    seller = "ストア" if row.get("seller_is_store") else "個人"
+    current = row.get("current_manyen") or 0
     cur_dev = row.get("current_vs_hammer_pct")
+    expected = row.get("expected_manyen")
+
+    # --- 見出し（タイトルはリンク、右にサムネ） ---
+    title = row["title"][:64] + ("…" if len(row["title"]) > 64 else "")
+    head: dict[str, Any] = {
+        "type": "section",
+        "text": {
+            "type": "mrkdwn",
+            "text": (
+                f"{mark} *<{row['url']}|{title}>*\n"
+                f"{row['vehicle_name']} {row.get('model_year') or '?'}年"
+                + (f" {row['generation']}" if row.get("generation") else "")
+                + f" ・ {mileage_s}"
+            ),
+        },
+    }
+    if row.get("image_url"):
+        head["accessory"] = {
+            "type": "image",
+            "image_url": row["image_url"],
+            "alt_text": row["vehicle_name"],
+        }
+
+    # --- 数字は 2 列で並べる ---
     if cur_dev is not None:
-        note = "（まだ競り上がる）" if row.get("will_rise") else ""
-        lines.append(
-            f"現在 *{current:.1f}万円* ← 落札相場 {row.get('expected_manyen')}万円 比 "
-            f"*{cur_dev:+.0f}%*{note} ・ 入札 {row.get('bid_count', 0)} ・ {left}"
-        )
+        rise = "\n_まだ競り上がる_" if row.get("will_rise") else ""
+        price_field = f"*現在 {current:.1f}万円*\n落札相場 {expected}万 比 {cur_dev:+.0f}%{rise}"
     else:
-        lines.append(f"現在 {current:.1f}万円 ・ 入札 {row.get('bid_count', 0)} ・ {left}")
+        price_field = f"*現在 {current:.1f}万円*"
 
-    # 即決があるなら、即決どうしで比べた結果も出す
+    fields = [{"type": "mrkdwn", "text": price_field}]
     if row.get("benchmark") == "即決どうし":
-        lines.append(
-            f"即決 *{total:.1f}万円*"
-            + (f"（諸費用 {overhead:.1f}万）" if overhead else "")
-            + f" ← 即決相場 比 *{headline}*  _{row.get('price_basis')}_"
-        )
+        overhead = (row.get("overhead_costs") or 0) / 10_000
+        fields.append({
+            "type": "mrkdwn",
+            "text": f"*即決 {row.get('judge_manyen')}万円*"
+                    + (f"（諸費用 {overhead:.1f}万）" if overhead else "")
+                    + f"\n即決相場 比 *{headline}*",
+        })
     else:
-        lines.append(
-            f"{row.get('judge_kind') or ''} 判定: *{headline}*  _{row.get('price_basis')}_"
-        )
+        fields.append({"type": "mrkdwn", "text": f"*判定*\n{headline}"})
 
+    fields.append({
+        "type": "mrkdwn",
+        "text": f"*{'🔥 ' if ending_soon else ''}{_left(hours)}*\n入札 {row.get('bid_count', 0)}件",
+    })
+    fields.append({
+        "type": "mrkdwn",
+        "text": f"*{seller}* 評価{row.get('seller_rating') or '-'}"
+                + (f"\n{row['seller_city']}" if row.get("seller_city") else ""),
+    })
+    body = {"type": "section", "fields": fields}
+
+    blocks: list[dict[str, Any]] = [head, body]
+
+    # --- 注意点は小さめの文字で ---
+    context: list[str] = []
     if row.get("risk_strong"):
-        lines.append("⚠️ " + " / ".join(row["risk_strong"]))
+        context.append("⚠️ " + " ・ ".join(row["risk_strong"]))
     if row.get("risk_notes"):
-        lines.append("ℹ️ " + " / ".join(row["risk_notes"]))
+        context.append("ℹ️ " + " ・ ".join(row["risk_notes"]))
+    if row.get("price_basis"):
+        context.append(f"📊 {row['price_basis']}")
+    if context:
+        blocks.append({
+            "type": "context",
+            "elements": [{"type": "mrkdwn", "text": t} for t in context[:3]],
+        })
 
-    return {"type": "section", "text": {"type": "mrkdwn", "text": "\n".join(lines)}}
+    return {"color": color, "blocks": blocks, "fallback": f"{row['vehicle_name']} {headline}"}
 
 
 def post(
@@ -131,40 +180,48 @@ def post(
     *,
     channel: str = DEFAULT_CHANNEL,
     header: str | None = None,
+    subtitle: str | None = None,
     dry_run: bool = False,
 ) -> dict[str, Any]:
-    """候補を Slack に流す。1件1ブロックで、タイトルが出品ページへのリンク。"""
+    """候補を Slack に流す。1 出品 = 1 attachment（左に割安度の色棒、右にサムネ）。"""
     if not rows:
         log.info("  通知対象なし")
         return {"ok": True, "posted": 0}
 
     rows = rows[:MAX_PER_RUN]
-    blocks: list[dict[str, Any]] = [
+    top = [
         {
             "type": "header",
-            "text": {"type": "plain_text", "text": header or f"新着 {len(rows)}件", "emoji": True},
+            "text": {"type": "plain_text", "text": header or f"気になる出品 {len(rows)}件", "emoji": True},
         }
     ]
-    for row in rows:
-        blocks.append(_format(row))
-        blocks.append({"type": "divider"})
-    blocks.pop()  # 末尾の区切りは要らない
+    if subtitle:
+        top.append({"type": "context", "elements": [{"type": "mrkdwn", "text": subtitle}]})
 
-    text = f"{header or '新着'} {len(rows)}件: " + " / ".join(
-        f"{r['vehicle_name']} {r.get('model_year')}年 {r.get('current_manyen')}万" for r in rows[:3]
+    attachments = [_format(r) for r in rows]
+    text = f"{header or '気になる出品'} {len(rows)}件: " + " / ".join(
+        f"{r['vehicle_name']}{r.get('model_year')}年 {r.get('current_manyen')}万" for r in rows[:3]
     )
 
     if dry_run:
         log.info("  [dry-run] %s件を %s へ送るところ", len(rows), channel)
         for r in rows:
-            log.info("    %s %s %s万 (%s)", r["vehicle_name"], r.get("model_year"),
-                     r.get("current_manyen"), r["url"])
+            head, color, mark = _headline(r)
+            log.info("    %s %-8s %s年 現在%s万 %s (%s)", mark, r["vehicle_name"],
+                     r.get("model_year"), r.get("current_manyen"), head, r["url"])
         return {"ok": True, "posted": 0, "dry_run": True}
 
     resp = requests.post(
         POST_URL,
         headers={"Authorization": f"Bearer {_token()}", "Content-Type": "application/json; charset=utf-8"},
-        json={"channel": channel, "text": text, "blocks": blocks, "unfurl_links": False},
+        json={
+            "channel": channel,
+            "text": text,
+            "blocks": top,
+            "attachments": attachments,
+            "unfurl_links": False,
+            "unfurl_media": False,
+        },
         timeout=30,
     )
     data = resp.json()

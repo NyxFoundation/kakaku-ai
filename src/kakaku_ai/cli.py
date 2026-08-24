@@ -179,8 +179,23 @@ def main(argv: list[str] | None = None) -> int:
             "出品 %s件 → 該当 %s件 → 未通知 %s件", len(listings), len(picked), len(fresh)
         )
 
-        result = notify.post(fresh, channel=args.channel, dry_run=args.dry_run,
-                             header=f"気になる出品 {len(fresh)}件")
+        conditions = [f"予算 {args.budget:.0f}万円" if args.budget else "予算指定なし"]
+        conditions.append("修復歴なしのみ" if args.repair == "none" else "修復歴で絞らない")
+        conditions.append("安い側のみ" if not args.include_pricey else "高い側も含む")
+        if args.individual_only:
+            conditions.append("個人出品のみ")
+        conditions.append(f"{args.year_from or vehicles.model_year_from}年式以降")
+
+        notify.post(
+            fresh,
+            channel=args.channel,
+            dry_run=args.dry_run,
+            header=f"気になる出品 {min(len(fresh), notify.MAX_PER_RUN)}件",
+            subtitle=(
+                f"出品 {len(listings)}件を確認 → 該当 {len(picked)}件 → 新着 {len(fresh)}件"
+                f"　|　{' ・ '.join(conditions)}"
+            ),
+        )
         if not args.dry_run:
             # 実際に流したものだけを既読にする。スキャンした全件を既読にすると、
             # 今日はまだ競り上がり前で判定保留だった出品が、終了間際になっても
