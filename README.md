@@ -226,6 +226,8 @@ uv run kakaku-ai weekly    # crawl → excel → upload
 
 - [`docs/crawl-research.md`](docs/crawl-research.md) — どのサイトから何をどう取るか（実測ベース）
 - [`docs/schema.md`](docs/schema.md) — データスキーマと相場の算出方法
+- [`docs/market-research.md`](docs/market-research.md) — 同種サービスの競合調査（日本・海外）と、
+  このデータを事業にできるかの評価
 
 ---
 
