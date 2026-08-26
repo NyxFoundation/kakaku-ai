@@ -64,6 +64,27 @@ def list_snapshots() -> list[str]:
     return sorted(p.name for p in SNAPSHOT_DIR.iterdir() if p.is_dir())
 
 
+def latest_snapshot_with(dataset: str) -> str | None:
+    """そのデータセットが**中身入りで**入っている最新のスナップショット日を返す。
+
+    収集は必ずしも全データセットを一度に撮るわけではない。`wide` だけ回した日は
+    その日のディレクトリに `wide_*` しか無いし、`--sources` を絞った日も同じ。
+    「最新ディレクトリ」を一律に使うと、その日に撮らなかったものが全部 0 件で
+    出てしまうので、データセットごとに新しいほうから探す。
+    """
+    for snap in reversed(list_snapshots()):
+        path = snapshot_path(snap, dataset)
+        if path.exists() and path.stat().st_size > 0:
+            return snap
+    return None
+
+
+def read_latest(dataset: str) -> tuple[list[dict[str, Any]], str | None]:
+    """最新の中身入りスナップショットからデータセットを読む。(行, 日付) を返す。"""
+    snap = latest_snapshot_with(dataset)
+    return (read(snap, dataset) if snap else []), snap
+
+
 def read_all(dataset: str, snapshots: list[str] | None = None) -> list[dict[str, Any]]:
     """全スナップショット（または指定分）を時系列順に連結して返す。"""
     rows: list[dict[str, Any]] = []

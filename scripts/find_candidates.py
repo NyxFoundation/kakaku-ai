@@ -159,7 +159,9 @@ def main() -> int:
             log.info("  [%s/%s] %-22s %s台", n, len(targets), meta["model_name"], len(found))
 
     if args.max_price:
-        rows = [r for r in rows if (r.get("total_price_manyen") or 0) <= args.max_price]
+        # 支払総額を出していない店は本体価格で見る。どちらも無い（応談）ものは残す
+        rows = [r for r in rows
+                if (r.get("total_price_manyen") or r.get("base_price_manyen") or 0) <= args.max_price]
     if args.max_mileage:
         rows = [r for r in rows if (r.get("mileage_km") or 0) <= args.max_mileage * 10_000]
 
@@ -186,9 +188,16 @@ def main() -> int:
 
     print(f"\n該当 {len(rows)} 台（{args.year_from}〜{args.year_to}年式）\n")
     for i, r in enumerate(rows, 1):
-        mileage = f"{r['mileage_km']/10000:.1f}万km" if r.get("mileage_km") else "距離不明"
+        mileage = f"{r['mileage_km'] / 10000:.1f}万km" if r.get("mileage_km") else "距離不明"
+        # 支払総額を出していない店もあるので、その場合は車両本体価格で代用する
+        if r.get("total_price_manyen"):
+            price = f"総額 {r['total_price_manyen']}万円"
+        elif r.get("base_price_manyen"):
+            price = f"本体 {r['base_price_manyen']}万円（総額表示なし）"
+        else:
+            price = "価格応談"
         print(f"{i:>2}. {r['model_name']} {r.get('model_year')}年 / {mileage} / "
-              f"総額 {r.get('total_price_manyen') or '?'}万円  [score {r['score']:+.1f}]")
+              f"{price}  [score {r['score']:+.1f}]")
         if r.get("title"):
             print(f"    {r['title'][:90]}")
         print(f"    {' ・ '.join(r['why']) if r['why'] else '特記なし'}")

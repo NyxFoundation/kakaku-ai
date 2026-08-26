@@ -136,7 +136,15 @@ PRICE_FORMATS = {
 }
 
 
-def _readme_sheet(ws: Worksheet, vehicles: VehicleSet, snapshots: list[str], counts: dict[str, int]) -> None:
+def _readme_sheet(
+    ws: Worksheet,
+    vehicles: VehicleSet,
+    snapshots: list[str],
+    counts: dict[str, int],
+    *,
+    price_date: str | None = None,
+    wide_date: str | None = None,
+) -> None:
     ws.column_dimensions["A"].width = 26
     ws.column_dimensions["B"].width = 110
 
@@ -155,6 +163,15 @@ def _readme_sheet(ws: Worksheet, vehicles: VehicleSet, snapshots: list[str], cou
             f"{vehicles.model_year_from}年式以降 / 全国",
         ),
         ("収録スナップショット", f"{len(snapshots)}件: {', '.join(snapshots)}"),
+        # 深掘り20車種（週次）と全車種クロール（別サイクル）は別々の日に走るので、
+        # 「最新」といっても日付が揃わない。どちらの断面かを明記しておく。
+        (
+            "各断面の時点",
+            " / ".join(
+                f"{label} {date or '未取得'}"
+                for label, date in (("深掘り20車種:", price_date), ("全車種:", wide_date))
+            ),
+        ),
         ("", ""),
         ("■ シートの読み方", ""),
         ("グラフ_価格差", "落札価格と店頭価格の差が大きい順の横棒。走行距離も併記。まずここ。"),
@@ -344,24 +361,25 @@ def build(output: Path, *, vehicles: VehicleSet | None = None) -> Path:
     snapshots = store.list_snapshots()
     if not snapshots:
         raise RuntimeError("スナップショットが 1 つもありません。先に crawl を実行してください。")
-    latest = snapshots[-1]
-
+    # 「最新のスナップショット日」ではなく**データセットごと**に最新を取る。
+    # 全車種クロールや `--sources` を絞った実行はその日の一部しか書かないので、
+    # 日付で揃えると撮っていないシートが軒並み空になる。
     price_all = store.read_all("price_by_year")
-    price_latest = [r for r in price_all if r["snapshot_date"] == latest]
-    summary_latest = store.read(latest, "vehicle_summary")
-    reviews_latest = store.read(latest, "reviews")
-    review_summary_latest = store.read(latest, "review_summary")
-    defects_latest = store.read(latest, "defect_summary")
-    defect_details = store.read(latest, "defects")
-    recalls_latest = store.read(latest, "recalls")
-    listings_latest = store.read(latest, "auction_listings")
+    price_latest, price_date = store.read_latest("price_by_year")
+    summary_latest, _ = store.read_latest("vehicle_summary")
+    reviews_latest, _ = store.read_latest("reviews")
+    review_summary_latest, _ = store.read_latest("review_summary")
+    defects_latest, _ = store.read_latest("defect_summary")
+    defect_details, _ = store.read_latest("defects")
+    recalls_latest, _ = store.read_latest("recalls")
+    listings_latest, _ = store.read_latest("auction_listings")
     # 落札は「終了180日間」しか取れないので、全スナップショットを auction_id で
     # 名寄せして 1 本にする。週を重ねるほど実効期間が伸び、年式ごとの n が増える。
     listings_pool = store.pooled_auction_listings()
-    jmty_latest = store.read(latest, "jmty_listings")
-    delisted = store.read(latest, "carsensor_delisted")
-    wide_year = store.read(latest, "wide_by_year")
-    wide_sum = store.read(latest, "wide_summary")
+    jmty_latest, _ = store.read_latest("jmty_listings")
+    delisted, _ = store.read_latest("carsensor_delisted")
+    wide_year, wide_date = store.read_latest("wide_by_year")
+    wide_sum, _ = store.read_latest("wide_summary")
 
     wb = Workbook()
     counts = {
@@ -379,7 +397,8 @@ def build(output: Path, *, vehicles: VehicleSet | None = None) -> Path:
         "全車種_一覧": len(wide_sum),
     }
 
-    _readme_sheet(wb.active, vehicles, snapshots, counts)
+    _readme_sheet(wb.active, vehicles, snapshots, counts,
+                  price_date=price_date, wide_date=wide_date)
     wb.active.title = "README"
 
     # --- グラフ（断面）。表より先に置いて、開いてすぐ絵が見えるようにする ---
