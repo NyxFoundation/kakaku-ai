@@ -196,7 +196,13 @@ def _readme_sheet(ws: Worksheet, vehicles: VehicleSet, snapshots: list[str], cou
             "年式・走行距離・修復歴に加え、商品ページから取ったグレード・車検・"
             "諸費用込み総額つき。",
         ),
-        ("車種マスタ", "車種・世代・型式の一覧。"),
+        (
+            "全車種_年式別相場",
+            "カーセンサー掲載の**全車種・全年式**の小売相場。"
+            "メーカー / 国産・輸入 / ボディタイプ（用途）/ 車種 / 年式 で絞り込める（見出し行のフィルタ）。",
+        ),
+        ("全車種_一覧", "全車種の車種単位サマリ。新車時価格・中古価格レンジ・掲載台数・評価。"),
+        ("車種マスタ", "深掘り対象 20 車種の世代・型式の一覧。"),
         ("", ""),
         ("■ 相場の作り方", ""),
         (
@@ -354,6 +360,8 @@ def build(output: Path, *, vehicles: VehicleSet | None = None) -> Path:
     listings_pool = store.pooled_auction_listings()
     jmty_latest = store.read(latest, "jmty_listings")
     delisted = store.read(latest, "carsensor_delisted")
+    wide_year = store.read(latest, "wide_by_year")
+    wide_sum = store.read(latest, "wide_summary")
 
     wb = Workbook()
     counts = {
@@ -367,6 +375,8 @@ def build(output: Path, *, vehicles: VehicleSet | None = None) -> Path:
         "落札明細（最新断面のみ）": len(listings_latest),
         "参考_ジモティー掲載": len(jmty_latest),
         "店頭_成約推定": len(delisted),
+        "全車種_年式別相場": len(wide_year),
+        "全車種_一覧": len(wide_sum),
     }
 
     _readme_sheet(wb.active, vehicles, snapshots, counts)
@@ -687,6 +697,7 @@ def build(output: Path, *, vehicles: VehicleSet | None = None) -> Path:
                 ("price_cut_manyen", "値下げ幅\n(万円)"),
                 ("mileage_km", "走行距離(km)"),
                 ("repair_history", "修復歴"),
+                ("inspection", "車検"),
                 ("listing_id", "掲載ID"),
                 ("url", "URL"),
             ],
@@ -717,6 +728,64 @@ def build(output: Path, *, vehicles: VehicleSet | None = None) -> Path:
         ):
             cell = ws.cell(row=i, column=1, value=line)
             cell.alignment = Alignment(wrap_text=True, vertical="top")
+
+    # --- 全車種 × 年式（フィルタで絞る用） ---
+    if wide_year:
+        _write_table(
+            wb.create_sheet("全車種_年式別相場"),
+            [
+                ("maker", "メーカー"),
+                ("origin", "国産/輸入"),
+                ("body_type", "ボディタイプ\n(用途)"),
+                ("model_name", "車種"),
+                ("model_year", "年式"),
+                ("is_open_bucket", "以前/以降\nまとめ"),
+                ("listing_count", "掲載台数"),
+                ("retail_p25_manyen", "25%(万円)"),
+                ("retail_median_manyen", "中央値(万円)"),
+                ("retail_mean_manyen", "平均(万円)"),
+                ("retail_p75_manyen", "75%(万円)"),
+                ("production_period", "生産期間"),
+                ("carsensor_code", "コード"),
+                ("url", "URL"),
+            ],
+            sorted(
+                wide_year,
+                key=lambda r: (r.get("maker") or "", r.get("model_name") or "", -(r.get("model_year") or 0)),
+            ),
+            number_formats={
+                "listing_count": INT_FMT,
+                "retail_p25_manyen": MANYEN_FMT,
+                "retail_median_manyen": MANYEN_FMT,
+                "retail_mean_manyen": MANYEN_FMT,
+                "retail_p75_manyen": MANYEN_FMT,
+            },
+        )
+    if wide_sum:
+        _write_table(
+            wb.create_sheet("全車種_一覧"),
+            [
+                ("maker", "メーカー"),
+                ("origin", "国産/輸入"),
+                ("body_type", "ボディタイプ\n(用途)"),
+                ("model_name", "車種"),
+                ("production_period", "生産期間"),
+                ("retail_price_min_manyen", "中古下限\n(万円)"),
+                ("retail_price_max_manyen", "中古上限\n(万円)"),
+                ("listing_count", "掲載台数"),
+                ("shop_count", "取扱店舗"),
+                ("retail_median_mileage_km", "掲載車の\n中央走行距離(km)"),
+                ("review_score_overall", "総合評価"),
+                ("review_count", "口コミ件数"),
+                ("ranking_position", "同ボディ\nランキング"),
+                ("carsensor_code", "コード"),
+            ],
+            sorted(wide_sum, key=lambda r: (r.get("maker") or "", r.get("model_name") or "")),
+            number_formats={
+                "listing_count": INT_FMT, "shop_count": INT_FMT,
+                "review_count": INT_FMT, "retail_median_mileage_km": INT_FMT,
+            },
+        )
 
     # --- 参考: ジモティー掲載明細 ---
     _write_table(

@@ -1,0 +1,11 @@
+[Unit]
+Description=kakaku-ai 全車種クロールを毎週まわす
+
+[Timer]
+# 毎週火曜 02:41。週次本体（月曜 04:23）とぶつからない時間に置く。
+OnCalendar=Tue *-*-* 02:41:00
+Persistent=true
+RandomizedDelaySec=1800
+
+[Install]
+WantedBy=timers.target

@@ -32,7 +32,7 @@ from datetime import date, datetime, timezone
 from typing import Any
 
 from . import store
-from .aggregate import MANYEN, is_usable
+from .aggregate import MANYEN, inspection_year_month, is_usable, months_until
 from .vehicles import VehicleSet, load_vehicles
 
 log = logging.getLogger(__name__)
@@ -192,6 +192,17 @@ def risk_flags(
         notes.append("修復歴『わからない』（申告なし）")
     elif repair == "NONE":
         notes.append("修復歴なし（申告）")
+
+    # 車検の残り。#16 の条件では車検の有無で総額が10万円前後変わる
+    ym = listing.get("inspection_ym") or inspection_year_month(listing.get("inspection_until"))
+    left = months_until(ym, today)
+    if left is not None:
+        if left < 0:
+            strong.append(f"車検切れ（{ym // 100}/{ym % 100:02d} 満了）")
+        elif left <= 3:
+            notes.append(f"車検 残り{left}ヶ月（{ym // 100}/{ym % 100:02d} 満了）")
+        else:
+            notes.append(f"車検 {ym // 100}/{ym % 100:02d} まで（残り{left}ヶ月）")
 
     count = listing.get("image_count")
     if count is not None and count <= 3:

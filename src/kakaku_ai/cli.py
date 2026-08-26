@@ -14,7 +14,7 @@ import logging
 import sys
 from pathlib import Path
 
-from . import drive, excel, notify, pipeline, store, watch
+from . import drive, excel, notify, pipeline, store, watch, wide
 from .vehicles import DATA_DIR, load_vehicles
 
 OUTPUT_DIR = DATA_DIR / "xlsx"
@@ -89,6 +89,13 @@ def main(argv: list[str] | None = None) -> int:
         help="修復歴の絞り方。none=申告が「なし」のものだけ（既定） / any=絞らない",
     )
 
+    wd = sub.add_parser("wide", help="全車種・全年式の小売相場を集める（カーセンサー）")
+    wd.add_argument("--snapshot", help="YYYY-MM-DD（既定=今日）")
+    wd.add_argument("--prefix", help="メーカー接頭辞で絞る（例 TO）")
+    wd.add_argument("--limit", type=int, help="車種数の上限（試運転用）")
+    wd.add_argument("--year-from", type=int, help="年式の下限（既定=全年式）")
+    wd.add_argument("--no-cache", action="store_true")
+
     sub.add_parser("list", help="収録済みスナップショットを表示する")
 
     args = parser.parse_args(argv)
@@ -127,6 +134,23 @@ def main(argv: list[str] | None = None) -> int:
         path = excel.build(_output_path(args))
         if not args.no_upload:
             drive.upload(path, folder_id=args.folder_id, snapshot=snapshot)
+        return 0
+
+    if args.command == "wide":
+        from .http import Fetcher
+        from .pipeline import CACHE_DIR
+
+        snapshot = args.snapshot or store.today()
+        fetcher = Fetcher(cache_dir=CACHE_DIR, snapshot=snapshot, use_cache=not args.no_cache)
+        summaries, by_year = wide.crawl(
+            fetcher, snapshot, prefix=args.prefix, limit=args.limit,
+            model_year_from=args.year_from,
+        )
+        # 部分実行でも既存を消さないよう、pipeline と同じ扱いにする
+        for dataset, rows in (("wide_summary", summaries), ("wide_by_year", by_year)):
+            merged = pipeline._merge_with_existing(snapshot, dataset, rows, None)
+            store.write(snapshot, dataset, merged)
+        print(f"車種 {len(summaries)} / 年式別相場 {len(by_year)}行 を {snapshot} に保存")
         return 0
 
     if args.command == "watch":

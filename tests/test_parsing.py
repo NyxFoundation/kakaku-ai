@@ -997,3 +997,35 @@ def test_channel_history_failure_does_not_block(monkeypatch):
 
     monkeypatch.setattr(notify.requests, "get", boom)
     assert notify.posted_in_channel("C") == set()
+
+
+# ---------------------------------------------------------------------- 車検
+
+
+def test_inspection_date_normalises_both_formats():
+    """車検の表記がソースで違うので、西暦の年月に寄せること。
+
+    ヤフオク商品ページは "R10/04"（令和）、カーセンサー在庫は "2028(R10)年12月"。
+    「車検整備付」のように日付が無い表記もそのまま来る。
+    """
+    from kakaku_ai.aggregate import inspection_year_month
+
+    assert inspection_year_month("R10/04") == 202804   # 令和10年 = 2028年
+    assert inspection_year_month("R8/11") == 202611
+    assert inspection_year_month("2028(R10)年12月") == 202812
+    assert inspection_year_month("2027(R09)年01月") == 202701
+    # 日付が無いものは None（表示用の文字列は別に残す）
+    for v in ("車検整備付", "車検整備無", "", None):
+        assert inspection_year_month(v) is None
+
+
+def test_months_until_handles_expired():
+    from datetime import date
+
+    from kakaku_ai.aggregate import months_until
+
+    today = date(2026, 8, 26)
+    assert months_until(202804, today) == 20
+    assert months_until(202611, today) == 3
+    assert months_until(202606, today) == -2  # 切れている
+    assert months_until(None, today) is None

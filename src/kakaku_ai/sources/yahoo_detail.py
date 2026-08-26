@@ -27,6 +27,7 @@ import re
 from pathlib import Path
 from typing import Any
 
+from ..aggregate import inspection_year_month
 from ..http import Fetcher
 from ..vehicles import DATA_DIR
 
@@ -65,6 +66,7 @@ KEEP = (
     "fuel",
     "color",
     "inspection_until",
+    "inspection_ym",
     "total_price",
     "total_costs",
     "recycling_deposit",
@@ -134,6 +136,7 @@ def _parse(auction_id: str, html: str) -> dict[str, Any] | None:
         "fuel": spec.get("fuel"),
         "color": spec.get("colorTone"),
         "inspection_until": inspection,
+        "inspection_ym": inspection_year_month(inspection),
         "total_price": car.get("totalPrice"),
         "total_costs": car.get("totalCosts"),
         "recycling_deposit": car.get("recyclingDeposit"),
@@ -219,7 +222,7 @@ def apply_to(listings: list[dict[str, Any]], store: dict[str, dict[str, Any]] | 
             )
 
         for key in ("grade", "body_type", "transmission", "fuel", "color",
-                    "inspection_until", "total_price", "total_costs",
+                    "inspection_until", "inspection_ym", "total_price", "total_costs",
                     "image_count", "description_flags", "description_len"):
             if detail.get(key) is not None:
                 row.setdefault(key, detail[key])

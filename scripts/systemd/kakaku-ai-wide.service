@@ -1,0 +1,12 @@
+[Unit]
+Description=kakaku-ai 全車種クロール（カーセンサーの相場ページを全車種ぶん）
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/workspace/kakaku.ai
+ExecStart=%h/workspace/kakaku.ai/scripts/wide.sh
+# 約2,200車種 × 2秒で 75分前後。余裕を見て 広めに取る
+TimeoutStartSec=14400
+Nice=15

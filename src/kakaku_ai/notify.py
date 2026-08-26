@@ -29,6 +29,7 @@ from typing import Any
 
 import requests
 
+from .aggregate import months_until
 from .vehicles import DATA_DIR
 
 log = logging.getLogger(__name__)
@@ -219,6 +220,17 @@ def _format(row: dict[str, Any]) -> dict[str, Any]:
         "text": f"*{seller}* 評価{row.get('seller_rating') or '-'}"
                 + (f"\n{row['seller_city']}" if row.get("seller_city") else ""),
     })
+
+    ym = row.get("inspection_ym")
+    if ym:
+        left = months_until(ym)
+        fields.append({
+            "type": "mrkdwn",
+            "text": f"*車検 {ym // 100}/{ym % 100:02d} まで*"
+                    + (f"\n残り{left}ヶ月" if left is not None and left >= 0 else "\n**切れています**"),
+        })
+    elif row.get("inspection_until"):
+        fields.append({"type": "mrkdwn", "text": f"*車検*\n{row['inspection_until']}"})
     body = {"type": "section", "fields": fields}
 
     blocks: list[dict[str, Any]] = [head, body]

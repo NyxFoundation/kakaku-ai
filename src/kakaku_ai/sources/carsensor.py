@@ -144,10 +144,34 @@ def _parse_cross_table(table) -> tuple[list[str], list[tuple[tuple[float, float]
     return columns, rows
 
 
-def _summary_block(soup: BeautifulSoup) -> dict[str, Any]:
+# 車種ページのタイトルは「ステップワゴン(ホンダ)の中古車相場・新車価格情報【カーセンサー】」
+TITLE_RE = re.compile(r"^(.+?)\((.+?)\)の中古車相場")
+# 「ミニバンランキング ： 5 位」からボディタイプ（＝用途）を拾う
+BODY_RE = re.compile(r"(\S+?)ランキング\s*[:：]\s*(\d+)\s*位")
+
+# 国産メーカー。ここに無ければ輸入車として扱う
+DOMESTIC_MAKERS = frozenset({
+    "トヨタ", "日産", "ホンダ", "マツダ", "スバル", "スズキ", "ダイハツ", "三菱",
+    "レクサス", "いすゞ", "日野", "三菱ふそう", "ＵＤトラックス", "UDトラックス",
+    "光岡", "ミツオカ", "トヨタ自動車", "日産自動車",
+})
+
+
+def is_domestic(maker: str | None) -> bool:
+    return bool(maker) and maker in DOMESTIC_MAKERS
+
+
+def _summary_block(soup: BeautifulSoup, title: str = "") -> dict[str, Any]:
     """ページ上部の価格レンジ・評価・掲載台数などを拾う。"""
     text = re.sub(r"\s+", " ", soup.get_text(" ", strip=True))
     out: dict[str, Any] = {}
+
+    # 車種名とメーカーはタイトルから。全車種を舐めるときのカタログの素になる。
+    m = TITLE_RE.match(title.strip())
+    if m:
+        out["model_name"] = m.group(1).strip()
+        out["maker"] = m.group(2).strip()
+        out["is_domestic"] = is_domestic(out["maker"])
 
     m = re.search(r"中古車価格\s*(\d[\d,]*)\s*[~〜～]\s*(\d[\d,]*)\s*万円", text)
     if m:
@@ -173,8 +197,10 @@ def _summary_block(soup: BeautifulSoup) -> dict[str, Any]:
         if m:
             out[key] = float(m.group(1))
 
-    m = re.search(r"(\S+)ランキング\s*[:：]\s*(\d+)\s*位", text)
+    m = BODY_RE.search(text)
     if m:
+        # 「ミニバンランキング」→ ボディタイプ = ミニバン。用途フィルタに使う
+        out["body_type"] = m.group(1)
         out["ranking_category"] = m.group(1)
         out["ranking_position"] = int(m.group(2))
 
@@ -195,9 +221,11 @@ def _summary_block(soup: BeautifulSoup) -> dict[str, Any]:
 def _page(fetcher: Fetcher, code: str) -> tuple[dict[str, Any], dict[int, dict[str, Any]]]:
     """1ページぶんのサマリと、年式 → {ラベル, 価格ビン別台数} を返す。"""
     url = BASE.format(code=code)
-    soup = BeautifulSoup(fetcher.get_text(url), "lxml")
+    html_text = fetcher.get_text(url)
+    soup = BeautifulSoup(html_text, "lxml")
 
-    summary = _summary_block(soup)
+    title_el = soup.select_one("title")
+    summary = _summary_block(soup, title_el.get_text() if title_el else "")
     summary["carsensor_code"] = code
     summary["url"] = url
 

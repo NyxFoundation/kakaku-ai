@@ -5,6 +5,8 @@
 
 from __future__ import annotations
 
+import re
+from datetime import date
 from typing import Any, Iterable
 
 MANYEN = 10_000  # 1万円
@@ -34,6 +36,41 @@ def is_usable(row: dict[str, Any]) -> bool:
         row.get("mileage_type") not in BAD_MILEAGE
         and row.get("repair_type") not in REPAIRED
     )
+
+
+# 車検の表記はソースでばらばら。
+#   ヤフオク商品ページ : "R10/04"（令和10年4月）
+#   カーセンサー在庫   : "2028(R10)年12月" / "車検整備付" / "車検整備無"
+# 並べ替えや残り月数の計算に使えるよう、西暦の年月（YYYYMM）に寄せる。
+_WAREKI = re.compile(r"^R(\d{1,2})[/／-](\d{1,2})$")
+_SEIREKI = re.compile(r"(\d{4})\s*(?:\(R\d+\))?\s*年\s*(\d{1,2})\s*月")
+REIWA_ORIGIN = 2018  # 令和1年 = 2019年
+
+
+def inspection_year_month(value: str | None) -> int | None:
+    """車検の満了時期を YYYYMM にする。分からなければ None。
+
+    「車検整備付」「車検整備無」のように日付が無い表記もそのまま来るので、
+    その場合は None を返し、表示用の文字列は別に残す。
+    """
+    if not value:
+        return None
+    text = str(value).strip()
+    m = _WAREKI.match(text)
+    if m:
+        return (REIWA_ORIGIN + int(m.group(1))) * 100 + int(m.group(2))
+    m = _SEIREKI.search(text)
+    if m:
+        return int(m.group(1)) * 100 + int(m.group(2))
+    return None
+
+
+def months_until(year_month: int | None, today: date | None = None) -> int | None:
+    """車検満了までの残り月数。過ぎていれば負になる。"""
+    if not year_month:
+        return None
+    today = today or date.today()
+    return (year_month // 100 - today.year) * 12 + (year_month % 100 - today.month)
 
 
 def _quantile(sorted_values: list[float], q: float) -> float:

@@ -34,6 +34,7 @@ from typing import Any, Iterable
 
 from bs4 import BeautifulSoup
 
+from ..aggregate import inspection_year_month
 from ..http import Fetcher
 from ..vehicles import DATA_DIR
 
@@ -110,6 +111,7 @@ def _parse_card(card, vehicle, code: str) -> dict[str, Any] | None:
         "base_price_manyen": _price_manyen(card, "basePrice"),
         "mileage_km": mileage_km,
         "inspection": spec.get("車検", ""),
+        "inspection_ym": inspection_year_month(spec.get("車検")),
         "repair_history": spec.get("修復歴", ""),
         "warranty": spec.get("保証", ""),
         "url": f"https://www.carsensor.net/usedcar/detail/{listing_id}/index.html",
@@ -253,6 +255,8 @@ def delisted_rows(snapshot: str) -> list[dict[str, Any]]:
                 ),
                 "base_price_manyen": row.get("base_price_manyen"),
                 "mileage_km": row.get("mileage_km"),
+                "inspection": row.get("inspection"),
+                "inspection_ym": row.get("inspection_ym"),
                 "repair_history": row.get("repair_history"),
                 "url": row["url"],
             }
