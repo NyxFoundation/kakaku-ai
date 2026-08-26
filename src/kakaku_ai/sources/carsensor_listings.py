@@ -127,6 +127,7 @@ def _fetch_year(
 ) -> list[dict[str, Any]]:
     maker, model = code.split("_S")
     rows: list[dict[str, Any]] = []
+    seen: set[str] = set()
     for page in range(1, MAX_PAGES_PER_YEAR + 1):
         url = BASE.format(maker=maker, model=f"{int(model):03d}", page="" if page == 1 else page)
         try:
@@ -138,12 +139,18 @@ def _fetch_year(
         cards = BeautifulSoup(html, "lxml").select(CARD)
         if not cards:
             break
+        # index2.html 以降が 1 ページ目を返すことがある（fetch_range 参照）
+        fresh = 0
         for card in cards:
             parsed = _parse_card(card, vehicle, code)
+            if not parsed or parsed["listing_id"] in seen:
+                continue
+            seen.add(parsed["listing_id"])
             # YMIN/YMAX で絞っているが、念のため年式を確認する
-            if parsed and parsed["model_year"] == year:
+            if parsed["model_year"] == year:
                 rows.append(parsed)
-        if len(cards) < PER_PAGE:
+            fresh += 1
+        if fresh == 0 or len(cards) < PER_PAGE:
             break
     return rows
 
@@ -166,6 +173,7 @@ def fetch_range(
     """
     maker, model = code.split("_S")
     rows: list[dict[str, Any]] = []
+    seen: set[str] = set()
     for page in range(1, max_pages + 1):
         url = BASE.format(maker=maker, model=f"{int(model):03d}", page="" if page == 1 else page)
         try:
@@ -178,12 +186,20 @@ def fetch_range(
         cards = BeautifulSoup(html, "lxml").select(CARD)
         if not cards:
             break
+        # 絞り込みの結果が 1 ページに収まる車種だと、index2.html 以降を叩いても
+        # 1 ページ目が返ってくる（＝同じ個体を何度も拾う）。ID で見て、新しい
+        # ものが 1 件も無ければそこで打ち切る
+        fresh = 0
         for card in cards:
             parsed = _parse_card(card, vehicle, code)
+            if not parsed or parsed["listing_id"] in seen:
+                continue
+            seen.add(parsed["listing_id"])
             # YMIN/YMAX で絞っているが、念のため年式を確認する
-            if parsed and parsed["model_year"] and year_from <= parsed["model_year"] <= year_to:
+            if parsed["model_year"] and year_from <= parsed["model_year"] <= year_to:
                 rows.append(parsed)
-        if len(cards) < PER_PAGE:
+            fresh += 1
+        if fresh == 0 or len(cards) < PER_PAGE:
             break
     return rows
 

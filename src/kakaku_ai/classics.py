@@ -183,8 +183,46 @@ def crawl(
         rows.extend(found)
         log.info("  [%s/%s] %-24s %s台", i, len(codes), vehicle.name, len(found))
 
+    rows = dedupe(rows)
     rescore(rows)
     log.info("旧車クロール完了: 在庫のある車種 %s / 個体 %s台", with_stock, len(rows))
+    return rows
+
+
+def dedupe(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """同じ掲載を 1 件にまとめる（先に出たほうを残す）。"""
+    seen: set[str] = set()
+    out = []
+    for row in rows:
+        listing_id = row.get("listing_id")
+        if not listing_id or listing_id in seen:
+            continue
+        seen.add(listing_id)
+        out.append(row)
+    return out
+
+
+def reapply_catalog(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """保存済みの在庫にカタログの車種情報を貼り直す（ネットワークなし）。
+
+    メーカーやボディタイプは取得時にカタログから焼き込んでいるので、
+    カタログ側を直しても既存の行には反映されない。分類を直したあと
+    取り直さずに済むよう、ここで貼り替えてスコアも振り直す。
+    """
+    catalog = load_catalog()
+    for row in rows:
+        meta = catalog.get(row.get("carsensor_code") or "")
+        if not meta:
+            continue
+        row.update({
+            "model_name": meta.get("model_name") or row.get("model_name"),
+            "maker": meta.get("maker"),
+            "origin": meta.get("origin"),
+            "body_type": meta.get("body_type"),
+            "production_period": meta.get("production_period"),
+        })
+    rows = dedupe(rows)
+    rescore(rows)
     return rows
 
 

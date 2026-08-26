@@ -108,6 +108,8 @@ def main(argv: list[str] | None = None) -> int:
     cs.add_argument("--folder-id", default=drive.DEFAULT_FOLDER_ID)
     cs.add_argument("--upload", action="store_true", help="作った xlsx を Drive に上げる")
     cs.add_argument("--no-cache", action="store_true")
+    cs.add_argument("--rebuild", action="store_true",
+                    help="取得はせず、保存済みの在庫から xlsx を作り直す")
 
     sub.add_parser("list", help="収録済みスナップショットを表示する")
 
@@ -262,19 +264,27 @@ def main(argv: list[str] | None = None) -> int:
         from .sources import carsensor_listings
 
         snapshot = args.snapshot or store.today()
-        fetcher = Fetcher(cache_dir=CACHE_DIR, snapshot=snapshot, use_cache=not args.no_cache)
-        listings = classics.crawl(
-            fetcher,
-            year_from=args.year_from,
-            year_to=args.year_to,
-            makers=args.maker,
-            limit=args.limit,
-            max_pages=args.max_pages,
-        )
-        # 在庫ストアにも積んでおく。週を空けて撮り直すと値下げが履歴に残る。
-        # 掲載終了の判定は track() 側の役目なのでここではしない
-        carsensor_listings.record(listings, snapshot)
-        store.write(snapshot, "classic_listings", listings)
+        if args.rebuild:
+            listings, found_on = store.read_latest("classic_listings")
+            if not listings:
+                raise SystemExit("保存済みの旧車在庫がありません。--rebuild なしで実行してください。")
+            snapshot = args.snapshot or found_on or snapshot
+            listings = classics.reapply_catalog(listings)
+            store.write(snapshot, "classic_listings", listings)
+        else:
+            fetcher = Fetcher(cache_dir=CACHE_DIR, snapshot=snapshot, use_cache=not args.no_cache)
+            listings = classics.crawl(
+                fetcher,
+                year_from=args.year_from,
+                year_to=args.year_to,
+                makers=args.maker,
+                limit=args.limit,
+                max_pages=args.max_pages,
+            )
+            # 在庫ストアにも積んでおく。週を空けて撮り直すと値下げが履歴に残る。
+            # 掲載終了の判定は track() 側の役目なのでここではしない
+            carsensor_listings.record(listings, snapshot)
+            store.write(snapshot, "classic_listings", listings)
 
         models = classics.by_model(listings)
         path = Path(args.output) if args.output else classics_excel.DEFAULT_OUTPUT

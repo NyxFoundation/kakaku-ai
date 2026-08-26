@@ -19,7 +19,7 @@
 {"carsensor_code": "AB_S019", "model_name": "500e", "maker": "アバルト", "origin": "輸入", "body_type": "ハッチバック", "production_period": "2023年10月～"}
 {"carsensor_code": "AB_S020", "model_name": "500eカブリオレ", "maker": "アバルト", "origin": "輸入", "body_type": "オープン", "production_period": "2023年10月～"}
 {"carsensor_code": "AB_S021", "model_name": "695セッタンタチンクエ アニヴェルサーリオ", "maker": "アバルト", "origin": "輸入", "body_type": "ハッチバック", "production_period": "2024年7月～"}
-{"carsensor_code": "AB_S999", "model_name": "AB_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "AB_S999", "model_name": "アバルト その他", "maker": "アバルト", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "AC_S999", "model_name": "AC_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "AD_S001", "model_name": "A3", "maker": "アウディ", "origin": "輸入", "body_type": "ハッチバック", "production_period": "2003年7月～2006年7月"}
 {"carsensor_code": "AD_S002", "model_name": "A3スポーツバック", "maker": "アウディ", "origin": "輸入", "body_type": "ハッチバック", "production_period": "2021年5月～"}
@@ -105,7 +105,7 @@
 {"carsensor_code": "AD_S094", "model_name": "SQ6 e-tron", "maker": "アウディ", "origin": "輸入", "body_type": "クロカン・ＳＵＶ", "production_period": "2025年4月～"}
 {"carsensor_code": "AD_S095", "model_name": "A6スポーツバックe-tron", "maker": "アウディ", "origin": "輸入", "body_type": "ハッチバック", "production_period": "2025年7月～"}
 {"carsensor_code": "AD_S096", "model_name": "A6アバントe-tron", "maker": "アウディ", "origin": "輸入", "body_type": "ステーションワゴン", "production_period": "2025年7月～"}
-{"carsensor_code": "AD_S999", "model_name": "AD_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "AD_S999", "model_name": "アウディ その他", "maker": "アウディ", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "AF_S001", "model_name": "アルファ75", "maker": "アルファ　ロメオ", "origin": "輸入", "body_type": "セダン", "production_period": "1987年1月～1992年12月"}
 {"carsensor_code": "AF_S002", "model_name": "アルファ145", "maker": "アルファ　ロメオ", "origin": "輸入", "body_type": "ハッチバック", "production_period": "1996年9月～2001年9月"}
 {"carsensor_code": "AF_S003", "model_name": "アルファ147", "maker": "アルファ　ロメオ", "origin": "輸入", "body_type": "ハッチバック", "production_period": "2001年10月～2011年3月"}
@@ -131,7 +131,7 @@
 {"carsensor_code": "AF_S025", "model_name": "トナーレ", "maker": "アルファ　ロメオ", "origin": "輸入", "body_type": "クロカン・ＳＵＶ", "production_period": "2023年2月～"}
 {"carsensor_code": "AF_S026", "model_name": "アルファスッド", "maker": "アルファ　ロメオ", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "AF_S028", "model_name": "ジュニア", "maker": "アルファ　ロメオ", "origin": "輸入", "body_type": "クロカン・ＳＵＶ", "production_period": "2025年6月～"}
-{"carsensor_code": "AF_S999", "model_name": "AF_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "AF_S999", "model_name": "アルファ　ロメオ その他", "maker": "アルファ　ロメオ", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "AG_S001", "model_name": "Cクラス", "maker": "ＡＭＧ", "origin": "輸入", "body_type": "セダン", "production_period": "2007年10月～2014年6月"}
 {"carsensor_code": "AG_S002", "model_name": "Cクラスワゴン", "maker": "ＡＭＧ", "origin": "輸入", "body_type": "ステーションワゴン", "production_period": "2008年4月～2014年10月"}
 {"carsensor_code": "AG_S003", "model_name": "Eクラス", "maker": "ＡＭＧ", "origin": "輸入", "body_type": "セダン", "production_period": "2009年8月～2016年9月"}
@@ -155,7 +155,7 @@
 {"carsensor_code": "AG_S024", "model_name": "GLAクラス", "maker": "ＡＭＧ", "origin": "輸入", "body_type": "クロカン・ＳＵＶ", "production_period": "2014年5月～2015年5月"}
 {"carsensor_code": "AG_S034", "model_name": "ミディアムクラス", "maker": "ＡＭＧ", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "AG_S036", "model_name": "ミディアムクラスワゴン", "maker": "ＡＭＧ", "origin": "輸入", "body_type": null, "production_period": null}
-{"carsensor_code": "AG_S999", "model_name": "AG_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "AG_S999", "model_name": "ＡＭＧ その他", "maker": "ＡＭＧ", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "AJ_S001", "model_name": "CJ7", "maker": "AMCジープ", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "AJ_S007", "model_name": "グランドワゴニア", "maker": "AMCジープ", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "AL_S002", "model_name": "B8リムジン", "maker": "ＢＭＷアルピナ", "origin": "輸入", "body_type": "セダン", "production_period": "1995年8月～1998年11月"}
@@ -183,7 +183,7 @@
 {"carsensor_code": "AL_S037", "model_name": "XB7", "maker": "ＢＭＷアルピナ", "origin": "輸入", "body_type": "クロカン・ＳＵＶ", "production_period": "2020年5月～"}
 {"carsensor_code": "AL_S038", "model_name": "B8グランクーペ", "maker": "ＢＭＷアルピナ", "origin": "輸入", "body_type": "セダン", "production_period": "2021年3月～"}
 {"carsensor_code": "AL_S039", "model_name": "B4グランクーペ", "maker": "ＢＭＷアルピナ", "origin": "輸入", "body_type": "ハッチバック", "production_period": "2022年3月～"}
-{"carsensor_code": "AL_S999", "model_name": "AL_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "AL_S999", "model_name": "ＢＭＷアルピナ その他", "maker": "ＢＭＷアルピナ", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "AM_S001", "model_name": "Aクラス", "maker": "メルセデスＡＭＧ", "origin": "輸入", "body_type": "ハッチバック", "production_period": "2019年8月～"}
 {"carsensor_code": "AM_S002", "model_name": "CLAクラス", "maker": "メルセデスＡＭＧ", "origin": "輸入", "body_type": "セダン", "production_period": "2019年11月～"}
 {"carsensor_code": "AM_S003", "model_name": "CLAシューティングブレーク", "maker": "メルセデスＡＭＧ", "origin": "輸入", "body_type": "ステーションワゴン", "production_period": "2019年11月～"}
@@ -222,7 +222,7 @@
 {"carsensor_code": "AM_S040", "model_name": "CLEクーペ", "maker": "メルセデスＡＭＧ", "origin": "輸入", "body_type": "クーペ", "production_period": "2024年6月～"}
 {"carsensor_code": "AM_S041", "model_name": "CLEカブリオレ", "maker": "メルセデスＡＭＧ", "origin": "輸入", "body_type": "オープン", "production_period": "2024年11月～"}
 {"carsensor_code": "AN_S001", "model_name": "A110", "maker": "アルピーヌ", "origin": "輸入", "body_type": "クーペ", "production_period": "2018年6月～"}
-{"carsensor_code": "AN_S999", "model_name": "AN_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "AN_S999", "model_name": "アルピーヌ その他", "maker": "アルピーヌ", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "AS_S001", "model_name": "ヴァンテージ", "maker": "アストンマーティン", "origin": "輸入", "body_type": "クーペ", "production_period": "2017年11月～"}
 {"carsensor_code": "AS_S002", "model_name": "V8", "maker": "アストンマーティン", "origin": "輸入", "body_type": "クーペ", "production_period": "2005年6月～2018年1月"}
 {"carsensor_code": "AS_S003", "model_name": "DB7", "maker": "アストンマーティン", "origin": "輸入", "body_type": "クーペ", "production_period": "1995年8月～2003年9月"}
@@ -248,13 +248,13 @@
 {"carsensor_code": "AS_S037", "model_name": "DB12", "maker": "アストンマーティン", "origin": "輸入", "body_type": "クーペ", "production_period": "2023年5月～"}
 {"carsensor_code": "AS_S038", "model_name": "DB12ヴォランテ", "maker": "アストンマーティン", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "AS_S039", "model_name": "DBSスーパーレッジェーラヴォランテ", "maker": "アストンマーティン", "origin": "輸入", "body_type": "オープン", "production_period": "2019年4月～"}
-{"carsensor_code": "AS_S999", "model_name": "AS_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "AS_S999", "model_name": "アストンマーティン その他", "maker": "アストンマーティン", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "AT_S001", "model_name": "A112", "maker": "アウトビアンキ", "origin": "輸入", "body_type": null, "production_period": null}
-{"carsensor_code": "AT_S999", "model_name": "AT_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "AT_S999", "model_name": "アウトビアンキ その他", "maker": "アウトビアンキ", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "AU_S001", "model_name": "ミニ", "maker": "オースチン", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "AU_S002", "model_name": "セブン", "maker": "オースチン", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "AU_S006", "model_name": "A40", "maker": "オースチン", "origin": "輸入", "body_type": null, "production_period": null}
-{"carsensor_code": "AU_S999", "model_name": "AU_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "AU_S999", "model_name": "オースチン その他", "maker": "オースチン", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "BE_S002", "model_name": "ミュルザンヌ", "maker": "ベントレー", "origin": "輸入", "body_type": "セダン", "production_period": "2010年3月～2020年11月"}
 {"carsensor_code": "BE_S003", "model_name": "ターボ", "maker": "ベントレー", "origin": "輸入", "body_type": "セダン", "production_period": "1989年11月～1998年12月"}
 {"carsensor_code": "BE_S004", "model_name": "アズール", "maker": "ベントレー", "origin": "輸入", "body_type": "オープン", "production_period": "1998年6月～2004年4月"}
@@ -268,7 +268,7 @@
 {"carsensor_code": "BE_S014", "model_name": "フライングスパー", "maker": "ベントレー", "origin": "輸入", "body_type": "セダン", "production_period": "2024年9月～"}
 {"carsensor_code": "BE_S015", "model_name": "コンチネンタルGTコンバーチブル", "maker": "ベントレー", "origin": "輸入", "body_type": "オープン", "production_period": "2024年6月～"}
 {"carsensor_code": "BE_S016", "model_name": "ベンテイガ", "maker": "ベントレー", "origin": "輸入", "body_type": "クロカン・ＳＵＶ", "production_period": "2015年12月～"}
-{"carsensor_code": "BE_S999", "model_name": "BE_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "BE_S999", "model_name": "ベントレー その他", "maker": "ベントレー", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "BG_S002", "model_name": "EB110", "maker": "ブガッティ", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "BI_S001", "model_name": "バーキン7", "maker": "バーキン", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "BL_S001", "model_name": "ミニ", "maker": "ＢＬ", "origin": "輸入", "body_type": null, "production_period": null}
@@ -350,10 +350,10 @@
 {"carsensor_code": "BM_S079", "model_name": "iX2", "maker": "ＢＭＷ", "origin": "輸入", "body_type": "クロカン・ＳＵＶ", "production_period": "2023年10月～"}
 {"carsensor_code": "BM_S080", "model_name": "i5ツーリング", "maker": "ＢＭＷ", "origin": "輸入", "body_type": "ステーションワゴン", "production_period": "2024年2月～"}
 {"carsensor_code": "BM_S081", "model_name": "M5ツーリング", "maker": "ＢＭＷ", "origin": "輸入", "body_type": "ステーションワゴン", "production_period": "2024年12月～"}
-{"carsensor_code": "BM_S999", "model_name": "BM_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "BM_S999", "model_name": "ＢＭＷ その他", "maker": "ＢＭＷ", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "BR_S001", "model_name": "S-B8", "maker": "ブラバス", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "BR_S016", "model_name": "G-B11", "maker": "ブラバス", "origin": "輸入", "body_type": null, "production_period": null}
-{"carsensor_code": "BR_S999", "model_name": "BR_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "BR_S999", "model_name": "ブラバス その他", "maker": "ブラバス", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "BU_S001", "model_name": "パークアベニュー", "maker": "ビュイック", "origin": "輸入", "body_type": "セダン", "production_period": "1991年1月～1996年12月"}
 {"carsensor_code": "BU_S003", "model_name": "リーガルワゴン", "maker": "ビュイック", "origin": "輸入", "body_type": "ステーションワゴン", "production_period": "1990年1月～1996年12月"}
 {"carsensor_code": "BU_S005", "model_name": "センチュリー", "maker": "ビュイック", "origin": "輸入", "body_type": null, "production_period": null}
@@ -393,7 +393,7 @@
 {"carsensor_code": "CA_S030", "model_name": "CT5", "maker": "キャデラック", "origin": "輸入", "body_type": "セダン", "production_period": "2020年12月～"}
 {"carsensor_code": "CA_S031", "model_name": "XT4", "maker": "キャデラック", "origin": "輸入", "body_type": "クロカン・ＳＵＶ", "production_period": "2020年12月～"}
 {"carsensor_code": "CA_S032", "model_name": "リリック", "maker": "キャデラック", "origin": "輸入", "body_type": "クロカン・ＳＵＶ", "production_period": "2025年3月～"}
-{"carsensor_code": "CA_S999", "model_name": "CA_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "CA_S999", "model_name": "キャデラック その他", "maker": "キャデラック", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "CH_S001", "model_name": "アストロ", "maker": "シボレー", "origin": "輸入", "body_type": "ミニバン", "production_period": "1993年3月～2005年12月"}
 {"carsensor_code": "CH_S002", "model_name": "MW", "maker": "シボレー", "origin": "輸入", "body_type": "ハッチバック", "production_period": "2000年9月～2010年11月"}
 {"carsensor_code": "CH_S004", "model_name": "クルーズ", "maker": "シボレー", "origin": "輸入", "body_type": "クロカン・ＳＵＶ", "production_period": "2001年11月～2008年8月"}
@@ -436,7 +436,7 @@
 {"carsensor_code": "CH_S057", "model_name": "キャプティバ", "maker": "シボレー", "origin": "輸入", "body_type": "クロカン・ＳＵＶ", "production_period": "2006年8月～2018年12月"}
 {"carsensor_code": "CH_S061", "model_name": "ノバ", "maker": "シボレー", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "CH_S062", "model_name": "シェベル", "maker": "シボレー", "origin": "輸入", "body_type": null, "production_period": null}
-{"carsensor_code": "CH_S999", "model_name": "CH_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "CH_S999", "model_name": "シボレー その他", "maker": "シボレー", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "CI_S002", "model_name": "BX", "maker": "シトロエン", "origin": "輸入", "body_type": "ハッチバック", "production_period": "1989年9月～1993年12月"}
 {"carsensor_code": "CI_S005", "model_name": "C3", "maker": "シトロエン", "origin": "輸入", "body_type": "ハッチバック", "production_period": "2025年11月～"}
 {"carsensor_code": "CI_S006", "model_name": "C3プルリエル", "maker": "シトロエン", "origin": "輸入", "body_type": "オープン", "production_period": "2005年4月～2010年12月"}
@@ -471,7 +471,7 @@
 {"carsensor_code": "CI_S048", "model_name": "ID", "maker": "シトロエン", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "CI_S049", "model_name": "SM", "maker": "シトロエン", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "CI_S050", "model_name": "C5エアクロス", "maker": "シトロエン", "origin": "輸入", "body_type": "クロカン・ＳＵＶ", "production_period": "2026年4月～"}
-{"carsensor_code": "CI_S999", "model_name": "CI_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "CI_S999", "model_name": "シトロエン その他", "maker": "シトロエン", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "CR_S002", "model_name": "インペリアル", "maker": "クライスラー", "origin": "輸入", "body_type": "セダン", "production_period": "1990年1月～1992年12月"}
 {"carsensor_code": "CR_S004", "model_name": "ニューヨーカー", "maker": "クライスラー", "origin": "輸入", "body_type": "セダン", "production_period": "1989年1月～1992年12月"}
 {"carsensor_code": "CR_S007", "model_name": "ルバロンコンバーチブル", "maker": "クライスラー", "origin": "輸入", "body_type": "オープン", "production_period": "1989年1月～1992年12月"}
@@ -485,7 +485,7 @@
 {"carsensor_code": "CR_S023", "model_name": "パシフィカ", "maker": "クライスラー", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "CR_S024", "model_name": "イプシロン", "maker": "クライスラー", "origin": "輸入", "body_type": "ハッチバック", "production_period": "2012年12月～2014年12月"}
 {"carsensor_code": "CR_S025", "model_name": "300", "maker": "クライスラー", "origin": "輸入", "body_type": "セダン", "production_period": "2012年12月～2018年3月"}
-{"carsensor_code": "CR_S999", "model_name": "CR_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "CR_S999", "model_name": "クライスラー その他", "maker": "クライスラー", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "CT_S001", "model_name": "セブン", "maker": "ケータハム", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "CT_S002", "model_name": "セブン160", "maker": "ケータハム", "origin": "輸入", "body_type": "その他", "production_period": "2014年4月～2021年12月"}
 {"carsensor_code": "CT_S003", "model_name": "セブン250", "maker": "ケータハム", "origin": "輸入", "body_type": null, "production_period": null}
@@ -495,7 +495,7 @@
 {"carsensor_code": "CT_S010", "model_name": "セブンロードスポーツ", "maker": "ケータハム", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "CT_S011", "model_name": "スーパーセブン1600", "maker": "ケータハム", "origin": "輸入", "body_type": "その他", "production_period": "2020年6月～"}
 {"carsensor_code": "CT_S012", "model_name": "セブン170", "maker": "ケータハム", "origin": "輸入", "body_type": "その他", "production_period": "2021年9月～"}
-{"carsensor_code": "CT_S999", "model_name": "CT_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "CT_S999", "model_name": "ケータハム その他", "maker": "ケータハム", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "DA_S001", "model_name": "アトレー", "maker": "ダイハツ", "origin": "国産", "body_type": "ハッチバック", "production_period": "2021年12月～"}
 {"carsensor_code": "DA_S002", "model_name": "アトレーワゴン", "maker": "ダイハツ", "origin": "国産", "body_type": "ハッチバック", "production_period": "2005年5月～2021年12月"}
 {"carsensor_code": "DA_S003", "model_name": "アルティス", "maker": "ダイハツ", "origin": "国産", "body_type": "セダン", "production_period": "2017年7月～2023年12月"}
@@ -565,7 +565,7 @@
 {"carsensor_code": "DA_S079", "model_name": "アトレーデッキバン", "maker": "ダイハツ", "origin": "国産", "body_type": "トラック", "production_period": "2021年12月～"}
 {"carsensor_code": "DA_S080", "model_name": "コペンクーペ", "maker": "ダイハツ", "origin": "国産", "body_type": "クーペ", "production_period": "2018年12月～2019年9月"}
 {"carsensor_code": "DA_S081", "model_name": "e-アトレー", "maker": "ダイハツ", "origin": "国産", "body_type": "ハッチバック", "production_period": "2026年2月～"}
-{"carsensor_code": "DA_S999", "model_name": "DA_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "DA_S999", "model_name": "ダイハツ その他", "maker": "ダイハツ", "origin": "国産", "body_type": null, "production_period": null}
 {"carsensor_code": "DC_S001", "model_name": "12", "maker": "DMC", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "DE_S001", "model_name": "パンテーラ", "maker": "デトマソ", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "DG_S001", "model_name": "バイパー", "maker": "ダッジ", "origin": "輸入", "body_type": null, "production_period": "1999年10月～2002年12月"}
@@ -581,9 +581,9 @@
 {"carsensor_code": "DG_S017", "model_name": "ラムバン", "maker": "ダッジ", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "DG_S021", "model_name": "JC", "maker": "ダッジ", "origin": "輸入", "body_type": "クロカン・ＳＵＶ", "production_period": "2009年1月～2012年12月"}
 {"carsensor_code": "DG_S022", "model_name": "ダート", "maker": "ダッジ", "origin": "輸入", "body_type": "セダン", "production_period": "2012年5月～"}
-{"carsensor_code": "DG_S999", "model_name": "DG_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "DG_S999", "model_name": "ダッジ その他", "maker": "ダッジ", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "DI_S001", "model_name": "デイムラー", "maker": "デイムラー", "origin": "輸入", "body_type": "セダン", "production_period": "2005年7月～2010年12月"}
-{"carsensor_code": "DI_S999", "model_name": "DI_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "DI_S999", "model_name": "デイムラー その他", "maker": "デイムラー", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "DS_S001", "model_name": "DS3", "maker": "ＤＳオートモビル", "origin": "輸入", "body_type": "クロカン・ＳＵＶ", "production_period": "2023年5月～"}
 {"carsensor_code": "DS_S002", "model_name": "DS3カブリオ", "maker": "ＤＳオートモビル", "origin": "輸入", "body_type": "オープン", "production_period": "2015年10月～2019年1月"}
 {"carsensor_code": "DS_S003", "model_name": "DS4", "maker": "ＤＳオートモビル", "origin": "輸入", "body_type": "ハッチバック", "production_period": "2022年4月～"}
@@ -654,7 +654,7 @@
 {"carsensor_code": "FE_S072", "model_name": "プロサングエ", "maker": "フェラーリ", "origin": "輸入", "body_type": "クロカン・ＳＵＶ", "production_period": "2022年9月～"}
 {"carsensor_code": "FE_S073", "model_name": "ローマスパイダー", "maker": "フェラーリ", "origin": "輸入", "body_type": "オープン", "production_period": "2023年5月～"}
 {"carsensor_code": "FE_S074", "model_name": "12チリンドリ", "maker": "フェラーリ", "origin": "輸入", "body_type": "クーペ", "production_period": "2024年5月～"}
-{"carsensor_code": "FE_S999", "model_name": "FE_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "FE_S999", "model_name": "フェラーリ その他", "maker": "フェラーリ", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "FI_S003", "model_name": "クーペフィアット", "maker": "フィアット", "origin": "輸入", "body_type": "クーペ", "production_period": "1995年3月～2002年3月"}
 {"carsensor_code": "FI_S006", "model_name": "バルケッタ", "maker": "フィアット", "origin": "輸入", "body_type": "オープン", "production_period": "1996年2月～2007年12月"}
 {"carsensor_code": "FI_S007", "model_name": "パンダ", "maker": "フィアット", "origin": "輸入", "body_type": "ハッチバック", "production_period": "2013年6月～2024年7月"}
@@ -680,7 +680,7 @@
 {"carsensor_code": "FI_S032", "model_name": "850", "maker": "フィアット", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "FI_S034", "model_name": "600e", "maker": "フィアット", "origin": "輸入", "body_type": "クロカン・ＳＵＶ", "production_period": "2024年9月～"}
 {"carsensor_code": "FI_S035", "model_name": "600ハイブリッド", "maker": "フィアット", "origin": "輸入", "body_type": "クロカン・ＳＵＶ", "production_period": "2025年5月～"}
-{"carsensor_code": "FI_S999", "model_name": "FI_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "FI_S999", "model_name": "フィアット その他", "maker": "フィアット", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "FO_S002", "model_name": "ギャラクシー", "maker": "フォード", "origin": "輸入", "body_type": "ミニバン", "production_period": "1998年1月～1999年12月"}
 {"carsensor_code": "FO_S003", "model_name": "フィエスタ", "maker": "フォード", "origin": "輸入", "body_type": "ハッチバック", "production_period": "2014年2月～"}
 {"carsensor_code": "FO_S004", "model_name": "フォーカス", "maker": "フォード", "origin": "輸入", "body_type": "ハッチバック", "production_period": "2013年4月～"}
@@ -712,7 +712,7 @@
 {"carsensor_code": "FO_S062", "model_name": "プーマ", "maker": "フォード", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "FO_S063", "model_name": "E-350", "maker": "フォード", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "FO_S066", "model_name": "フェアレーン", "maker": "フォード", "origin": "輸入", "body_type": null, "production_period": null}
-{"carsensor_code": "FO_S999", "model_name": "FO_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "FO_S999", "model_name": "フォード その他", "maker": "フォード", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "FU_S001", "model_name": "キャンター", "maker": "三菱ふそう", "origin": "国産", "body_type": "トラック", "production_period": "1993年11月～"}
 {"carsensor_code": "FU_S003", "model_name": "キャンターガッツ", "maker": "三菱ふそう", "origin": "国産", "body_type": "トラック", "production_period": "1992年10月～"}
 {"carsensor_code": "FU_S004", "model_name": "ザ・グレート", "maker": "三菱ふそう", "origin": "国産", "body_type": null, "production_period": null}
@@ -724,7 +724,7 @@
 {"carsensor_code": "FU_S011", "model_name": "エアロミディ", "maker": "三菱ふそう", "origin": "国産", "body_type": null, "production_period": null}
 {"carsensor_code": "FU_S012", "model_name": "ローザ", "maker": "三菱ふそう", "origin": "国産", "body_type": null, "production_period": null}
 {"carsensor_code": "FU_S013", "model_name": "キャンターEX", "maker": "三菱ふそう", "origin": "国産", "body_type": "トラック", "production_period": "2014年12月～"}
-{"carsensor_code": "FU_S999", "model_name": "FU_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "FU_S999", "model_name": "三菱ふそう その他", "maker": "三菱ふそう", "origin": "国産", "body_type": null, "production_period": null}
 {"carsensor_code": "GC_S001", "model_name": "サファリ", "maker": "ＧＭＣ", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "GC_S002", "model_name": "タイフーン", "maker": "ＧＭＣ", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "GC_S003", "model_name": "ユーコン", "maker": "ＧＭＣ", "origin": "輸入", "body_type": "クロカン・ＳＵＶ", "production_period": "2014年2月～"}
@@ -736,7 +736,7 @@
 {"carsensor_code": "GC_S010", "model_name": "シエラ", "maker": "ＧＭＣ", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "GC_S011", "model_name": "シエラクラシック", "maker": "ＧＭＣ", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "GC_S012", "model_name": "テレーン", "maker": "ＧＭＣ", "origin": "輸入", "body_type": "クロカン・ＳＵＶ", "production_period": "2009年8月～"}
-{"carsensor_code": "GC_S999", "model_name": "GC_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "GC_S999", "model_name": "ＧＭＣ その他", "maker": "ＧＭＣ", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "GI_S001", "model_name": "G4", "maker": "ジネッタ", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "GI_S002", "model_name": "G12", "maker": "ジネッタ", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "GI_S003", "model_name": "G15", "maker": "ジネッタ", "origin": "輸入", "body_type": null, "production_period": null}
@@ -750,28 +750,28 @@
 {"carsensor_code": "HD_S016", "model_name": "コナ", "maker": "ヒョンデ", "origin": "輸入", "body_type": "クロカン・ＳＵＶ", "production_period": "2023年11月～"}
 {"carsensor_code": "HD_S017", "model_name": "アイオニック5N", "maker": "ヒョンデ", "origin": "輸入", "body_type": "クロカン・ＳＵＶ", "production_period": "2024年6月～"}
 {"carsensor_code": "HD_S018", "model_name": "インスター", "maker": "ヒョンデ", "origin": "輸入", "body_type": "クロカン・ＳＵＶ", "production_period": "2025年1月～"}
-{"carsensor_code": "HD_S999", "model_name": "HD_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "HD_S999", "model_name": "ヒョンデ その他", "maker": "ヒョンデ", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "HE_S001", "model_name": "スプライト", "maker": "ヒーレー", "origin": "輸入", "body_type": null, "production_period": null}
-{"carsensor_code": "HE_S999", "model_name": "HE_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
-{"carsensor_code": "HI_S001", "model_name": "クルージングレンジャー", "maker": "日野自動車", "origin": "輸入", "body_type": null, "production_period": null}
-{"carsensor_code": "HI_S002", "model_name": "コンテッサ", "maker": "日野自動車", "origin": "輸入", "body_type": null, "production_period": null}
-{"carsensor_code": "HI_S004", "model_name": "デュトロ", "maker": "日野自動車", "origin": "輸入", "body_type": "トラック", "production_period": "1999年5月～"}
-{"carsensor_code": "HI_S005", "model_name": "デュトロハイブリッド", "maker": "日野自動車", "origin": "輸入", "body_type": "トラック", "production_period": "2003年11月～"}
-{"carsensor_code": "HI_S006", "model_name": "スーパードルフィン", "maker": "日野自動車", "origin": "輸入", "body_type": null, "production_period": null}
-{"carsensor_code": "HI_S008", "model_name": "スペースレンジャー", "maker": "日野自動車", "origin": "輸入", "body_type": null, "production_period": null}
-{"carsensor_code": "HI_S009", "model_name": "プロフィア", "maker": "日野自動車", "origin": "輸入", "body_type": null, "production_period": null}
-{"carsensor_code": "HI_S010", "model_name": "レンジャー", "maker": "日野自動車", "origin": "輸入", "body_type": null, "production_period": null}
-{"carsensor_code": "HI_S012", "model_name": "レンジャープロ", "maker": "日野自動車", "origin": "輸入", "body_type": null, "production_period": null}
-{"carsensor_code": "HI_S013", "model_name": "デュトロルートバン", "maker": "日野自動車", "origin": "輸入", "body_type": null, "production_period": null}
-{"carsensor_code": "HI_S014", "model_name": "レインボー", "maker": "日野自動車", "origin": "輸入", "body_type": null, "production_period": null}
-{"carsensor_code": "HI_S015", "model_name": "リエッセ", "maker": "日野自動車", "origin": "輸入", "body_type": null, "production_period": null}
-{"carsensor_code": "HI_S016", "model_name": "リエッセII", "maker": "日野自動車", "origin": "輸入", "body_type": null, "production_period": null}
-{"carsensor_code": "HI_S017", "model_name": "セレガ", "maker": "日野自動車", "origin": "輸入", "body_type": null, "production_period": null}
-{"carsensor_code": "HI_S018", "model_name": "ブルーリボン", "maker": "日野自動車", "origin": "輸入", "body_type": null, "production_period": null}
-{"carsensor_code": "HI_S019", "model_name": "ポンチョ", "maker": "日野自動車", "origin": "輸入", "body_type": null, "production_period": null}
-{"carsensor_code": "HI_S020", "model_name": "メルファ", "maker": "日野自動車", "origin": "輸入", "body_type": null, "production_period": null}
-{"carsensor_code": "HI_S021", "model_name": "レンジャー2", "maker": "日野自動車", "origin": "輸入", "body_type": null, "production_period": null}
-{"carsensor_code": "HI_S999", "model_name": "HI_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "HE_S999", "model_name": "ヒーレー その他", "maker": "ヒーレー", "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "HI_S001", "model_name": "クルージングレンジャー", "maker": "日野自動車", "origin": "国産", "body_type": null, "production_period": null}
+{"carsensor_code": "HI_S002", "model_name": "コンテッサ", "maker": "日野自動車", "origin": "国産", "body_type": null, "production_period": null}
+{"carsensor_code": "HI_S004", "model_name": "デュトロ", "maker": "日野自動車", "origin": "国産", "body_type": "トラック", "production_period": "1999年5月～"}
+{"carsensor_code": "HI_S005", "model_name": "デュトロハイブリッド", "maker": "日野自動車", "origin": "国産", "body_type": "トラック", "production_period": "2003年11月～"}
+{"carsensor_code": "HI_S006", "model_name": "スーパードルフィン", "maker": "日野自動車", "origin": "国産", "body_type": null, "production_period": null}
+{"carsensor_code": "HI_S008", "model_name": "スペースレンジャー", "maker": "日野自動車", "origin": "国産", "body_type": null, "production_period": null}
+{"carsensor_code": "HI_S009", "model_name": "プロフィア", "maker": "日野自動車", "origin": "国産", "body_type": null, "production_period": null}
+{"carsensor_code": "HI_S010", "model_name": "レンジャー", "maker": "日野自動車", "origin": "国産", "body_type": null, "production_period": null}
+{"carsensor_code": "HI_S012", "model_name": "レンジャープロ", "maker": "日野自動車", "origin": "国産", "body_type": null, "production_period": null}
+{"carsensor_code": "HI_S013", "model_name": "デュトロルートバン", "maker": "日野自動車", "origin": "国産", "body_type": null, "production_period": null}
+{"carsensor_code": "HI_S014", "model_name": "レインボー", "maker": "日野自動車", "origin": "国産", "body_type": null, "production_period": null}
+{"carsensor_code": "HI_S015", "model_name": "リエッセ", "maker": "日野自動車", "origin": "国産", "body_type": null, "production_period": null}
+{"carsensor_code": "HI_S016", "model_name": "リエッセII", "maker": "日野自動車", "origin": "国産", "body_type": null, "production_period": null}
+{"carsensor_code": "HI_S017", "model_name": "セレガ", "maker": "日野自動車", "origin": "国産", "body_type": null, "production_period": null}
+{"carsensor_code": "HI_S018", "model_name": "ブルーリボン", "maker": "日野自動車", "origin": "国産", "body_type": null, "production_period": null}
+{"carsensor_code": "HI_S019", "model_name": "ポンチョ", "maker": "日野自動車", "origin": "国産", "body_type": null, "production_period": null}
+{"carsensor_code": "HI_S020", "model_name": "メルファ", "maker": "日野自動車", "origin": "国産", "body_type": null, "production_period": null}
+{"carsensor_code": "HI_S021", "model_name": "レンジャー2", "maker": "日野自動車", "origin": "国産", "body_type": null, "production_period": null}
+{"carsensor_code": "HI_S999", "model_name": "日野自動車 その他", "maker": "日野自動車", "origin": "国産", "body_type": null, "production_period": null}
 {"carsensor_code": "HM_S001", "model_name": "H2", "maker": "ハマー", "origin": "輸入", "body_type": "クロカン・ＳＵＶ", "production_period": "2003年2月～2010年2月"}
 {"carsensor_code": "HM_S002", "model_name": "H3", "maker": "ハマー", "origin": "輸入", "body_type": "クロカン・ＳＵＶ", "production_period": "2005年9月～2011年11月"}
 {"carsensor_code": "HM_S003", "model_name": "H1", "maker": "ハマー", "origin": "輸入", "body_type": null, "production_period": null}
@@ -880,7 +880,7 @@
 {"carsensor_code": "HO_S119", "model_name": "145", "maker": "ホンダ", "origin": "国産", "body_type": null, "production_period": null}
 {"carsensor_code": "HO_S121", "model_name": "シビックカントリー", "maker": "ホンダ", "origin": "国産", "body_type": null, "production_period": null}
 {"carsensor_code": "HO_S123", "model_name": "N-ONE e:", "maker": "ホンダ", "origin": "国産", "body_type": "ハッチバック", "production_period": "2025年9月～"}
-{"carsensor_code": "HO_S999", "model_name": "HO_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "HO_S999", "model_name": "ホンダ その他", "maker": "ホンダ", "origin": "国産", "body_type": null, "production_period": null}
 {"carsensor_code": "IS_S002", "model_name": "アスカ", "maker": "いすゞ", "origin": "国産", "body_type": "セダン", "production_period": "1997年10月～2001年12月"}
 {"carsensor_code": "IS_S003", "model_name": "ウィザード", "maker": "いすゞ", "origin": "国産", "body_type": "クロカン・ＳＵＶ", "production_period": "1998年6月～2002年8月"}
 {"carsensor_code": "IS_S004", "model_name": "ジェミニ", "maker": "いすゞ", "origin": "国産", "body_type": "セダン", "production_period": "1997年2月～2000年9月"}
@@ -917,7 +917,7 @@
 {"carsensor_code": "IS_S046", "model_name": "ビギン", "maker": "いすゞ", "origin": "国産", "body_type": null, "production_period": null}
 {"carsensor_code": "IS_S047", "model_name": "エルフミオ", "maker": "いすゞ", "origin": "国産", "body_type": null, "production_period": null}
 {"carsensor_code": "IS_S048", "model_name": "ビーカム", "maker": "いすゞ", "origin": "国産", "body_type": null, "production_period": null}
-{"carsensor_code": "IS_S999", "model_name": "IS_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "IS_S999", "model_name": "いすゞ その他", "maker": "いすゞ", "origin": "国産", "body_type": null, "production_period": null}
 {"carsensor_code": "JA_S001", "model_name": "XJ-Sクーペ", "maker": "ジャガー", "origin": "輸入", "body_type": "クーペ", "production_period": "1989年10月～1996年12月"}
 {"carsensor_code": "JA_S002", "model_name": "XJコンバーチブル", "maker": "ジャガー", "origin": "輸入", "body_type": "オープン", "production_period": "1989年10月～1996年12月"}
 {"carsensor_code": "JA_S003", "model_name": "XKクーペ", "maker": "ジャガー", "origin": "輸入", "body_type": "クーペ", "production_period": "2006年7月～2015年3月"}
@@ -938,7 +938,7 @@
 {"carsensor_code": "JA_S019", "model_name": "Eタイプロードスター", "maker": "ジャガー", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "JA_S020", "model_name": "Iペイス", "maker": "ジャガー", "origin": "輸入", "body_type": "クロカン・ＳＵＶ", "production_period": "2018年9月～"}
 {"carsensor_code": "JA_S021", "model_name": "マーク2", "maker": "ジャガー", "origin": "輸入", "body_type": null, "production_period": null}
-{"carsensor_code": "JA_S999", "model_name": "JA_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "JA_S999", "model_name": "ジャガー その他", "maker": "ジャガー", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "JE_S001", "model_name": "ラングラー", "maker": "ジープ", "origin": "輸入", "body_type": "クロカン・ＳＵＶ", "production_period": "2018年11月～"}
 {"carsensor_code": "JE_S002", "model_name": "チェロキー", "maker": "ジープ", "origin": "輸入", "body_type": "クロカン・ＳＵＶ", "production_period": "2014年5月～2022年3月"}
 {"carsensor_code": "JE_S003", "model_name": "グランドチェロキー", "maker": "ジープ", "origin": "輸入", "body_type": "クロカン・ＳＵＶ", "production_period": "2022年10月～"}
@@ -951,14 +951,14 @@
 {"carsensor_code": "JE_S011", "model_name": "グラディエーター", "maker": "ジープ", "origin": "輸入", "body_type": "ピックアップトラック", "production_period": "2019年4月～"}
 {"carsensor_code": "JE_S012", "model_name": "グランドチェロキーL", "maker": "ジープ", "origin": "輸入", "body_type": "クロカン・ＳＵＶ", "production_period": "2022年2月～"}
 {"carsensor_code": "JE_S014", "model_name": "アベンジャー", "maker": "ジープ", "origin": "輸入", "body_type": "クロカン・ＳＵＶ", "production_period": "2024年9月～"}
-{"carsensor_code": "JE_S999", "model_name": "JE_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "JE_S999", "model_name": "ジープ その他", "maker": "ジープ", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "KI_S999", "model_name": "KI_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "LA_S002", "model_name": "テーマ", "maker": "ランチア", "origin": "輸入", "body_type": "セダン", "production_period": "1990年2月～1996年12月"}
 {"carsensor_code": "LA_S003", "model_name": "デルタ", "maker": "ランチア", "origin": "輸入", "body_type": "ハッチバック", "production_period": "1992年1月～1995年12月"}
 {"carsensor_code": "LA_S005", "model_name": "イプシロン", "maker": "ランチア", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "LA_S006", "model_name": "テーシス", "maker": "ランチア", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "LA_S008", "model_name": "テーマステーションワゴン", "maker": "ランチア", "origin": "輸入", "body_type": null, "production_period": null}
-{"carsensor_code": "LA_S999", "model_name": "LA_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "LA_S999", "model_name": "ランチア その他", "maker": "ランチア", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "LD_S003", "model_name": "ニーヴァ", "maker": "ラーダ", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "LE_S001", "model_name": "GS", "maker": "レクサス", "origin": "国産", "body_type": "セダン", "production_period": "2012年1月～2020年8月"}
 {"carsensor_code": "LE_S002", "model_name": "GSハイブリッド", "maker": "レクサス", "origin": "国産", "body_type": "セダン", "production_period": "2012年3月～2020年8月"}
@@ -987,7 +987,7 @@
 {"carsensor_code": "LE_S025", "model_name": "LM", "maker": "レクサス", "origin": "国産", "body_type": "ミニバン", "production_period": "2023年12月～"}
 {"carsensor_code": "LE_S026", "model_name": "LBX", "maker": "レクサス", "origin": "国産", "body_type": "クロカン・ＳＵＶ", "production_period": "2023年12月～"}
 {"carsensor_code": "LE_S027", "model_name": "GX", "maker": "レクサス", "origin": "国産", "body_type": "クロカン・ＳＵＶ", "production_period": "2024年6月～"}
-{"carsensor_code": "LE_S999", "model_name": "LE_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "LE_S999", "model_name": "レクサス その他", "maker": "レクサス", "origin": "国産", "body_type": null, "production_period": null}
 {"carsensor_code": "LG_S001", "model_name": "ムルシエラゴ", "maker": "ランボルギーニ", "origin": "輸入", "body_type": "クーペ", "production_period": "2001年12月～2011年11月"}
 {"carsensor_code": "LG_S002", "model_name": "ムルシエラゴロードスター", "maker": "ランボルギーニ", "origin": "輸入", "body_type": "オープン", "production_period": "2004年8月～2012年12月"}
 {"carsensor_code": "LG_S003", "model_name": "ガヤルド", "maker": "ランボルギーニ", "origin": "輸入", "body_type": "クーペ", "production_period": "2003年9月～2013年11月"}
@@ -1002,14 +1002,14 @@
 {"carsensor_code": "LG_S019", "model_name": "ウラカンステラート", "maker": "ランボルギーニ", "origin": "輸入", "body_type": "クロカン・ＳＵＶ", "production_period": "2022年11月～"}
 {"carsensor_code": "LG_S020", "model_name": "テメラリオ", "maker": "ランボルギーニ", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "LG_S021", "model_name": "レヴエルト", "maker": "ランボルギーニ", "origin": "輸入", "body_type": "クーペ", "production_period": "2023年3月～"}
-{"carsensor_code": "LG_S999", "model_name": "LG_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "LG_S999", "model_name": "ランボルギーニ その他", "maker": "ランボルギーニ", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "LI_S001", "model_name": "コンチネンタル", "maker": "リンカーン", "origin": "輸入", "body_type": "セダン", "production_period": "1995年11月～2003年7月"}
 {"carsensor_code": "LI_S002", "model_name": "タウンカー", "maker": "リンカーン", "origin": "輸入", "body_type": "セダン", "production_period": "1998年12月～2007年10月"}
 {"carsensor_code": "LI_S003", "model_name": "マークVIII", "maker": "リンカーン", "origin": "輸入", "body_type": "クーペ", "production_period": "1993年1月～1998年12月"}
 {"carsensor_code": "LI_S005", "model_name": "ナビゲーター", "maker": "リンカーン", "origin": "輸入", "body_type": "クロカン・ＳＵＶ", "production_period": "2017年9月～"}
 {"carsensor_code": "LI_S007", "model_name": "マークLT", "maker": "リンカーン", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "LI_S008", "model_name": "MKX", "maker": "リンカーン", "origin": "輸入", "body_type": "クロカン・ＳＵＶ", "production_period": "2017年1月～"}
-{"carsensor_code": "LI_S999", "model_name": "LI_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "LI_S999", "model_name": "リンカーン その他", "maker": "リンカーン", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "LR_S001", "model_name": "フリーランダー", "maker": "ランドローバー", "origin": "輸入", "body_type": "クロカン・ＳＵＶ", "production_period": "2001年2月～2007年4月"}
 {"carsensor_code": "LR_S002", "model_name": "ディスカバリー", "maker": "ランドローバー", "origin": "輸入", "body_type": "クロカン・ＳＵＶ", "production_period": "2017年4月～"}
 {"carsensor_code": "LR_S003", "model_name": "ディスカバリー3", "maker": "ランドローバー", "origin": "輸入", "body_type": "クロカン・ＳＵＶ", "production_period": "2005年5月～2009年12月"}
@@ -1023,7 +1023,7 @@
 {"carsensor_code": "LR_S011", "model_name": "ディスカバリースポーツ", "maker": "ランドローバー", "origin": "輸入", "body_type": "クロカン・ＳＵＶ", "production_period": "2014年10月～"}
 {"carsensor_code": "LR_S012", "model_name": "レンジローバーイヴォークコンバーチブル", "maker": "ランドローバー", "origin": "輸入", "body_type": "オープン", "production_period": "2016年9月～2019年6月"}
 {"carsensor_code": "LR_S013", "model_name": "レンジローバーヴェラール", "maker": "ランドローバー", "origin": "輸入", "body_type": "クロカン・ＳＵＶ", "production_period": "2017年7月～"}
-{"carsensor_code": "LR_S999", "model_name": "LR_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "LR_S999", "model_name": "ランドローバー その他", "maker": "ランドローバー", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "LT_S001", "model_name": "TX4", "maker": "ロンドンタクシー", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "MA_S001", "model_name": "MPV", "maker": "マツダ", "origin": "国産", "body_type": "ミニバン", "production_period": "2006年2月～2016年4月"}
 {"carsensor_code": "MA_S002", "model_name": "AZ-オフロード", "maker": "マツダ", "origin": "国産", "body_type": "クロカン・ＳＵＶ", "production_period": "1998年10月～2014年3月"}
@@ -1113,7 +1113,7 @@
 {"carsensor_code": "MA_S105", "model_name": "MX-30ロータリーEV", "maker": "マツダ", "origin": "国産", "body_type": "クロカン・ＳＵＶ", "production_period": "2023年11月～"}
 {"carsensor_code": "MA_S107", "model_name": "CX-80", "maker": "マツダ", "origin": "国産", "body_type": "クロカン・ＳＵＶ", "production_period": "2024年10月～"}
 {"carsensor_code": "MA_S108", "model_name": "ファミリアクーペ", "maker": "マツダ", "origin": "国産", "body_type": null, "production_period": null}
-{"carsensor_code": "MA_S999", "model_name": "MA_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "MA_S999", "model_name": "マツダ その他", "maker": "マツダ", "origin": "国産", "body_type": null, "production_period": null}
 {"carsensor_code": "MC_S001", "model_name": "フォーツークーペ", "maker": "スマート", "origin": "輸入", "body_type": "ハッチバック", "production_period": "2015年10月～2020年4月"}
 {"carsensor_code": "MC_S002", "model_name": "フォーツーカブリオ", "maker": "スマート", "origin": "輸入", "body_type": "オープン", "production_period": "2016年8月～2020年4月"}
 {"carsensor_code": "MC_S004", "model_name": "ロードスター", "maker": "スマート", "origin": "輸入", "body_type": "オープン", "production_period": "2003年9月～2007年3月"}
@@ -1185,14 +1185,14 @@
 {"carsensor_code": "ME_S067", "model_name": "EQE SUV", "maker": "メルセデス・ベンツ", "origin": "輸入", "body_type": "クロカン・ＳＵＶ", "production_period": "2023年8月～"}
 {"carsensor_code": "ME_S068", "model_name": "CLEクーペ", "maker": "メルセデス・ベンツ", "origin": "輸入", "body_type": "クーペ", "production_period": "2024年3月～"}
 {"carsensor_code": "ME_S069", "model_name": "CLEカブリオレ", "maker": "メルセデス・ベンツ", "origin": "輸入", "body_type": "オープン", "production_period": "2024年6月～"}
-{"carsensor_code": "ME_S999", "model_name": "ME_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "ME_S999", "model_name": "メルセデス・ベンツ その他", "maker": "メルセデス・ベンツ", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "MF_S001", "model_name": "MINIマーコス", "maker": "マーコス", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "MG_S001", "model_name": "F", "maker": "ＭＧ", "origin": "輸入", "body_type": "オープン", "production_period": "1995年10月～2000年5月"}
 {"carsensor_code": "MG_S003", "model_name": "RV8", "maker": "ＭＧ", "origin": "輸入", "body_type": "オープン", "production_period": "1993年10月～1997年12月"}
 {"carsensor_code": "MG_S006", "model_name": "A", "maker": "ＭＧ", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "MG_S007", "model_name": "B", "maker": "ＭＧ", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "MG_S008", "model_name": "ミジェット", "maker": "ＭＧ", "origin": "輸入", "body_type": null, "production_period": null}
-{"carsensor_code": "MG_S999", "model_name": "MG_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "MG_S999", "model_name": "ＭＧ その他", "maker": "ＭＧ", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "MI_S001", "model_name": "アイ", "maker": "三菱", "origin": "国産", "body_type": "ハッチバック", "production_period": "2006年1月～2013年7月"}
 {"carsensor_code": "MI_S002", "model_name": "アウトランダー", "maker": "三菱", "origin": "国産", "body_type": "クロカン・ＳＵＶ", "production_period": "2021年12月～"}
 {"carsensor_code": "MI_S003", "model_name": "eKアクティブ", "maker": "三菱", "origin": "国産", "body_type": "クロカン・ＳＵＶ", "production_period": "2004年5月～2006年8月"}
@@ -1278,9 +1278,9 @@
 {"carsensor_code": "MI_S119", "model_name": "eKクロスEV", "maker": "三菱", "origin": "国産", "body_type": "クロカン・ＳＵＶ", "production_period": "2022年6月～"}
 {"carsensor_code": "MI_S120", "model_name": "デリカミニ", "maker": "三菱", "origin": "国産", "body_type": "クロカン・ＳＵＶ", "production_period": "2025年10月～"}
 {"carsensor_code": "MI_S121", "model_name": "ミニキャブEV", "maker": "三菱", "origin": "国産", "body_type": "ハッチバック", "production_period": "2023年12月～"}
-{"carsensor_code": "MI_S999", "model_name": "MI_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "MI_S999", "model_name": "三菱 その他", "maker": "三菱", "origin": "国産", "body_type": null, "production_period": null}
 {"carsensor_code": "MK_S007", "model_name": "クーガー", "maker": "マーキュリー", "origin": "輸入", "body_type": null, "production_period": null}
-{"carsensor_code": "MK_S999", "model_name": "MK_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "MK_S999", "model_name": "マーキュリー その他", "maker": "マーキュリー", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "ML_S002", "model_name": "MP4-12C", "maker": "マクラーレン", "origin": "輸入", "body_type": "クーペ", "production_period": "2011年10月～2015年1月"}
 {"carsensor_code": "ML_S003", "model_name": "MP4-12Cスパイダー", "maker": "マクラーレン", "origin": "輸入", "body_type": "オープン", "production_period": "2012年10月～2015年1月"}
 {"carsensor_code": "ML_S005", "model_name": "650S", "maker": "マクラーレン", "origin": "輸入", "body_type": "クーペ", "production_period": "2014年4月～2018年10月"}
@@ -1306,11 +1306,11 @@
 {"carsensor_code": "ML_S026", "model_name": "750Sスパイダー", "maker": "マクラーレン", "origin": "輸入", "body_type": "オープン", "production_period": "2023年4月～"}
 {"carsensor_code": "ML_S027", "model_name": "GTS", "maker": "マクラーレン", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "ML_S028", "model_name": "アルトゥーラスパイダー", "maker": "マクラーレン", "origin": "輸入", "body_type": null, "production_period": null}
-{"carsensor_code": "ML_S999", "model_name": "ML_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "ML_S999", "model_name": "マクラーレン その他", "maker": "マクラーレン", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "MM_S001", "model_name": "Sクラス", "maker": "メルセデス・マイバッハ", "origin": "輸入", "body_type": "セダン", "production_period": "2021年7月～"}
 {"carsensor_code": "MM_S002", "model_name": "GLS", "maker": "メルセデス・マイバッハ", "origin": "輸入", "body_type": "クロカン・ＳＵＶ", "production_period": "2021年7月～"}
 {"carsensor_code": "MM_S003", "model_name": "EQS SUV", "maker": "メルセデス・マイバッハ", "origin": "輸入", "body_type": "クロカン・ＳＵＶ", "production_period": "2024年8月～"}
-{"carsensor_code": "MM_S999", "model_name": "MM_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "MM_S999", "model_name": "メルセデス・マイバッハ その他", "maker": "メルセデス・マイバッハ", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "MN_S001", "model_name": "ミニ", "maker": "ミニ", "origin": "輸入", "body_type": "ハッチバック", "production_period": "2024年3月～"}
 {"carsensor_code": "MN_S002", "model_name": "ミニコンバーチブル", "maker": "ミニ", "origin": "輸入", "body_type": "オープン", "production_period": "2024年10月～"}
 {"carsensor_code": "MN_S003", "model_name": "ミニクラブマン", "maker": "ミニ", "origin": "輸入", "body_type": "ステーションワゴン", "production_period": "2015年11月～2024年5月"}
@@ -1320,18 +1320,18 @@
 {"carsensor_code": "MN_S007", "model_name": "ミニペースマン", "maker": "ミニ", "origin": "輸入", "body_type": "クロカン・ＳＵＶ", "production_period": "2013年3月～2016年8月"}
 {"carsensor_code": "MN_S008", "model_name": "ミニカントリーマン", "maker": "ミニ", "origin": "輸入", "body_type": "クロカン・ＳＵＶ", "production_period": "2023年11月～"}
 {"carsensor_code": "MN_S009", "model_name": "ミニエースマン", "maker": "ミニ", "origin": "輸入", "body_type": "クロカン・ＳＵＶ", "production_period": "2024年6月～"}
-{"carsensor_code": "MN_S999", "model_name": "MN_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "MN_S999", "model_name": "ミニ その他", "maker": "ミニ", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "MO_S001", "model_name": "プラス4", "maker": "モーガン", "origin": "輸入", "body_type": "オープン", "production_period": "1998年10月～2019年11月"}
 {"carsensor_code": "MO_S002", "model_name": "4/4", "maker": "モーガン", "origin": "輸入", "body_type": "オープン", "production_period": "1998年10月～2019年7月"}
 {"carsensor_code": "MO_S003", "model_name": "プラス8", "maker": "モーガン", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "MO_S007", "model_name": "プラスシックス", "maker": "モーガン", "origin": "輸入", "body_type": "オープン", "production_period": "2019年6月～"}
 {"carsensor_code": "MO_S008", "model_name": "プラスフォー", "maker": "モーガン", "origin": "輸入", "body_type": null, "production_period": null}
-{"carsensor_code": "MO_S999", "model_name": "MO_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "MO_S999", "model_name": "モーガン その他", "maker": "モーガン", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "MQ_S001", "model_name": "ミニモーク", "maker": "モーク", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "MR_S001", "model_name": "ミニ", "maker": "モーリス", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "MR_S002", "model_name": "1100", "maker": "モーリス", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "MR_S004", "model_name": "マイナー", "maker": "モーリス", "origin": "輸入", "body_type": null, "production_period": null}
-{"carsensor_code": "MR_S999", "model_name": "MR_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "MR_S999", "model_name": "モーリス その他", "maker": "モーリス", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "MS_S001", "model_name": "3200GT", "maker": "マセラティ", "origin": "輸入", "body_type": "クーペ", "production_period": "1998年11月～2002年4月"}
 {"carsensor_code": "MS_S002", "model_name": "クーペ", "maker": "マセラティ", "origin": "輸入", "body_type": "クーペ", "production_period": "1998年11月～2008年12月"}
 {"carsensor_code": "MS_S003", "model_name": "スパイダー", "maker": "マセラティ", "origin": "輸入", "body_type": "オープン", "production_period": "2001年10月～2008年12月"}
@@ -1348,35 +1348,35 @@
 {"carsensor_code": "MS_S021", "model_name": "グレカーレ", "maker": "マセラティ", "origin": "輸入", "body_type": "クロカン・ＳＵＶ", "production_period": "2022年5月～"}
 {"carsensor_code": "MS_S022", "model_name": "MC20チェロ", "maker": "マセラティ", "origin": "輸入", "body_type": "オープン", "production_period": "2022年5月～"}
 {"carsensor_code": "MS_S023", "model_name": "グランスポーツ", "maker": "マセラティ", "origin": "輸入", "body_type": null, "production_period": null}
-{"carsensor_code": "MS_S999", "model_name": "MS_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
-{"carsensor_code": "MT_S001", "model_name": "ガリュー", "maker": "光岡自動車", "origin": "輸入", "body_type": "セダン", "production_period": "2015年9月～2021年12月"}
-{"carsensor_code": "MT_S002", "model_name": "ヌエラ", "maker": "光岡自動車", "origin": "輸入", "body_type": "セダン", "production_period": "2004年4月～2008年7月"}
-{"carsensor_code": "MT_S003", "model_name": "ビュート", "maker": "光岡自動車", "origin": "輸入", "body_type": "セダン", "production_period": "2012年5月～2023年3月"}
-{"carsensor_code": "MT_S004", "model_name": "ゼロ1", "maker": "光岡自動車", "origin": "輸入", "body_type": "その他", "production_period": "1994年1月～2000年7月"}
-{"carsensor_code": "MT_S005", "model_name": "ユーガ", "maker": "光岡自動車", "origin": "輸入", "body_type": "ハッチバック", "production_period": "2000年5月～2002年9月"}
-{"carsensor_code": "MT_S006", "model_name": "ラセード", "maker": "光岡自動車", "origin": "輸入", "body_type": "クーペ", "production_period": "2000年11月～2000年12月"}
-{"carsensor_code": "MT_S007", "model_name": "リョーガ", "maker": "光岡自動車", "origin": "輸入", "body_type": "セダン", "production_period": "2001年7月～2004年9月"}
-{"carsensor_code": "MT_S008", "model_name": "リョーガワゴン", "maker": "光岡自動車", "origin": "輸入", "body_type": "ステーションワゴン", "production_period": "1998年2月～2001年6月"}
-{"carsensor_code": "MT_S009", "model_name": "レイ", "maker": "光岡自動車", "origin": "輸入", "body_type": "ハッチバック", "production_period": "2002年6月～2004年9月"}
-{"carsensor_code": "MT_S010", "model_name": "マイクロカー", "maker": "光岡自動車", "origin": "輸入", "body_type": "その他", "production_period": "1998年7月～2007年1月"}
-{"carsensor_code": "MT_S011", "model_name": "ガリューII", "maker": "光岡自動車", "origin": "輸入", "body_type": "セダン", "production_period": "1999年12月～2005年6月"}
-{"carsensor_code": "MT_S012", "model_name": "ガリューI", "maker": "光岡自動車", "origin": "輸入", "body_type": "セダン", "production_period": "1999年12月～2001年8月"}
-{"carsensor_code": "MT_S013", "model_name": "オロチ", "maker": "光岡自動車", "origin": "輸入", "body_type": "クーペ", "production_period": "2006年10月～2014年9月"}
-{"carsensor_code": "MT_S016", "model_name": "ヌエラ6-02", "maker": "光岡自動車", "origin": "輸入", "body_type": "セダン", "production_period": "2008年7月～2016年6月"}
-{"carsensor_code": "MT_S017", "model_name": "ヌエラ6-02ワゴン", "maker": "光岡自動車", "origin": "輸入", "body_type": "ステーションワゴン", "production_period": "2008年7月～2016年6月"}
-{"carsensor_code": "MT_S018", "model_name": "ヒミコ", "maker": "光岡自動車", "origin": "輸入", "body_type": "オープン", "production_period": "2018年2月～"}
-{"carsensor_code": "MT_S019", "model_name": "ガリューIII", "maker": "光岡自動車", "origin": "輸入", "body_type": "セダン", "production_period": "2008年2月～2016年6月"}
-{"carsensor_code": "MT_S021", "model_name": "ガリュークラシック", "maker": "光岡自動車", "origin": "輸入", "body_type": "セダン", "production_period": "2010年3月～2016年6月"}
-{"carsensor_code": "MT_S022", "model_name": "ビュートコンバーチブル", "maker": "光岡自動車", "origin": "輸入", "body_type": null, "production_period": null}
-{"carsensor_code": "MT_S024", "model_name": "ライク", "maker": "光岡自動車", "origin": "輸入", "body_type": "ハッチバック", "production_period": "2010年6月～2012年12月"}
-{"carsensor_code": "MT_S025", "model_name": "リューギ", "maker": "光岡自動車", "origin": "輸入", "body_type": "セダン", "production_period": "2014年6月～2021年5月"}
-{"carsensor_code": "MT_S027", "model_name": "リューギワゴン", "maker": "光岡自動車", "origin": "輸入", "body_type": "ステーションワゴン", "production_period": "2016年1月～2021年5月"}
-{"carsensor_code": "MT_S028", "model_name": "ロックスター", "maker": "光岡自動車", "origin": "輸入", "body_type": "オープン", "production_period": "2018年12月～2022年2月"}
-{"carsensor_code": "MT_S029", "model_name": "バディ", "maker": "光岡自動車", "origin": "輸入", "body_type": "クロカン・ＳＵＶ", "production_period": "2020年11月～"}
-{"carsensor_code": "MT_S030", "model_name": "ビュートなでしこ", "maker": "光岡自動車", "origin": "輸入", "body_type": "ハッチバック", "production_period": "2015年7月～2023年3月"}
-{"carsensor_code": "MT_S031", "model_name": "ビュートストーリー", "maker": "光岡自動車", "origin": "輸入", "body_type": "ハッチバック", "production_period": "2023年9月～"}
-{"carsensor_code": "MT_S034", "model_name": "M55", "maker": "光岡自動車", "origin": "輸入", "body_type": "ハッチバック", "production_period": "2024年11月～"}
-{"carsensor_code": "MT_S999", "model_name": "MT_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "MS_S999", "model_name": "マセラティ その他", "maker": "マセラティ", "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "MT_S001", "model_name": "ガリュー", "maker": "光岡自動車", "origin": "国産", "body_type": "セダン", "production_period": "2015年9月～2021年12月"}
+{"carsensor_code": "MT_S002", "model_name": "ヌエラ", "maker": "光岡自動車", "origin": "国産", "body_type": "セダン", "production_period": "2004年4月～2008年7月"}
+{"carsensor_code": "MT_S003", "model_name": "ビュート", "maker": "光岡自動車", "origin": "国産", "body_type": "セダン", "production_period": "2012年5月～2023年3月"}
+{"carsensor_code": "MT_S004", "model_name": "ゼロ1", "maker": "光岡自動車", "origin": "国産", "body_type": "その他", "production_period": "1994年1月～2000年7月"}
+{"carsensor_code": "MT_S005", "model_name": "ユーガ", "maker": "光岡自動車", "origin": "国産", "body_type": "ハッチバック", "production_period": "2000年5月～2002年9月"}
+{"carsensor_code": "MT_S006", "model_name": "ラセード", "maker": "光岡自動車", "origin": "国産", "body_type": "クーペ", "production_period": "2000年11月～2000年12月"}
+{"carsensor_code": "MT_S007", "model_name": "リョーガ", "maker": "光岡自動車", "origin": "国産", "body_type": "セダン", "production_period": "2001年7月～2004年9月"}
+{"carsensor_code": "MT_S008", "model_name": "リョーガワゴン", "maker": "光岡自動車", "origin": "国産", "body_type": "ステーションワゴン", "production_period": "1998年2月～2001年6月"}
+{"carsensor_code": "MT_S009", "model_name": "レイ", "maker": "光岡自動車", "origin": "国産", "body_type": "ハッチバック", "production_period": "2002年6月～2004年9月"}
+{"carsensor_code": "MT_S010", "model_name": "マイクロカー", "maker": "光岡自動車", "origin": "国産", "body_type": "その他", "production_period": "1998年7月～2007年1月"}
+{"carsensor_code": "MT_S011", "model_name": "ガリューII", "maker": "光岡自動車", "origin": "国産", "body_type": "セダン", "production_period": "1999年12月～2005年6月"}
+{"carsensor_code": "MT_S012", "model_name": "ガリューI", "maker": "光岡自動車", "origin": "国産", "body_type": "セダン", "production_period": "1999年12月～2001年8月"}
+{"carsensor_code": "MT_S013", "model_name": "オロチ", "maker": "光岡自動車", "origin": "国産", "body_type": "クーペ", "production_period": "2006年10月～2014年9月"}
+{"carsensor_code": "MT_S016", "model_name": "ヌエラ6-02", "maker": "光岡自動車", "origin": "国産", "body_type": "セダン", "production_period": "2008年7月～2016年6月"}
+{"carsensor_code": "MT_S017", "model_name": "ヌエラ6-02ワゴン", "maker": "光岡自動車", "origin": "国産", "body_type": "ステーションワゴン", "production_period": "2008年7月～2016年6月"}
+{"carsensor_code": "MT_S018", "model_name": "ヒミコ", "maker": "光岡自動車", "origin": "国産", "body_type": "オープン", "production_period": "2018年2月～"}
+{"carsensor_code": "MT_S019", "model_name": "ガリューIII", "maker": "光岡自動車", "origin": "国産", "body_type": "セダン", "production_period": "2008年2月～2016年6月"}
+{"carsensor_code": "MT_S021", "model_name": "ガリュークラシック", "maker": "光岡自動車", "origin": "国産", "body_type": "セダン", "production_period": "2010年3月～2016年6月"}
+{"carsensor_code": "MT_S022", "model_name": "ビュートコンバーチブル", "maker": "光岡自動車", "origin": "国産", "body_type": null, "production_period": null}
+{"carsensor_code": "MT_S024", "model_name": "ライク", "maker": "光岡自動車", "origin": "国産", "body_type": "ハッチバック", "production_period": "2010年6月～2012年12月"}
+{"carsensor_code": "MT_S025", "model_name": "リューギ", "maker": "光岡自動車", "origin": "国産", "body_type": "セダン", "production_period": "2014年6月～2021年5月"}
+{"carsensor_code": "MT_S027", "model_name": "リューギワゴン", "maker": "光岡自動車", "origin": "国産", "body_type": "ステーションワゴン", "production_period": "2016年1月～2021年5月"}
+{"carsensor_code": "MT_S028", "model_name": "ロックスター", "maker": "光岡自動車", "origin": "国産", "body_type": "オープン", "production_period": "2018年12月～2022年2月"}
+{"carsensor_code": "MT_S029", "model_name": "バディ", "maker": "光岡自動車", "origin": "国産", "body_type": "クロカン・ＳＵＶ", "production_period": "2020年11月～"}
+{"carsensor_code": "MT_S030", "model_name": "ビュートなでしこ", "maker": "光岡自動車", "origin": "国産", "body_type": "ハッチバック", "production_period": "2015年7月～2023年3月"}
+{"carsensor_code": "MT_S031", "model_name": "ビュートストーリー", "maker": "光岡自動車", "origin": "国産", "body_type": "ハッチバック", "production_period": "2023年9月～"}
+{"carsensor_code": "MT_S034", "model_name": "M55", "maker": "光岡自動車", "origin": "国産", "body_type": "ハッチバック", "production_period": "2024年11月～"}
+{"carsensor_code": "MT_S999", "model_name": "光岡自動車 その他", "maker": "光岡自動車", "origin": "国産", "body_type": null, "production_period": null}
 {"carsensor_code": "MY_S001", "model_name": "マイバッハ", "maker": "マイバッハ", "origin": "輸入", "body_type": "セダン", "production_period": "2002年9月～2014年3月"}
 {"carsensor_code": "NI_S001", "model_name": "モコ", "maker": "日産", "origin": "国産", "body_type": "ハッチバック", "production_period": "2011年2月～2016年5月"}
 {"carsensor_code": "NI_S002", "model_name": "ラフェスタ", "maker": "日産", "origin": "国産", "body_type": "ミニバン", "production_period": "2004年12月～2012年12月"}
@@ -1539,16 +1539,16 @@
 {"carsensor_code": "NI_S193", "model_name": "ブルーバードクーペ", "maker": "日産", "origin": "国産", "body_type": null, "production_period": null}
 {"carsensor_code": "NI_S194", "model_name": "キャラバンマイクロバス", "maker": "日産", "origin": "国産", "body_type": null, "production_period": null}
 {"carsensor_code": "NI_S195", "model_name": "ブルーバードマキシマ", "maker": "日産", "origin": "国産", "body_type": null, "production_period": null}
-{"carsensor_code": "NI_S999", "model_name": "NI_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "NI_S999", "model_name": "日産 その他", "maker": "日産", "origin": "国産", "body_type": null, "production_period": null}
 {"carsensor_code": "OL_S004", "model_name": "トロネード", "maker": "オールズモビル", "origin": "輸入", "body_type": null, "production_period": null}
-{"carsensor_code": "OL_S999", "model_name": "OL_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "OL_S999", "model_name": "オールズモビル その他", "maker": "オールズモビル", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "OP_S001", "model_name": "アストラ", "maker": "オペル", "origin": "輸入", "body_type": "ハッチバック", "production_period": "2004年11月～2006年12月"}
 {"carsensor_code": "OP_S005", "model_name": "アストラカブリオ", "maker": "オペル", "origin": "輸入", "body_type": "オープン", "production_period": "2002年3月～2005年12月"}
 {"carsensor_code": "OP_S006", "model_name": "ヴィータ", "maker": "オペル", "origin": "輸入", "body_type": "ハッチバック", "production_period": "2001年3月～2004年3月"}
 {"carsensor_code": "OP_S009", "model_name": "カリブラ", "maker": "オペル", "origin": "輸入", "body_type": "クーペ", "production_period": "1993年11月～1997年12月"}
 {"carsensor_code": "OP_S012", "model_name": "スピードスター", "maker": "オペル", "origin": "輸入", "body_type": "オープン", "production_period": "2003年1月～2003年6月"}
 {"carsensor_code": "OP_S015", "model_name": "ベクトラ", "maker": "オペル", "origin": "輸入", "body_type": "セダン", "production_period": "2002年7月～2005年2月"}
-{"carsensor_code": "OP_S999", "model_name": "OP_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "OP_S999", "model_name": "オペル その他", "maker": "オペル", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "PE_S001", "model_name": "106", "maker": "プジョー", "origin": "輸入", "body_type": "ハッチバック", "production_period": "1995年4月～2003年6月"}
 {"carsensor_code": "PE_S002", "model_name": "1007", "maker": "プジョー", "origin": "輸入", "body_type": "ハッチバック", "production_period": "2006年3月～2009年1月"}
 {"carsensor_code": "PE_S003", "model_name": "205", "maker": "プジョー", "origin": "輸入", "body_type": "ハッチバック", "production_period": "1988年5月～1994年12月"}
@@ -1588,14 +1588,14 @@
 {"carsensor_code": "PE_S047", "model_name": "リフターロング", "maker": "プジョー", "origin": "輸入", "body_type": "ミニバン", "production_period": "2023年1月～"}
 {"carsensor_code": "PE_S048", "model_name": "408", "maker": "プジョー", "origin": "輸入", "body_type": "ハッチバック", "production_period": "2023年7月～"}
 {"carsensor_code": "PE_S050", "model_name": "E-3008", "maker": "プジョー", "origin": "輸入", "body_type": "クロカン・ＳＵＶ", "production_period": "2026年2月～"}
-{"carsensor_code": "PE_S999", "model_name": "PE_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "PE_S999", "model_name": "プジョー その他", "maker": "プジョー", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "PN_S003", "model_name": "トランザム", "maker": "ポンテアック", "origin": "輸入", "body_type": "クーペ", "production_period": "1991年11月～1992年12月"}
 {"carsensor_code": "PN_S005", "model_name": "グランプリ", "maker": "ポンテアック", "origin": "輸入", "body_type": "セダン", "production_period": "1990年1月～1993年12月"}
 {"carsensor_code": "PN_S008", "model_name": "ファイアーバード", "maker": "ポンテアック", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "PN_S016", "model_name": "GTO", "maker": "ポンテアック", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "PN_S017", "model_name": "ソルスティス", "maker": "ポンテアック", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "PN_S018", "model_name": "スターチーフ", "maker": "ポンテアック", "origin": "輸入", "body_type": null, "production_period": null}
-{"carsensor_code": "PN_S999", "model_name": "PN_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "PN_S999", "model_name": "ポンテアック その他", "maker": "ポンテアック", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "PO_S001", "model_name": "911", "maker": "ポルシェ", "origin": "輸入", "body_type": "クーペ", "production_period": "2019年7月～"}
 {"carsensor_code": "PO_S002", "model_name": "911カブリオレ", "maker": "ポルシェ", "origin": "輸入", "body_type": "オープン", "production_period": "2019年7月～"}
 {"carsensor_code": "PO_S003", "model_name": "928", "maker": "ポルシェ", "origin": "輸入", "body_type": "クーペ", "production_period": "1977年10月～1995年12月"}
@@ -1620,10 +1620,10 @@
 {"carsensor_code": "PO_S024", "model_name": "タイカン", "maker": "ポルシェ", "origin": "輸入", "body_type": "セダン", "production_period": "2020年6月～"}
 {"carsensor_code": "PO_S026", "model_name": "タイカンクロスツーリスモ", "maker": "ポルシェ", "origin": "輸入", "body_type": "クロカン・ＳＵＶ", "production_period": "2021年3月～"}
 {"carsensor_code": "PO_S027", "model_name": "911 ダカール", "maker": "ポルシェ", "origin": "輸入", "body_type": "クロカン・ＳＵＶ", "production_period": "2022年11月～"}
-{"carsensor_code": "PO_S999", "model_name": "PO_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "PO_S999", "model_name": "ポルシェ その他", "maker": "ポルシェ", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "PR_S001", "model_name": "バラクーダ", "maker": "プリムス", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "PR_S002", "model_name": "ロードランナー", "maker": "プリムス", "origin": "輸入", "body_type": null, "production_period": null}
-{"carsensor_code": "PR_S999", "model_name": "PR_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "PR_S999", "model_name": "プリムス その他", "maker": "プリムス", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "PT_S002", "model_name": "カリスタ", "maker": "パンサー", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "PT_S003", "model_name": "リマ", "maker": "パンサー", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "RE_S001", "model_name": "アルピーヌ", "maker": "ルノー", "origin": "輸入", "body_type": "クーペ", "production_period": "1990年2月～1995年1月"}
@@ -1650,9 +1650,9 @@
 {"carsensor_code": "RE_S042", "model_name": "アルカナ", "maker": "ルノー", "origin": "輸入", "body_type": "クロカン・ＳＵＶ", "production_period": "2022年5月～"}
 {"carsensor_code": "RE_S043", "model_name": "クリオ", "maker": "ルノー", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "RE_S044", "model_name": "グランカングー", "maker": "ルノー", "origin": "輸入", "body_type": "ミニバン", "production_period": "2026年2月～"}
-{"carsensor_code": "RE_S999", "model_name": "RE_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "RE_S999", "model_name": "ルノー その他", "maker": "ルノー", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "RI_S001", "model_name": "エルフ", "maker": "ライレー", "origin": "輸入", "body_type": null, "production_period": null}
-{"carsensor_code": "RI_S999", "model_name": "RI_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "RI_S999", "model_name": "ライレー その他", "maker": "ライレー", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "RO_S001", "model_name": "エラン", "maker": "ロータス", "origin": "輸入", "body_type": "オープン", "production_period": "1989年1月～1996年12月"}
 {"carsensor_code": "RO_S002", "model_name": "エスプリ", "maker": "ロータス", "origin": "輸入", "body_type": "クーペ", "production_period": "1976年1月～2003年12月"}
 {"carsensor_code": "RO_S003", "model_name": "エキシージ", "maker": "ロータス", "origin": "輸入", "body_type": "クーペ", "production_period": "2013年7月～2023年1月"}
@@ -1667,7 +1667,7 @@
 {"carsensor_code": "RO_S020", "model_name": "エミーラ", "maker": "ロータス", "origin": "輸入", "body_type": "クーペ", "production_period": "2021年10月～"}
 {"carsensor_code": "RO_S021", "model_name": "エレトレ", "maker": "ロータス", "origin": "輸入", "body_type": "クロカン・ＳＵＶ", "production_period": "2023年6月～"}
 {"carsensor_code": "RO_S022", "model_name": "エメヤ", "maker": "ロータス", "origin": "輸入", "body_type": null, "production_period": null}
-{"carsensor_code": "RO_S999", "model_name": "RO_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "RO_S999", "model_name": "ロータス その他", "maker": "ロータス", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "RR_S001", "model_name": "シルバースパー", "maker": "ロールスロイス", "origin": "輸入", "body_type": "セダン", "production_period": "1997年9月～1999年12月"}
 {"carsensor_code": "RR_S002", "model_name": "コーニッシュ", "maker": "ロールスロイス", "origin": "輸入", "body_type": "オープン", "production_period": "2000年7月～2003年10月"}
 {"carsensor_code": "RR_S003", "model_name": "シルバースピリット", "maker": "ロールスロイス", "origin": "輸入", "body_type": "セダン", "production_period": "1996年1月～1996年12月"}
@@ -1689,11 +1689,11 @@
 {"carsensor_code": "RR_S022", "model_name": "ブラックバッジカリナン", "maker": "ロールスロイス", "origin": "輸入", "body_type": "クロカン・ＳＵＶ", "production_period": "2019年11月～"}
 {"carsensor_code": "RR_S023", "model_name": "スペクター", "maker": "ロールスロイス", "origin": "輸入", "body_type": "クーペ", "production_period": "2023年7月～"}
 {"carsensor_code": "RR_S024", "model_name": "ブラックバッジスペクター", "maker": "ロールスロイス", "origin": "輸入", "body_type": "クーペ", "production_period": "2025年1月～"}
-{"carsensor_code": "RR_S999", "model_name": "RR_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "RR_S999", "model_name": "ロールスロイス その他", "maker": "ロールスロイス", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "RV_S001", "model_name": "ミニ", "maker": "ローバー", "origin": "輸入", "body_type": "その他", "production_period": "1983年5月～2001年6月"}
 {"carsensor_code": "RV_S002", "model_name": "75シリーズ", "maker": "ローバー", "origin": "輸入", "body_type": "セダン", "production_period": "2003年7月～2005年12月"}
 {"carsensor_code": "RV_S004", "model_name": "100シリーズ", "maker": "ローバー", "origin": "輸入", "body_type": "ハッチバック", "production_period": "1992年1月～1998年12月"}
-{"carsensor_code": "RV_S999", "model_name": "RV_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "RV_S999", "model_name": "ローバー その他", "maker": "ローバー", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "SA_S001", "model_name": "900", "maker": "サーブ", "origin": "輸入", "body_type": "ハッチバック", "production_period": "1993年10月～1998年5月"}
 {"carsensor_code": "SA_S002", "model_name": "900クーペ", "maker": "サーブ", "origin": "輸入", "body_type": "クーペ", "production_period": "1993年10月～1997年9月"}
 {"carsensor_code": "SA_S003", "model_name": "900カブリオレ", "maker": "サーブ", "origin": "輸入", "body_type": "オープン", "production_period": "1993年10月～1998年5月"}
@@ -1704,7 +1704,7 @@
 {"carsensor_code": "SA_S010", "model_name": "9-5エステート", "maker": "サーブ", "origin": "輸入", "body_type": "ステーションワゴン", "production_period": "1999年3月～2010年9月"}
 {"carsensor_code": "SA_S011", "model_name": "900セダン", "maker": "サーブ", "origin": "輸入", "body_type": "セダン", "production_period": "1989年11月～1993年9月"}
 {"carsensor_code": "SA_S012", "model_name": "9-3X", "maker": "サーブ", "origin": "輸入", "body_type": "クロカン・ＳＵＶ", "production_period": "2010年9月～2011年12月"}
-{"carsensor_code": "SA_S999", "model_name": "SA_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "SA_S999", "model_name": "サーブ その他", "maker": "サーブ", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "SB_S001", "model_name": "R1", "maker": "スバル", "origin": "国産", "body_type": "ハッチバック", "production_period": "2004年12月～2010年3月"}
 {"carsensor_code": "SB_S002", "model_name": "R2", "maker": "スバル", "origin": "国産", "body_type": "ハッチバック", "production_period": "2003年12月～2010年3月"}
 {"carsensor_code": "SB_S003", "model_name": "インプレッサ", "maker": "スバル", "origin": "国産", "body_type": "セダン", "production_period": "2000年8月～2007年6月"}
@@ -1761,7 +1761,7 @@
 {"carsensor_code": "SB_S060", "model_name": "クロストレック", "maker": "スバル", "origin": "国産", "body_type": "クロカン・ＳＵＶ", "production_period": "2022年12月～"}
 {"carsensor_code": "SB_S061", "model_name": "レックス", "maker": "スバル", "origin": "国産", "body_type": "クロカン・ＳＵＶ", "production_period": "2022年11月～"}
 {"carsensor_code": "SB_S062", "model_name": "レヴォーグレイバック", "maker": "スバル", "origin": "国産", "body_type": "クロカン・ＳＵＶ", "production_period": "2023年10月～"}
-{"carsensor_code": "SB_S999", "model_name": "SB_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "SB_S999", "model_name": "スバル その他", "maker": "スバル", "origin": "国産", "body_type": null, "production_period": null}
 {"carsensor_code": "SC_S002", "model_name": "アストロ", "maker": "スタークラフト", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "SE_S004", "model_name": "イビーザ", "maker": "セアト", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "SI_S001", "model_name": "xB", "maker": "米国サイオン", "origin": "輸入", "body_type": null, "production_period": null}
@@ -1813,10 +1813,10 @@
 {"carsensor_code": "SZ_S058", "model_name": "スペーシアベース", "maker": "スズキ", "origin": "国産", "body_type": "ハッチバック", "production_period": "2022年8月～"}
 {"carsensor_code": "SZ_S059", "model_name": "フロンクス", "maker": "スズキ", "origin": "国産", "body_type": "クロカン・ＳＵＶ", "production_period": "2024年10月～"}
 {"carsensor_code": "SZ_S060", "model_name": "ジムニーノマド", "maker": "スズキ", "origin": "国産", "body_type": "クロカン・ＳＵＶ", "production_period": "2025年4月～"}
-{"carsensor_code": "SZ_S999", "model_name": "SZ_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "SZ_S999", "model_name": "スズキ その他", "maker": "スズキ", "origin": "国産", "body_type": null, "production_period": null}
 {"carsensor_code": "TD_S001", "model_name": "TD2000", "maker": "ＴＤ", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "TM_S001", "model_name": "ZZ", "maker": "トミーカイラ", "origin": "輸入", "body_type": "オープン", "production_period": "1995年8月～1997年10月"}
-{"carsensor_code": "TM_S999", "model_name": "TM_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "TM_S999", "model_name": "トミーカイラ その他", "maker": "トミーカイラ", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "TO_S001", "model_name": "アイシス", "maker": "トヨタ", "origin": "国産", "body_type": "ミニバン", "production_period": "2004年9月～2017年12月"}
 {"carsensor_code": "TO_S004", "model_name": "アベンシスワゴン", "maker": "トヨタ", "origin": "国産", "body_type": "ステーションワゴン", "production_period": "2011年9月～2018年4月"}
 {"carsensor_code": "TO_S005", "model_name": "アリオン", "maker": "トヨタ", "origin": "国産", "body_type": "セダン", "production_period": "2007年6月～2021年3月"}
@@ -2052,19 +2052,19 @@
 {"carsensor_code": "TO_S271", "model_name": "ハイランダー", "maker": "トヨタ", "origin": "国産", "body_type": "クロカン・ＳＵＶ", "production_period": "2026年4月～"}
 {"carsensor_code": "TO_S272", "model_name": "ランドクルーザーFJ", "maker": "トヨタ", "origin": "国産", "body_type": "クロカン・ＳＵＶ", "production_period": "2026年5月～"}
 {"carsensor_code": "TO_S273", "model_name": "コンフォート教習車", "maker": "トヨタ", "origin": "国産", "body_type": null, "production_period": null}
-{"carsensor_code": "TO_S999", "model_name": "TO_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "TO_S999", "model_name": "トヨタ その他", "maker": "トヨタ", "origin": "国産", "body_type": null, "production_period": null}
 {"carsensor_code": "TR_S001", "model_name": "TR-2", "maker": "トライアンフ", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "TR_S002", "model_name": "TR-3", "maker": "トライアンフ", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "TR_S003", "model_name": "TR-4", "maker": "トライアンフ", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "TR_S004", "model_name": "TR-5", "maker": "トライアンフ", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "TR_S005", "model_name": "TR-6", "maker": "トライアンフ", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "TR_S007", "model_name": "スピットファイア", "maker": "トライアンフ", "origin": "輸入", "body_type": null, "production_period": null}
-{"carsensor_code": "TR_S999", "model_name": "TR_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "TR_S999", "model_name": "トライアンフ その他", "maker": "トライアンフ", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "TS_S002", "model_name": "モデルS", "maker": "テスラ", "origin": "輸入", "body_type": null, "production_period": "2010年4月～"}
 {"carsensor_code": "TS_S003", "model_name": "モデルX", "maker": "テスラ", "origin": "輸入", "body_type": null, "production_period": "2016年9月～"}
 {"carsensor_code": "TS_S004", "model_name": "モデル3", "maker": "テスラ", "origin": "輸入", "body_type": null, "production_period": "2019年5月～"}
 {"carsensor_code": "TS_S005", "model_name": "モデルY", "maker": "テスラ", "origin": "輸入", "body_type": null, "production_period": "2022年6月～"}
-{"carsensor_code": "TS_S999", "model_name": "TS_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "TS_S999", "model_name": "テスラ その他", "maker": "テスラ", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "TV_S001", "model_name": "グリフィス", "maker": "ＴＶＲ", "origin": "輸入", "body_type": "オープン", "production_period": "1994年4月～2001年12月"}
 {"carsensor_code": "TV_S006", "model_name": "タモーラ", "maker": "ＴＶＲ", "origin": "輸入", "body_type": "オープン", "production_period": "2002年4月～2006年12月"}
 {"carsensor_code": "TY_S004", "model_name": "ハイラックスヴィーゴ", "maker": "タイトヨタ", "origin": "輸入", "body_type": null, "production_period": null}
@@ -2078,13 +2078,13 @@
 {"carsensor_code": "UD_S001", "model_name": "クオン", "maker": "ＵＤトラックス", "origin": "国産", "body_type": null, "production_period": "2010年2月～"}
 {"carsensor_code": "UD_S002", "model_name": "コンドル", "maker": "ＵＤトラックス", "origin": "国産", "body_type": null, "production_period": null}
 {"carsensor_code": "UD_S003", "model_name": "カゼット", "maker": "ＵＤトラックス", "origin": "国産", "body_type": null, "production_period": null}
-{"carsensor_code": "UD_S999", "model_name": "UD_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "UD_S999", "model_name": "ＵＤトラックス その他", "maker": "ＵＤトラックス", "origin": "国産", "body_type": null, "production_period": null}
 {"carsensor_code": "UH_S001", "model_name": "アコード", "maker": "米国ホンダ", "origin": "輸入", "body_type": "セダン", "production_period": "2012年9月～"}
 {"carsensor_code": "UH_S002", "model_name": "アコードクーペ", "maker": "米国ホンダ", "origin": "輸入", "body_type": "クーペ", "production_period": "2012年9月～"}
 {"carsensor_code": "UH_S004", "model_name": "シビッククーペ", "maker": "米国ホンダ", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "UH_S010", "model_name": "オデッセイ", "maker": "米国ホンダ", "origin": "輸入", "body_type": "ミニバン", "production_period": "2010年9月～"}
 {"carsensor_code": "UH_S012", "model_name": "リッジライン", "maker": "米国ホンダ", "origin": "輸入", "body_type": "ピックアップトラック", "production_period": "2016年5月～"}
-{"carsensor_code": "UH_S999", "model_name": "UH_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "UH_S999", "model_name": "米国ホンダ その他", "maker": "米国ホンダ", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "UI_S001", "model_name": "EX", "maker": "米国インフィニティ", "origin": "輸入", "body_type": "クロカン・ＳＵＶ", "production_period": "2007年12月～2013年8月"}
 {"carsensor_code": "UI_S002", "model_name": "FX", "maker": "米国インフィニティ", "origin": "輸入", "body_type": "クロカン・ＳＵＶ", "production_period": "2008年9月～"}
 {"carsensor_code": "UI_S007", "model_name": "QX", "maker": "米国インフィニティ", "origin": "輸入", "body_type": "クロカン・ＳＵＶ", "production_period": "2010年9月～2013年8月"}
@@ -2092,7 +2092,7 @@
 {"carsensor_code": "UI_S012", "model_name": "Q60クーペ", "maker": "米国インフィニティ", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "UI_S015", "model_name": "QX60", "maker": "米国インフィニティ", "origin": "輸入", "body_type": "クロカン・ＳＵＶ", "production_period": "2013年9月～"}
 {"carsensor_code": "UI_S017", "model_name": "QX80", "maker": "米国インフィニティ", "origin": "輸入", "body_type": "クロカン・ＳＵＶ", "production_period": "2013年9月～"}
-{"carsensor_code": "UI_S999", "model_name": "UI_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "UI_S999", "model_name": "米国インフィニティ その他", "maker": "米国インフィニティ", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "UL_S002", "model_name": "GS", "maker": "米国レクサス", "origin": "輸入", "body_type": "セダン", "production_period": "2012年1月～"}
 {"carsensor_code": "UL_S008", "model_name": "IS F", "maker": "米国レクサス", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "UL_S009", "model_name": "LS", "maker": "米国レクサス", "origin": "輸入", "body_type": "セダン", "production_period": "2006年9月～"}
@@ -2102,7 +2102,7 @@
 {"carsensor_code": "UL_S015", "model_name": "LC", "maker": "米国レクサス", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "UM_S002", "model_name": "CX-9", "maker": "米国マツダ", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "UM_S003", "model_name": "MX-5ミアータ", "maker": "米国マツダ", "origin": "輸入", "body_type": null, "production_period": null}
-{"carsensor_code": "UM_S999", "model_name": "UM_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "UM_S999", "model_name": "米国マツダ その他", "maker": "米国マツダ", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "UN_S002", "model_name": "Z", "maker": "米国日産", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "UN_S003", "model_name": "アルティマ", "maker": "米国日産", "origin": "輸入", "body_type": "セダン", "production_period": "2012年9月～"}
 {"carsensor_code": "UN_S004", "model_name": "アルティマクーペ", "maker": "米国日産", "origin": "輸入", "body_type": "クーペ", "production_period": "2007年5月～"}
@@ -2115,12 +2115,12 @@
 {"carsensor_code": "UN_S016", "model_name": "ムラーノ", "maker": "米国日産", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "UN_S023", "model_name": "ダットサントラック", "maker": "米国日産", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "UN_S024", "model_name": "フェアレディ", "maker": "米国日産", "origin": "輸入", "body_type": null, "production_period": null}
-{"carsensor_code": "UN_S999", "model_name": "UN_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "UN_S999", "model_name": "米国日産 その他", "maker": "米国日産", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "UR_S003", "model_name": "バハ", "maker": "米国スバル", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "UR_S005", "model_name": "アウトバック", "maker": "米国スバル", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "UR_S006", "model_name": "インプレッサ", "maker": "米国スバル", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "UR_S007", "model_name": "フォレスター", "maker": "米国スバル", "origin": "輸入", "body_type": null, "production_period": null}
-{"carsensor_code": "UR_S999", "model_name": "UR_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "UR_S999", "model_name": "米国スバル その他", "maker": "米国スバル", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "UT_S001", "model_name": "4ランナー", "maker": "米国トヨタ", "origin": "輸入", "body_type": "クロカン・ＳＵＶ", "production_period": "2009年9月～"}
 {"carsensor_code": "UT_S002", "model_name": "FJクルーザー", "maker": "米国トヨタ", "origin": "輸入", "body_type": "クロカン・ＳＵＶ", "production_period": "2006年9月～"}
 {"carsensor_code": "UT_S006", "model_name": "カムリ", "maker": "米国トヨタ", "origin": "輸入", "body_type": "セダン", "production_period": "2011年9月～"}
@@ -2137,7 +2137,7 @@
 {"carsensor_code": "UT_S022", "model_name": "プリウスv", "maker": "米国トヨタ", "origin": "輸入", "body_type": "ステーションワゴン", "production_period": "2011年9月～"}
 {"carsensor_code": "UT_S027", "model_name": "ハイラックス", "maker": "米国トヨタ", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "UT_S028", "model_name": "ピックアップ", "maker": "米国トヨタ", "origin": "輸入", "body_type": null, "production_period": null}
-{"carsensor_code": "UT_S999", "model_name": "UT_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "UT_S999", "model_name": "米国トヨタ その他", "maker": "米国トヨタ", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "UZ_S999", "model_name": "UZ_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "VO_S001", "model_name": "V70", "maker": "ボルボ", "origin": "輸入", "body_type": "ステーションワゴン", "production_period": "2007年11月～2017年2月"}
 {"carsensor_code": "VO_S002", "model_name": "V40", "maker": "ボルボ", "origin": "輸入", "body_type": "ハッチバック", "production_period": "2013年2月～2020年12月"}
@@ -2174,9 +2174,9 @@
 {"carsensor_code": "VO_S047", "model_name": "EX30", "maker": "ボルボ", "origin": "輸入", "body_type": "クロカン・ＳＵＶ", "production_period": "2023年10月～"}
 {"carsensor_code": "VO_S048", "model_name": "EX40", "maker": "ボルボ", "origin": "輸入", "body_type": "クロカン・ＳＵＶ", "production_period": "2024年9月～"}
 {"carsensor_code": "VO_S049", "model_name": "EX30クロスカントリー", "maker": "ボルボ", "origin": "輸入", "body_type": "クロカン・ＳＵＶ", "production_period": "2025年8月～"}
-{"carsensor_code": "VO_S999", "model_name": "VO_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "VO_S999", "model_name": "ボルボ その他", "maker": "ボルボ", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "VP_S001", "model_name": "プリンセス", "maker": "バンデンプラ", "origin": "輸入", "body_type": null, "production_period": null}
-{"carsensor_code": "VP_S999", "model_name": "VP_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "VP_S999", "model_name": "バンデンプラ その他", "maker": "バンデンプラ", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "VW_S001", "model_name": "ポロ", "maker": "フォルクスワーゲン", "origin": "輸入", "body_type": "ハッチバック", "production_period": "2018年3月～"}
 {"carsensor_code": "VW_S002", "model_name": "ヴェント", "maker": "フォルクスワーゲン", "origin": "輸入", "body_type": "セダン", "production_period": "1992年6月～1998年12月"}
 {"carsensor_code": "VW_S003", "model_name": "コラード", "maker": "フォルクスワーゲン", "origin": "輸入", "body_type": "クーペ", "production_period": "1990年11月～1995年12月"}
@@ -2227,10 +2227,10 @@
 {"carsensor_code": "VW_S058", "model_name": "ID.4", "maker": "フォルクスワーゲン", "origin": "輸入", "body_type": "クロカン・ＳＵＶ", "production_period": "2022年11月～"}
 {"carsensor_code": "VW_S059", "model_name": "ユーロバン", "maker": "フォルクスワーゲン", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "VW_S060", "model_name": "ID.Buzz", "maker": "フォルクスワーゲン", "origin": "輸入", "body_type": "ミニバン", "production_period": "2025年6月～"}
-{"carsensor_code": "VW_S999", "model_name": "VW_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "VW_S999", "model_name": "フォルクスワーゲン その他", "maker": "フォルクスワーゲン", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "VX_S999", "model_name": "VX_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "WE_S001", "model_name": "SEi", "maker": "ウエストフィールド", "origin": "輸入", "body_type": null, "production_period": null}
-{"carsensor_code": "WE_S999", "model_name": "WE_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "WE_S999", "model_name": "ウエストフィールド その他", "maker": "ウエストフィールド", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "WN_S999", "model_name": "WN_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "WO_S001", "model_name": "ホーネット", "maker": "ウーズレイ", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "ZJ_S999", "model_name": "ZJ_S999", "maker": null, "origin": "輸入", "body_type": null, "production_period": null}

@@ -1029,3 +1029,157 @@ def test_months_until_handles_expired():
     assert months_until(202611, today) == 3
     assert months_until(202606, today) == -2  # 切れている
     assert months_until(None, today) is None
+
+
+# ---------------------------------------------------------------- 旧車（classics）
+
+_CARD = """
+<div class="cassette" id="{id}_cas">
+  <p class="cassetteMain__title">{title}</p>
+  <div class="totalPrice__mainPriceNum">{price}</div>
+  <div class="specList__detailBox"><span class="specList__title">年式</span>
+    <span class="specList__data">{year} (H10)</span></div>
+  <div class="specList__detailBox"><span class="specList__title">走行距離</span>
+    <span class="specList__data">{mileage} 万km</span></div>
+  <div class="specList__detailBox"><span class="specList__title">修復歴</span>
+    <span class="specList__data">{repair}</span></div>
+  <div class="specList__detailBox"><span class="specList__title">保証</span>
+    <span class="specList__data">{warranty}</span></div>
+</div>
+"""
+
+
+def _page(ids, year=1998):
+    cards = "".join(
+        _CARD.format(id=i, title=f"V70 {i}", price=100, year=year, mileage=5,
+                     repair="なし", warranty="保証付")
+        for i in ids
+    )
+    return f"<html><body>{cards}</body></html>"
+
+
+class _FakeFetcher:
+    """index2.html 以降が 1 ページ目を返す、実際に遭遇した挙動を再現する。"""
+
+    def __init__(self, pages):
+        self.pages = pages
+        self.calls = 0
+
+    def get_text(self, url, params=None):
+        self.calls += 1
+        return self.pages[min(self.calls - 1, len(self.pages) - 1)]
+
+
+class _FakeVehicle:
+    key = "VO_S001"
+    name = "V70"
+
+    @staticmethod
+    def generation_for_model_year(_year):
+        return ""
+
+
+def test_fetch_range_stops_when_a_page_repeats_the_previous_one():
+    """同じ掲載を何度も拾わないこと。ページ送りが効かない車種がある。"""
+    from kakaku_ai.sources import carsensor_listings as cl
+
+    first = _page([f"AU{i:08d}" for i in range(cl.PER_PAGE)])
+    fetcher = _FakeFetcher([first, first, first])
+    rows = cl.fetch_range(fetcher, _FakeVehicle(), "VO_S001", 1988, 2001, max_pages=5)
+
+    assert len(rows) == cl.PER_PAGE
+    assert len({r["listing_id"] for r in rows}) == cl.PER_PAGE
+    # 1 ページ目と、新しいものが無いと分かった 2 ページ目で打ち切る
+    assert fetcher.calls == 2
+
+
+def test_fetch_range_follows_real_pagination():
+    from kakaku_ai.sources import carsensor_listings as cl
+
+    p1 = _page([f"AU{i:08d}" for i in range(cl.PER_PAGE)])
+    p2 = _page([f"AU{i:08d}" for i in range(cl.PER_PAGE, cl.PER_PAGE + 5)])
+    rows = cl.fetch_range(_FakeFetcher([p1, p2]), _FakeVehicle(), "VO_S001", 1988, 2001)
+
+    assert len(rows) == cl.PER_PAGE + 5
+
+
+def test_fetch_range_keeps_only_the_requested_years():
+    from kakaku_ai.sources import carsensor_listings as cl
+
+    rows = cl.fetch_range(
+        _FakeFetcher([_page(["AU1", "AU2"], year=2015)]),
+        _FakeVehicle(), "VO_S001", 1988, 2001,
+    )
+    assert rows == []
+
+
+def test_warranty_scoring_does_not_count_hoshou_nashi():
+    """「保証無」は部分一致で「保証」を含む。加点してはいけない。"""
+    from kakaku_ai import classics
+
+    covered, why = classics.score({"warranty": "保証付"}, None, None)
+    none, why_none = classics.score({"warranty": "保証無"}, None, None)
+    assert covered == 1.0 and "保証付" in why
+    assert none == 0.0 and why_none == []
+
+
+def test_rescore_compares_within_the_same_model_and_year():
+    """車種をまたいで中央値を取らないこと。240の8万kmとV70の8万kmは意味が違う。"""
+    from kakaku_ai import classics
+
+    rows = [
+        {"carsensor_code": "VO_S014", "model_year": 1991, "mileage_km": 200_000},
+        {"carsensor_code": "VO_S014", "model_year": 1991, "mileage_km": 220_000},
+        {"carsensor_code": "VO_S001", "model_year": 1998, "mileage_km": 80_000},
+        {"carsensor_code": "VO_S001", "model_year": 1998, "mileage_km": 90_000},
+        {"carsensor_code": "VO_S001", "model_year": 1998, "mileage_km": 30_000},
+    ]
+    classics.rescore(rows)
+    # 240 の 20万km は同年式（中央値 21万km）では平均的なので増減なし。
+    # 5台まとめて中央値（9万km）を取っていたら 2.2倍の外れ値として減点されてしまう
+    assert rows[0]["score"] == 0.0
+    assert rows[0]["peer_count"] == 2
+    # V70 の 3万km は同年式（中央値 8万km）の半分以下
+    assert rows[4]["score"] == 3.0
+    assert rows[4]["peer_count"] == 3
+
+
+def test_rescore_skips_comparison_when_a_year_has_one_car():
+    from kakaku_ai import classics
+
+    rows = [{"carsensor_code": "VO_S014", "model_year": 1991,
+             "mileage_km": 300_000, "total_price_manyen": 50}]
+    classics.rescore(rows)
+    assert rows[0]["score"] == 0.0
+    assert rows[0]["peer_count"] == 1
+
+
+def test_dedupe_keeps_the_first_occurrence():
+    from kakaku_ai import classics
+
+    rows = [{"listing_id": "A", "n": 1}, {"listing_id": "A", "n": 2}, {"listing_id": "B"}]
+    assert classics.dedupe(rows) == [{"listing_id": "A", "n": 1}, {"listing_id": "B"}]
+
+
+def test_hino_and_mitsuoka_are_domestic():
+    """カーセンサーは「日野自動車」と書く。略称だけだと輸入車に化ける。"""
+    assert carsensor.is_domestic("日野自動車")
+    assert carsensor.is_domestic("光岡自動車")
+    assert not carsensor.is_domestic("ボルボ")
+
+
+def test_normalize_catalog_fills_the_other_bucket():
+    """<メーカー>_S999 はタイトルが無くメーカーが取れない。兄弟から引く。"""
+    from kakaku_ai import wide
+
+    catalog = {
+        "VO_S001": {"maker": "ボルボ", "origin": "輸入", "model_name": "V70"},
+        "VO_S999": {"maker": None, "origin": None, "model_name": "VO_S999"},
+        "HI_S001": {"maker": "日野自動車", "origin": "輸入", "model_name": "デュトロ"},
+    }
+    wide.normalize_catalog(catalog)
+    assert catalog["VO_S999"]["maker"] == "ボルボ"
+    assert catalog["VO_S999"]["origin"] == "輸入"
+    assert catalog["VO_S999"]["model_name"] == "ボルボ その他"
+    # 判定表を直したぶんは既存のカタログにも引き直される
+    assert catalog["HI_S001"]["origin"] == "国産"

@@ -83,6 +83,38 @@ def load_catalog() -> dict[str, dict[str, Any]]:
     return out
 
 
+def normalize_catalog(catalog: dict[str, dict[str, Any]]) -> int:
+    """カタログの取りこぼしを直す。直した件数を返す。
+
+    1. `<メーカー>_S999`（＝そのメーカーの「その他」枠）はページにタイトルが
+       無く、メーカー名も車種名も取れない。同じ接頭辞の他の車種から引いて補う。
+    2. 国産／輸入は取得時のメーカー名で判定しているので、判定表を直しても
+       既存のカタログには反映されない。ここで引き直す。
+    """
+    from .sources.carsensor import is_domestic
+
+    known: dict[str, str] = {}
+    for code, meta in catalog.items():
+        prefix = code.split("_S")[0]
+        if meta.get("maker") and prefix not in known:
+            known[prefix] = meta["maker"]
+
+    fixed = 0
+    for code, meta in catalog.items():
+        before = (meta.get("maker"), meta.get("origin"))
+        if not meta.get("maker"):
+            sibling = known.get(code.split("_S")[0])
+            if sibling:
+                meta["maker"] = sibling
+                if meta.get("model_name") in (None, "", code):
+                    meta["model_name"] = f"{sibling} その他"
+        if meta.get("maker"):
+            meta["origin"] = "国産" if is_domestic(meta["maker"]) else "輸入"
+        if (meta.get("maker"), meta.get("origin")) != before:
+            fixed += 1
+    return fixed
+
+
 def save_catalog(catalog: dict[str, dict[str, Any]]) -> None:
     CATALOG_PATH.parent.mkdir(parents=True, exist_ok=True)
     with CATALOG_PATH.open("w", encoding="utf-8") as fh:
@@ -155,6 +187,8 @@ def crawl(
             log.info("  %s/%s 車種（相場 %s行）", i, len(codes), len(by_year))
             save_catalog(catalog)
 
+    if fixed := normalize_catalog(catalog):
+        log.info("  メーカー／国産輸入の欠け %s件を補完", fixed)
     save_catalog(catalog)
     log.info("全車種クロール完了: 車種 %s / 年式別相場 %s行", len(summaries), len(by_year))
     return summaries, by_year
