@@ -5,6 +5,7 @@
     uv run kakaku-ai excel                 # 全スナップショットから xlsx を作る
     uv run kakaku-ai upload                # Drive に上げる
     uv run kakaku-ai weekly                # crawl → excel → upload を通しで
+    uv run kakaku-ai classics              # 旧車（1988〜2001年式）の在庫を全メーカー集める
 """
 
 from __future__ import annotations
@@ -14,7 +15,7 @@ import logging
 import sys
 from pathlib import Path
 
-from . import drive, excel, notify, pipeline, store, watch, wide
+from . import classics, drive, excel, notify, pipeline, store, watch, wide
 from .vehicles import DATA_DIR, load_vehicles
 
 OUTPUT_DIR = DATA_DIR / "xlsx"
@@ -95,6 +96,18 @@ def main(argv: list[str] | None = None) -> int:
     wd.add_argument("--limit", type=int, help="車種数の上限（試運転用）")
     wd.add_argument("--year-from", type=int, help="年式の下限（既定=全年式）")
     wd.add_argument("--no-cache", action="store_true")
+
+    cs = sub.add_parser("classics", help="旧車の在庫を全メーカー集めて xlsx にする")
+    cs.add_argument("--year-from", type=int, default=classics.YEAR_FROM)
+    cs.add_argument("--year-to", type=int, default=classics.YEAR_TO)
+    cs.add_argument("--maker", nargs="*", help="メーカー名で絞る（既定=全部）")
+    cs.add_argument("--limit", type=int, help="車種数の上限（試運転用）")
+    cs.add_argument("--max-pages", type=int, default=5, help="1車種あたりのページ数")
+    cs.add_argument("--snapshot", help="YYYY-MM-DD（既定=今日）")
+    cs.add_argument("-o", "--output")
+    cs.add_argument("--folder-id", default=drive.DEFAULT_FOLDER_ID)
+    cs.add_argument("--upload", action="store_true", help="作った xlsx を Drive に上げる")
+    cs.add_argument("--no-cache", action="store_true")
 
     sub.add_parser("list", help="収録済みスナップショットを表示する")
 
@@ -240,6 +253,36 @@ def main(argv: list[str] | None = None) -> int:
             for r in fresh[: notify.MAX_PER_RUN]:
                 seen[r["auction_id"]] = r.get("end_time") or ""
             notify.save_seen(seen)
+        return 0
+
+    if args.command == "classics":
+        from . import classics_excel
+        from .http import Fetcher
+        from .pipeline import CACHE_DIR
+        from .sources import carsensor_listings
+
+        snapshot = args.snapshot or store.today()
+        fetcher = Fetcher(cache_dir=CACHE_DIR, snapshot=snapshot, use_cache=not args.no_cache)
+        listings = classics.crawl(
+            fetcher,
+            year_from=args.year_from,
+            year_to=args.year_to,
+            makers=args.maker,
+            limit=args.limit,
+            max_pages=args.max_pages,
+        )
+        # 在庫ストアにも積んでおく。週を空けて撮り直すと値下げが履歴に残る。
+        # 掲載終了の判定は track() 側の役目なのでここではしない
+        carsensor_listings.record(listings, snapshot)
+        store.write(snapshot, "classic_listings", listings)
+
+        models = classics.by_model(listings)
+        path = Path(args.output) if args.output else classics_excel.DEFAULT_OUTPUT
+        classics_excel.build(listings, models, output=path,
+                             year_from=args.year_from, year_to=args.year_to, snapshot=snapshot)
+        if args.upload:
+            drive.upload(path, folder_id=args.folder_id, snapshot=snapshot)
+        print(f"旧車 {len(listings)}台 / {len(models)}車種 → {path}")
         return 0
 
     if args.command == "list":

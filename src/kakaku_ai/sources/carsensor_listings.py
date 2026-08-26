@@ -148,6 +148,46 @@ def _fetch_year(
     return rows
 
 
+def fetch_range(
+    fetcher: Fetcher,
+    vehicle,
+    code: str,
+    year_from: int,
+    year_to: int,
+    *,
+    max_pages: int = 5,
+) -> list[dict[str, Any]]:
+    """年式の**範囲**をまとめて取る。
+
+    `_fetch_year()` は 1 年ずつ叩くので、14年ぶん見ようとすると 1 車種で 14 回に
+    なる。`YMIN`/`YMAX` は範囲指定がそのまま効くので、旧車のように年式が
+    散らばっていて 1 年あたりの在庫が少ないものは、こちらのほうが桁違いに軽い。
+    在庫の無い車種は 1 回で 0 件と分かる。
+    """
+    maker, model = code.split("_S")
+    rows: list[dict[str, Any]] = []
+    for page in range(1, max_pages + 1):
+        url = BASE.format(maker=maker, model=f"{int(model):03d}", page="" if page == 1 else page)
+        try:
+            html = fetcher.get_text(url, {"YMIN": year_from, "YMAX": year_to})
+        except Exception as exc:  # noqa: BLE001
+            if "404" not in str(exc):
+                log.warning("  carsensor在庫 %s %s-%s p%s: %s",
+                            vehicle.name, year_from, year_to, page, exc)
+            break
+        cards = BeautifulSoup(html, "lxml").select(CARD)
+        if not cards:
+            break
+        for card in cards:
+            parsed = _parse_card(card, vehicle, code)
+            # YMIN/YMAX で絞っているが、念のため年式を確認する
+            if parsed and parsed["model_year"] and year_from <= parsed["model_year"] <= year_to:
+                rows.append(parsed)
+        if len(cards) < PER_PAGE:
+            break
+    return rows
+
+
 # ------------------------------------------------------------------ 永続ストア
 
 

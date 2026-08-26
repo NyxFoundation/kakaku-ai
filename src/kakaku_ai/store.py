@@ -24,6 +24,7 @@ DATASETS = (
     "carsensor_delisted",  # 掲載が消えた店頭在庫＝成約推定
     "wide_by_year",  # 全車種 × 年式 の小売相場
     "wide_summary",  # 全車種の車種単位サマリ（カタログ兼用）
+    "classic_listings",  # 旧車（1988〜2001年式）の在庫明細（1台ずつ）
     "reviews",  # 口コミ明細（みんカラ）
     "review_summary",  # 車種 × 年式 の口コミ集計
     "recalls",  # 国交省リコール

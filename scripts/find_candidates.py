@@ -8,20 +8,11 @@
     uv run python scripts/find_candidates.py --body ミニバン --max-price 200 --max-mileage 10
     uv run python scripts/find_candidates.py --model V70 940 240 --sort mileage
 
-### 並べ方
+並べ方（状態スコア）は `kakaku_ai.classics.rescore()` と同じ。走行距離・修復歴・
+車検残・保証を重く、価格は軽く見る。デザインは数値化できないので採点しない。
 
-古い車は「安い個体」より「程度の良い個体」を選ぶべきなので、価格だけでは並べない。
-既定のスコアは
-
-* **走行距離** — 同年式のなかで少ないほど加点。古い車ではここがいちばん効く
-* **修復歴なし** — 加点。「あり」は大きく減点
-* **車検残** — 長いほど加点（残がないと10万円前後の出費になる）
-* **保証・整備** — 付いていれば加点
-* **価格** — 同年式の中央値より安ければ少し加点。ただし**安すぎは減点**にしている。
-  30年落ちで極端に安い個体は、状態がそれなりの理由があることが多い
-
-「デザイン」は数値化できないので触らない。グレード・装備の載った出品タイトルと
-リンクを出すので、そこは目で見て判断する。
+全メーカーを旧車の年式レンジで一気に舐めて xlsx にするのは `kakaku-ai classics`。
+こちらは車種や条件を指定して手元で確かめる用。
 """
 
 from __future__ import annotations
@@ -29,14 +20,13 @@ from __future__ import annotations
 import argparse
 import json
 import logging
-import statistics as st
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from kakaku_ai import store  # noqa: E402
-from kakaku_ai.aggregate import months_until  # noqa: E402
+from kakaku_ai.classics import rescore  # noqa: E402
 from kakaku_ai.http import Fetcher  # noqa: E402
 from kakaku_ai.sources import carsensor_listings as cl  # noqa: E402
 from kakaku_ai.wide import load_catalog  # noqa: E402
@@ -56,48 +46,6 @@ class _V:
     def generation_for_model_year(_year):
         return ""
 
-
-def score(row: dict, peer_median_price: float | None, peer_median_mileage: float | None) -> tuple[float, list[str]]:
-    """状態の良さを点数にする。理由も返す（数字だけ出しても判断できないので）。"""
-    points = 0.0
-    why: list[str] = []
-
-    mileage = row.get("mileage_km")
-    if mileage is not None and peer_median_mileage:
-        ratio = mileage / peer_median_mileage
-        if ratio <= 0.5:
-            points += 3; why.append(f"同年式の半分以下の走行（{mileage/10000:.1f}万km）")
-        elif ratio <= 0.8:
-            points += 1.5; why.append(f"走行が少なめ（{mileage/10000:.1f}万km）")
-        elif ratio >= 1.5:
-            points -= 1.5; why.append(f"走行が多め（{mileage/10000:.1f}万km）")
-
-    repair = (row.get("repair_history") or "").strip()
-    if repair == "なし":
-        points += 2; why.append("修復歴なし")
-    elif repair == "あり":
-        points -= 4; why.append("修復歴あり")
-
-    ym = row.get("inspection_ym") or 0
-    left = months_until(ym) or 0
-    if left > 0:
-        points += min(left / 12, 2)
-        why.append(f"車検 {ym // 100}/{ym % 100:02d} まで（残り{left}ヶ月）")
-    elif "整備付" in (row.get("inspection") or ""):
-        points += 1; why.append("車検整備付")
-
-    if "保証" in (row.get("warranty") or ""):
-        points += 1; why.append("保証付")
-
-    price = row.get("total_price_manyen") or row.get("base_price_manyen")
-    if price and peer_median_price:
-        ratio = price / peer_median_price
-        if 0.6 <= ratio <= 0.9:
-            points += 1; why.append(f"同年式より安い（中央値 {peer_median_price:.0f}万）")
-        elif ratio < 0.5:
-            # 30年落ちで極端に安いのは、それなりの理由があることが多い
-            points -= 1; why.append("同年式より極端に安い（要確認）")
-    return points, why
 
 
 def main() -> int:
@@ -169,18 +117,7 @@ def main() -> int:
     if args.max_mileage:
         rows = [r for r in rows if (r.get("mileage_km") or 0) <= args.max_mileage * 10_000]
 
-    # 同年式の中央値を出して、そこからの相対で評価する
-    by_year: dict[int, list[dict]] = {}
-    for r in rows:
-        by_year.setdefault(r.get("model_year") or 0, []).append(r)
-    med_price = {y: st.median([x["total_price_manyen"] for x in v if x.get("total_price_manyen")])
-                 for y, v in by_year.items() if any(x.get("total_price_manyen") for x in v)}
-    med_mileage = {y: st.median([x["mileage_km"] for x in v if x.get("mileage_km")])
-                   for y, v in by_year.items() if any(x.get("mileage_km") for x in v)}
-
-    for r in rows:
-        y = r.get("model_year") or 0
-        r["score"], r["why"] = score(r, med_price.get(y), med_mileage.get(y))
+    rescore(rows)  # 車種×年式のなかで相対評価する
 
     key = {
         "score": lambda r: -r["score"],
