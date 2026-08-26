@@ -100,10 +100,14 @@ def _parse_card(card, vehicle, code: str) -> dict[str, Any] | None:
         if m:
             mileage_km = int(m.group(1).replace(",", ""))
 
+    # グレード＋装備が全部つながった長い文字列。頭のほうにグレードが来る
+    title = card.select_one(".cassetteMain__title")
+
     return {
         "listing_id": listing_id,
         "vehicle_key": vehicle.key,
         "vehicle_name": vehicle.name,
+        "title": re.sub(r"\s+", " ", title.get_text(" ", strip=True))[:160] if title else "",
         "carsensor_code": code,
         "model_year": year,
         "generation": vehicle.generation_for_model_year(year),
