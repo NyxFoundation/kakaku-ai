@@ -169,6 +169,41 @@ def save_store(store: dict[str, dict[str, Any]]) -> None:
             fh.write(json.dumps(store[listing_id], ensure_ascii=False) + "\n")
 
 
+def record(rows: Iterable[dict[str, Any]], snapshot: str) -> int:
+    """拾った在庫を永続ストアに足すだけ。掲載終了の判定はしない。
+
+    `track()` は「今週見えなかった＝売れた」を判定するので、全車種を毎回
+    同じ範囲で撮ることが前提になる。単発の探索（`scripts/find_candidates.py`）で
+    それを呼ぶと、撮っていない車種が軒並み掲載終了扱いになってしまう。
+    こちらは値動きだけ積んでおいて、消えた判定には関与しない。
+    """
+    store = load_store()
+    added = 0
+    for row in rows:
+        listing_id = row.get("listing_id")
+        if not listing_id:
+            continue
+        existing = store.get(listing_id)
+        if existing is None:
+            store[listing_id] = {
+                **row,
+                "first_seen": snapshot,
+                "last_seen": snapshot,
+                "price_history": [[snapshot, row.get("total_price_manyen")]],
+                "delisted_on": None,
+            }
+            added += 1
+            continue
+        existing.update({k: v for k, v in row.items() if v is not None})
+        existing["last_seen"] = snapshot
+        history = existing.setdefault("price_history", [])
+        if not history or history[-1][1] != row.get("total_price_manyen"):
+            history.append([snapshot, row.get("total_price_manyen")])
+        existing["delisted_on"] = None
+    save_store(store)
+    return added
+
+
 def track(
     fetcher: Fetcher,
     vehicles: Iterable[Any],

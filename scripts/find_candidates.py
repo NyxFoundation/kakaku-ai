@@ -35,6 +35,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
+from kakaku_ai import store  # noqa: E402
 from kakaku_ai.aggregate import months_until  # noqa: E402
 from kakaku_ai.http import Fetcher  # noqa: E402
 from kakaku_ai.sources import carsensor_listings as cl  # noqa: E402
@@ -112,7 +113,9 @@ def main() -> int:
     ap.add_argument("--sort", choices=["score", "mileage", "price"], default="score")
     ap.add_argument("--limit", type=int, default=30)
     ap.add_argument("--pages", type=int, default=2, help="1年式あたりのページ数")
-    ap.add_argument("--json", help="結果を JSON で書き出す")
+    ap.add_argument("--json", help="**絞り込み後の全件**を JSON で書き出す（--limit は表示だけ）")
+    ap.add_argument("--no-save", action="store_true",
+                    help="拾った在庫を data/carsensor_listings.jsonl に足さない")
     args = ap.parse_args()
 
     logging.basicConfig(level=logging.INFO, format="%(message)s", stream=sys.stderr)
@@ -140,7 +143,8 @@ def main() -> int:
     log.info("対象車種 %s: %s", len(targets), ", ".join(m["model_name"] for _, m in targets[:12]))
 
     cl.MAX_PAGES_PER_YEAR = args.pages
-    fetcher = Fetcher(use_cache=False)
+    # 探索は条件を変えて何度も回すものなので、当日ぶんはキャッシュから返す
+    fetcher = Fetcher(use_cache=True)
     rows: list[dict] = []
     for n, (code, meta) in enumerate(targets, 1):
         vehicle = _V(code, meta["model_name"])
@@ -184,10 +188,18 @@ def main() -> int:
         "price": lambda r: r.get("total_price_manyen") or 10**9,
     }[args.sort]
     rows.sort(key=key)
-    rows = rows[: args.limit]
 
-    print(f"\n該当 {len(rows)} 台（{args.year_from}〜{args.year_to}年式）\n")
-    for i, r in enumerate(rows, 1):
+    # 書き出しは全件。--limit は画面に出す数だけ絞る
+    if args.json:
+        Path(args.json).write_text(json.dumps(rows, ensure_ascii=False, indent=2), encoding="utf-8")
+        log.info("%s 件を %s に書き出しました", len(rows), args.json)
+    if not args.no_save:
+        added = cl.record(rows, store.today())
+        log.info("在庫ストアに %s 件を新規登録（累計 %s 件）", added, len(cl.load_store()))
+
+    print(f"\n該当 {len(rows)} 台中 上位 {min(args.limit, len(rows))} 台"
+          f"（{args.year_from}〜{args.year_to}年式）\n")
+    for i, r in enumerate(rows[: args.limit], 1):
         mileage = f"{r['mileage_km'] / 10000:.1f}万km" if r.get("mileage_km") else "距離不明"
         # 支払総額を出していない店もあるので、その場合は車両本体価格で代用する
         if r.get("total_price_manyen"):
@@ -202,10 +214,6 @@ def main() -> int:
             print(f"    {r['title'][:90]}")
         print(f"    {' ・ '.join(r['why']) if r['why'] else '特記なし'}")
         print(f"    {r['url']}")
-
-    if args.json:
-        Path(args.json).write_text(json.dumps(rows, ensure_ascii=False, indent=2), encoding="utf-8")
-        print(f"\n{args.json} に書き出しました", file=sys.stderr)
     return 0
 
 
