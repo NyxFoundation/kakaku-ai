@@ -110,6 +110,9 @@ def main(argv: list[str] | None = None) -> int:
     cs.add_argument("--no-cache", action="store_true")
     cs.add_argument("--rebuild", action="store_true",
                     help="取得はせず、保存済みの在庫から xlsx を作り直す")
+    cs.add_argument("--yahoo", action="store_true",
+                    help="ヤフオクの落札（過去180日）も取る。中古車ノードを"
+                         "並び順を変えて全部さらうので 40〜50分かかる")
 
     sub.add_parser("list", help="収録済みスナップショットを表示する")
 
@@ -286,13 +289,25 @@ def main(argv: list[str] | None = None) -> int:
             carsensor_listings.record(listings, snapshot)
             store.write(snapshot, "classic_listings", listings)
 
+        if args.yahoo:
+            from .sources import yahoo_used_cars
+
+            fetcher = Fetcher(cache_dir=CACHE_DIR, snapshot=snapshot,
+                              use_cache=not args.no_cache)
+            auctions = yahoo_used_cars.sweep(fetcher, snapshot, model_year_to=args.year_to)
+            store.write(snapshot, "classic_auctions", auctions)
+        else:
+            # 取り直さないときは保存済みを使う。落札はもう変わらないので
+            # 毎回 50 分かけて取り直す意味がない
+            auctions, _ = store.read_latest("classic_auctions")
+
         models = classics.by_model(listings)
         path = Path(args.output) if args.output else classics_excel.DEFAULT_OUTPUT
-        classics_excel.build(listings, models, output=path,
+        classics_excel.build(listings, models, auctions=auctions, output=path,
                              year_from=args.year_from, year_to=args.year_to, snapshot=snapshot)
         if args.upload:
             drive.upload(path, folder_id=args.folder_id, snapshot=snapshot)
-        print(f"旧車 {len(listings)}台 / {len(models)}車種 → {path}")
+        print(f"旧車 在庫{len(listings)}台 / {len(models)}車種 / 落札{len(auctions)}台 → {path}")
         return 0
 
     if args.command == "list":

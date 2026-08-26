@@ -160,6 +160,7 @@ def crawl(
     log.info("旧車クロール: %s車種 × %s〜%s年式", len(codes), year_from, year_to)
 
     rows: list[dict[str, Any]] = []
+    truncated: list[str] = []
     with_stock = 0
     for i, code in enumerate(codes, 1):
         meta = catalog[code]
@@ -181,7 +182,14 @@ def crawl(
                 "production_period": meta.get("production_period"),
             })
         rows.extend(found)
+        if len(found) >= max_pages * cl.PER_PAGE:
+            truncated.append(vehicle.name)
         log.info("  [%s/%s] %-24s %s台", i, len(codes), vehicle.name, len(found))
+
+    if truncated:
+        # 黙って切り捨てると「全部入っている」と誤解したまま台数を数えることになる
+        log.warning("  ページ上限(%s)で打ち切った車種 %s: %s。--max-pages を上げると全部入る",
+                    max_pages, len(truncated), "・".join(truncated))
 
     rows = dedupe(rows)
     rescore(rows)

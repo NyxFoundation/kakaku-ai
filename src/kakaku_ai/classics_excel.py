@@ -17,6 +17,7 @@ from openpyxl import Workbook
 from openpyxl.formatting.rule import ColorScaleRule
 from openpyxl.utils import get_column_letter
 
+from . import classics_charts
 from .excel import ALT_FILL, INT_FMT, MANYEN_FMT, TITLE_FONT, _write_table
 from .vehicles import DATA_DIR
 
@@ -75,6 +76,34 @@ MODEL_COLUMNS: list[tuple[str, str]] = [
     ("url", "一覧URL"),
 ]
 
+AUCTION_COLUMNS: list[tuple[str, str]] = [
+    ("end_date", "終了日"),
+    ("maker", "メーカー"),
+    ("model_name", "車種"),
+    ("model_year", "年式"),
+    ("price_manyen", "落札額\n(万円)"),
+    ("buy_now_manyen", "即決\n(万円)"),
+    ("mileage_mankm", "走行距離\n(万km)"),
+    ("repair_label", "修復歴"),
+    ("mileage_label", "メーター"),
+    ("bid_count", "入札数"),
+    ("seller_label", "出品者"),
+    ("title", "タイトル"),
+    ("url", "落札URL"),
+]
+
+AUCTION_FORMATS = {
+    "model_year": "0",
+    "price_manyen": MANYEN_FMT,
+    "buy_now_manyen": MANYEN_FMT,
+    "mileage_mankm": "0.0",
+    "bid_count": INT_FMT,
+}
+
+REPAIR_LABELS = {"NONE": "なし", "REPAIRED": "あり", "EXISTS": "あり", "UNKNOWN": "わからない"}
+MILEAGE_LABELS = {"REAL_MILEAGE": "実走行", "METER_REPLACEMENT": "メーター交換",
+                  "UNKNOWN_MILEAGE": "不明"}
+
 MODEL_FORMATS = {
     "listing_count": INT_FMT,
     "year_min": "0",
@@ -101,7 +130,23 @@ def _flatten(row: dict[str, Any]) -> dict[str, Any]:
     return out
 
 
+def _flatten_auction(row: dict[str, Any]) -> dict[str, Any]:
+    out = dict(row)
+    out["end_date"] = (row.get("end_time") or "")[:10]
+    out["price_manyen"] = round(row["price"] / 10000, 1) if row.get("price") else None
+    out["buy_now_manyen"] = (round(row["buy_now_price"] / 10000, 1)
+                             if row.get("buy_now_price") else None)
+    out["mileage_mankm"] = round(row["mileage_km"] / 10000, 1) if row.get("mileage_km") else None
+    out["repair_label"] = REPAIR_LABELS.get(row.get("repair_type") or "", "不明")
+    out["mileage_label"] = MILEAGE_LABELS.get(row.get("mileage_type") or "", "")
+    # 個人出品かどうかは旧車ではとくに効く（業者は整備済み、個人は現状渡しが多い）
+    is_store = row.get("seller_is_store")
+    out["seller_label"] = "不明" if is_store is None else ("業者" if is_store else "個人")
+    return out
+
+
 def _readme(ws, listings: list[dict[str, Any]], models: list[dict[str, Any]],
+            auctions: list[dict[str, Any]],
             year_from: int, year_to: int, snapshot: str) -> None:
     ws.column_dimensions["A"].width = 24
     ws.column_dimensions["B"].width = 108
@@ -116,10 +161,18 @@ def _readme(ws, listings: list[dict[str, Any]], models: list[dict[str, Any]],
         ("対象", f"{year_from}〜{year_to}年式 / 全国 / カーセンサー掲載在庫"),
         ("収録", f"{len(listings)}台 / {len(models)}車種 / {makers}メーカー"
                  f"（うち輸入車 {imported}台）"),
+        ("ヤフオク落札", f"{len(auctions)}台（過去180日）" if auctions else "未取得"),
         ("", ""),
         ("■ シート", ""),
-        ("候補一覧", "1台ずつの明細。状態スコア順。メーカー・ボディタイプ・年式・価格・"
-                 "修復歴でフィルタできる。まずここ。"),
+        ("グラフ_メーカー別", "メーカーごとの在庫台数と価格中央値。どこに玉が残っているか。"),
+        ("グラフ_年式別", "年式ごとの台数・価格・走行距離。古いほど台数が減り価格は上がる。"),
+        ("グラフ_車種別", "在庫の多い車種の価格帯（最安・中央値・最高）。幅が広い＝程度の差が大きい。"),
+        ("グラフ_落札比較", "同じ車種の店頭価格とヤフオク落札価格の差。差が大きいほど"
+                       "オークションの旨みが大きい。"),
+        ("候補一覧", "カーセンサー在庫の1台ずつの明細。状態スコア順。メーカー・ボディタイプ・"
+                 "年式・価格・修復歴でフィルタできる。"),
+        ("ヤフオク落札", "過去180日の落札結果。実際にいくらで売れたかはこちら。"
+                    "出品者が個人か業者かも出している。"),
         ("車種別サマリ", "車種ごとの在庫台数・価格帯・走行中央値。どの車種が現実的か俯瞰する用。"),
         ("メーカー別サマリ", "メーカー単位の台数と価格帯。"),
         ("", ""),
@@ -185,14 +238,19 @@ def build(
     listings: list[dict[str, Any]],
     models: list[dict[str, Any]],
     *,
+    auctions: list[dict[str, Any]] | None = None,
     output: Path = DEFAULT_OUTPUT,
     year_from: int,
     year_to: int,
     snapshot: str,
 ) -> Path:
+    auctions = auctions or []
     wb = Workbook()
-    _readme(wb.active, listings, models, year_from, year_to, snapshot)
+    _readme(wb.active, listings, models, auctions, year_from, year_to, snapshot)
     wb.active.title = "README"
+
+    # グラフは表より先に置く。開いてすぐ絵が見えるようにするため
+    classics_charts.build(wb, listings, auctions, year_from=year_from, year_to=year_to)
 
     rows = sorted((_flatten(r) for r in listings), key=lambda r: -(r.get("score") or 0))
     ws = wb.create_sheet("候補一覧")
@@ -206,6 +264,15 @@ def build(
             ColorScaleRule(start_type="min", start_color="F8696B",
                            mid_type="percentile", mid_value=50, mid_color="FFEB84",
                            end_type="max", end_color="63BE7B"),
+        )
+
+    if auctions:
+        ws = wb.create_sheet("ヤフオク落札")
+        _write_table(
+            ws, AUCTION_COLUMNS,
+            sorted((_flatten_auction(r) for r in auctions),
+                   key=lambda r: r.get("end_date") or "", reverse=True),
+            number_formats=AUCTION_FORMATS, wrap_columns={"title"},
         )
 
     ws = wb.create_sheet("車種別サマリ")
@@ -229,7 +296,8 @@ def build(
 
     output.parent.mkdir(parents=True, exist_ok=True)
     wb.save(output)
-    log.info("xlsx を書き出しました: %s（%s台 / %s車種）", output, len(listings), len(models))
+    log.info("xlsx を書き出しました: %s（在庫 %s台 / %s車種 / 落札 %s台）",
+             output, len(listings), len(models), len(auctions))
     return output
 
 
