@@ -207,19 +207,12 @@ def auction_sheet(ws: Worksheet, listings: list[dict[str, Any]],
                   auctions: list[dict[str, Any]]) -> None:
     """同じ車種で 店頭 と ヤフオク落札 を並べる。
 
-    名寄せはメーカー＋車種名の文字列でやる。カーセンサーとヤフオクで
-    車種の切り方が違う（例: カーセンサーは「240」と「240エステート」を分けるが
-    ヤフオクは「240」ひとつ）ので、突き合わせは前方一致で緩めに取り、
-    サンプルが薄いものは載せない。
+    名寄せはメーカー＋車種名の**厳密一致**でやる。前方一致で緩めに取ると
+    「日産 スカイラインGT-R」の店頭価格が「日産 スカイライン」全体の落札と
+    突き合わされて、GT-R が 567% 高いという嘘の数字が出る（実際に出た）。
+    カーセンサーとヤフオクで車種の切り方が違うぶんは取りこぼすが、
+    間違った比較を出すよりいい。取りこぼした数は注記に出す。
     """
-    _title(
-        ws,
-        "店頭価格 と ヤフオク落札価格 の差",
-        "同じ車種の 支払総額中央値（カーセンサー）と 落札中央値（ヤフオク・過去180日）。"
-        "差が大きい車種ほど、オークションで買う旨みが大きい。"
-        "ただし現車確認ができず、名義変更・陸送・整備は自分で手配することになる。",
-    )
-
     shop: dict[str, list[float]] = defaultdict(list)
     for row in listings:
         price = _price(row)
@@ -233,12 +226,11 @@ def auction_sheet(ws: Worksheet, listings: list[dict[str, Any]],
             auction[key].append(row["price"] / MANYEN)
 
     records = []
+    thin = 0
     for name, shop_prices in shop.items():
-        # ヤフオク側は車種の切り方が粗いので、前方一致で拾う
-        hits = [p for k, v in auction.items()
-                if k == name or name.startswith(k) or k.startswith(name)
-                for p in v]
+        hits = auction.get(name) or []
         if len(hits) < MIN_AUCTION_SAMPLES or len(shop_prices) < MIN_AUCTION_SAMPLES:
+            thin += 1
             continue
         shop_median = st.median(shop_prices)
         auction_median = st.median(hits)
@@ -250,7 +242,19 @@ def auction_sheet(ws: Worksheet, listings: list[dict[str, Any]],
             round((shop_median / auction_median - 1) * 100, 1),
         ))
     records.sort(key=lambda r: -(r[5] or 0))
+    matched = len(records)
     records = records[:TOP_MODELS]
+
+    _title(
+        ws,
+        "店頭価格 と ヤフオク落札価格 の差",
+        f"同じ車種の 支払総額中央値（カーセンサー）と 落札中央値（ヤフオク・過去180日）。"
+        f"差の大きい上位{len(records)}車種。"
+        f"突き合わせできたのは {matched}車種で、車種名が一致しないか"
+        f"どちらかが3件未満のもの {thin}車種は載せていない。"
+        f"差が大きいほどオークションで買う旨みが大きいが、現車確認ができず、"
+        f"名義変更・陸送・整備は自分で手配することになる。",
+    )
 
     if not records:
         ws["A4"] = "突き合わせできる車種がありませんでした（ヤフオク側のサンプル不足）。"
