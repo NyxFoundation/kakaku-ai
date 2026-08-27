@@ -20,7 +20,7 @@ from . import classics, drive, excel, notify, pipeline, store, watch, wide
 from .vehicles import DATA_DIR, load_vehicles
 
 OUTPUT_DIR = DATA_DIR / "xlsx"
-OUTPUT_NAME = "minivan_souba.xlsx"
+OUTPUT_NAME = "souba_minivan.xlsx"
 
 
 def _setup_logging(verbose: bool) -> None:
@@ -334,7 +334,7 @@ def main(argv: list[str] | None = None) -> int:
             ))
         if "standard_cars" in wanted:
             built.append(books.catalog_book(
-                books.OUTPUT_DIR / "standard_cars.xlsx",
+                books.OUTPUT_DIR / "souba_standard.xlsx",
                 title="普通車（乗用車）から選ぶ",
                 note="ミニバンとトラックを除いた乗用車。ハッチバック・セダン・SUV・"
                      "クーペ・ワゴン・オープン。車種比較シートだけで候補を絞れるようにしてある。",

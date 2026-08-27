@@ -1185,16 +1185,50 @@ def test_normalize_catalog_fills_the_other_bucket():
     assert catalog["HI_S001"]["origin"] == "国産"
 
 
-def test_book_filenames_stay_put():
-    """Drive の共有 URL はファイル名に紐づく。勝手に改名しないこと。
+def test_drive_pins_cover_every_book():
+    """4冊ぶんの Drive ファイル ID が控えてあること。
 
-    rclone は同じ名前なら既存ファイルを update するのでファイル ID が
-    変わらない＝共有済みの URL が生きる。名前を変えると新しいファイルに
-    なってしまい、旧 URL を共有した人には古い中身が見え続ける。
-    minivan_souba / classics_90s は中身の対象が広がったあとも改名していない。
+    宛先を名前で決めていると、Drive 側で改名された瞬間に「その名前が無い」
+    となって新しいファイルが作られる。改名されたほうは共有 URL が生きたまま
+    更新が止まる（リンクは開けるのに中身が古い、という気づきにくい壊れ方）。
+    ID を控えて名前を引き直すことでこれを防いでいる。
+    """
+    from kakaku_ai import drive
+
+    pins = drive.load_pins()
+    assert set(pins) == {"all_cars.xlsx", "souba_standard.xlsx",
+                         "souba_minivan.xlsx", "souba_classics.xlsx"}
+    assert all(isinstance(v, str) and len(v) > 20 for v in pins.values())
+
+
+def test_resolve_follows_a_renamed_file():
+    """Drive 側で改名されていたら、その名前に書きに行くこと。"""
+    from kakaku_ai import drive
+
+    entries = [{"Name": "souba_minivan.xlsx", "ID": "ABC"}]
+    pins = {"souba_minivan.xlsx": "ABC"}
+    assert drive._resolve(entries, pins, "souba_minivan.xlsx") == ("souba_minivan.xlsx", True)
+
+    # 同じ ID のまま名前だけ変わった → 新しい名前を返す
+    entries = [{"Name": "\u30df\u30cb\u30d0\u30f3\u76f8\u5834.xlsx", "ID": "ABC"}]
+    assert drive._resolve(entries, pins, "souba_minivan.xlsx") == ("ミニバン相場.xlsx", True)
+
+
+def test_resolve_falls_back_when_the_pinned_file_is_gone():
+    from kakaku_ai import drive
+
+    entries = [{"Name": "other.xlsx", "ID": "ZZZ"}]
+    pins = {"souba_minivan.xlsx": "ABC"}
+    assert drive._resolve(entries, pins, "souba_minivan.xlsx") == ("souba_minivan.xlsx", False)
+
+
+def test_book_filenames_stay_put():
+    """ローカルの出力名と drive_files.json のキーが揃っていること。
+
+    ここがずれると ID を引けず、Drive 側に別名のファイルが増える。
     """
     from kakaku_ai import cli
     from kakaku_ai import classics_excel
 
-    assert cli.OUTPUT_NAME == "minivan_souba.xlsx"
-    assert classics_excel.DEFAULT_OUTPUT.name == "classics_90s.xlsx"
+    assert cli.OUTPUT_NAME == "souba_minivan.xlsx"
+    assert classics_excel.DEFAULT_OUTPUT.name == "souba_classics.xlsx"

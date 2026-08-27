@@ -1,6 +1,6 @@
 """旧車在庫の xlsx。本体の相場ブックとは別ファイルにする。
 
-`minivan_souba.xlsx` は「車種 × 年式の相場」を積み上げる時系列のブックで、
+`souba_minivan.xlsx` は「車種 × 年式の相場」を積み上げる時系列のブックで、
 こちらは「いま買える 1 台」を並べる在庫のブック。粒度も使い方も違うので
 混ぜない。フィルタで メーカー / 国産・輸入 / ボディタイプ / 車種 / 年式 /
 価格 / 走行距離 / 修復歴 を絞れるようにしてある。
@@ -23,7 +23,7 @@ from .vehicles import DATA_DIR
 
 log = logging.getLogger(__name__)
 
-DEFAULT_OUTPUT = DATA_DIR / "xlsx" / "classics_90s.xlsx"
+DEFAULT_OUTPUT = DATA_DIR / "xlsx" / "souba_classics.xlsx"
 
 LISTING_COLUMNS: list[tuple[str, str]] = [
     ("maker", "メーカー"),
