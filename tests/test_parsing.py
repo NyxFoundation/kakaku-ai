@@ -1268,3 +1268,35 @@ def test_mileage_coefficient_needs_enough_samples():
     enough = [{"mileage_km": i * 10_000, "price": 1_000_000 - i * 50_000} for i in range(12)]
     coef = sportscar._mileage_coefficient(enough)
     assert coef is not None and coef < 0  # 走るほど安い
+
+
+def test_fullwidth_conversion_covers_lowercase_and_plus():
+    """国交省の通称名は英数字が全角。小文字と記号も変換しないと引けない。
+
+    「eKワゴン」を「ＥＫワゴン」にしても 0 件で、「ｅＫワゴン」で初めて当たる。
+    大文字だけ変換していて三菱の eK 系を丸ごと取りこぼしていた。
+    """
+    from kakaku_ai.links import to_fullwidth
+
+    assert to_fullwidth("eKワゴン") == "ｅＫワゴン"
+    assert to_fullwidth("86") == "８６"
+    assert to_fullwidth("RX-8") == "ＲＸ－８"
+    assert to_fullwidth("フリード+") == "フリード＋"
+    assert to_fullwidth("ロードスター") == "ロードスター"  # かなはそのまま
+
+
+def test_mlit_maker_aliases():
+    """国交省のメーカー表記は素直でない。実測で確かめたものだけ載せている。"""
+    from kakaku_ai.links import MLIT_MAKER
+
+    assert MLIT_MAKER["日産"] == "ニッサン"      # 「日産」「日産自動車」は 0 件
+    assert MLIT_MAKER["ミニ"] == "ＭＩＮＩ"       # 「ミニ」「BMW」では引けない
+    assert MLIT_MAKER["日野自動車"] == "日野"     # こちらは逆に略称
+
+
+def test_normalize_pulls_variants_together():
+    from kakaku_ai.links import normalize
+
+    assert normalize("フェアレディＺ") == normalize("フェアレディZ")
+    assert normalize("ＲＸ－８") == normalize("RX-8")
+    assert normalize("ザ・ビートル") == normalize("ザビートル")

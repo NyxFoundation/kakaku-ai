@@ -45,18 +45,30 @@ LINKS_PATH = CONFIG_DIR / "model_links.json"
 
 # 国交省でのメーカー表記。ここに無いものはカーセンサーの表記をそのまま使う
 MLIT_MAKER = {
-    "日産": "ニッサン",
-    "ＢＭＷ": "ＢＭＷ",
-    "ＭＩＮＩ": "ＭＩＮＩ",
+    "日産": "ニッサン",     # 「日産」「日産自動車」はどちらも 0 件
+    "ミニ": "ＭＩＮＩ",      # 「ミニ」「BMW」では引けない
+    "日野自動車": "日野",     # 逆にこちらは略称のほう
 }
 
-_HALF = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-"
-_FULL = "０１２３４５６７８９ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺ－"
+# 小文字も含めて全角にする必要がある。「eKワゴン」は「ｅＫワゴン」でないと
+# 引けない（大文字だけ変換していて取りこぼしていた）
+_HALF = ("0123456789"
+         "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+         "abcdefghijklmnopqrstuvwxyz"
+         "-+&.")
+_FULL = ("０１２３４５６７８９"
+         "ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺ"
+         "ａｂｃｄｅｆｇｈｉｊｋｌｍｎｏｐｑｒｓｔｕｖｗｘｙｚ"
+         "－＋＆．")
 _TO_FULL = str.maketrans(_HALF, _FULL)
 
 
 def to_fullwidth(text: str) -> str:
-    """英数字とハイフンを全角にする。国交省の通称名がこの表記のため。"""
+    """英数字・記号を全角にする。国交省の通称名がこの表記のため。
+
+    「86」→「８６」、「RX-8」→「ＲＸ－８」、「eKワゴン」→「ｅＫワゴン」、
+    「フリード+」→「フリード＋」。半角のままだとどれも 0 件になる。
+    """
     return text.translate(_TO_FULL)
 
 
@@ -144,6 +156,11 @@ def resolve_mlit(fetcher: Fetcher, maker: str | None,
                   r"|スポーツ|クロスオーバー)$", "", model_name)
     if base and base != model_name:
         candidates += [base, to_fullwidth(base)]
+    # カーセンサーの車種名には「チンクエチェント)(フィアット 500」のように
+    # 別名が括弧で混ざっているものがある。括弧の中身を落としたものも試す
+    stripped = re.sub(r"[)(（）].*$", "", model_name).strip()
+    if stripped and stripped != model_name:
+        candidates += [stripped, to_fullwidth(stripped)]
 
     seen: set[str] = set()
     for name in candidates:
@@ -164,7 +181,7 @@ def resolve_mlit(fetcher: Fetcher, maker: str | None,
 
 
 def build(fetcher: Fetcher, summaries: list[dict[str, Any]], *,
-          refresh: bool = False) -> dict[str, dict[str, Any]]:
+          refresh: bool = False, retry_misses: bool = False) -> dict[str, dict[str, Any]]:
     """カタログの車種ぶんの対応を解決して貯める。
 
     みんカラはローカルの対応表を引くだけなので毎回やり直す。
@@ -180,7 +197,8 @@ def build(fetcher: Fetcher, summaries: list[dict[str, Any]], *,
         # みんカラはネットワーク不要なので毎回引き直す（対応表が育つため）
         entry["minkara"] = resolve_minkara(maker, model_name)
 
-        if "mlit" not in entry:
+        # 解決の仕方を直したときは、当たらなかったものだけ引き直す
+        if "mlit" not in entry or (retry_misses and not entry.get("mlit")):
             entry["mlit"] = resolve_mlit(fetcher, maker, model_name)
             if i % 50 == 0:
                 resolved = sum(1 for v in links.values() if v.get("mlit"))
