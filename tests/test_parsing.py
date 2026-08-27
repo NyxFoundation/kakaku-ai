@@ -1300,3 +1300,19 @@ def test_normalize_pulls_variants_together():
     assert normalize("フェアレディＺ") == normalize("フェアレディZ")
     assert normalize("ＲＸ－８") == normalize("RX-8")
     assert normalize("ザ・ビートル") == normalize("ザビートル")
+
+
+def test_jsonl_survives_unicode_line_separators(tmp_path, monkeypatch):
+    """口コミ本文に U+2028 が入っていても 1 レコードとして読めること。
+
+    str.splitlines() は U+2028（行区切り）や U+0085 でも割ってしまうが、
+    json.dumps(ensure_ascii=False) はそれらをエスケープしない。そのまま
+    splitlines() で読むと 1 レコードが 2 行に割れて JSON として壊れる。
+    実際に口コミ 1,404 車種ぶんで U+2028 が 3 個混ざっていて落ちた。
+    """
+    from kakaku_ai import store
+
+    monkeypatch.setattr(store, "SNAPSHOT_DIR", tmp_path)
+    rows = [{"text": f"満足{sep}している点"} for sep in (" ", " ", "\x85", "")]
+    store.write("2026-01-01", "reviews", rows)
+    assert store.read("2026-01-01", "reviews") == rows

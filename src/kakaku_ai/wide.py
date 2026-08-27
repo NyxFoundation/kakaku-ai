@@ -76,7 +76,9 @@ def load_catalog() -> dict[str, dict[str, Any]]:
     if not CATALOG_PATH.exists():
         return {}
     out: dict[str, dict[str, Any]] = {}
-    for line in CATALOG_PATH.read_text(encoding="utf-8").splitlines():
+    # 改行は "\n" だけで割る。splitlines() は U+2028 などでも割るが、
+    # json.dumps はそれをエスケープしないので 1 レコードが 2 行に割れる
+    for line in CATALOG_PATH.read_text(encoding="utf-8").split("\n"):
         if line.strip():
             row = json.loads(line)
             out[row["carsensor_code"]] = row

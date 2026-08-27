@@ -1007,7 +1007,11 @@
    "matched": "e-tron",
    "slug": "e_tron"
   },
-  "mlit": null,
+  "mlit": {
+   "common_name": "ｅ－ｔｒｏｎ",
+   "exact": false,
+   "maker": "アウディ"
+  },
   "model_name": "e-tron"
  },
  "AD_S077": {
@@ -2959,7 +2963,11 @@
    "matched": "i3",
    "slug": "i3"
   },
-  "mlit": null,
+  "mlit": {
+   "common_name": "ｉ３",
+   "exact": false,
+   "maker": "ＢＭＷ"
+  },
   "model_name": "i3"
  },
  "BM_S046": {
@@ -3022,7 +3030,11 @@
    "matched": "i8",
    "slug": "i8"
   },
-  "mlit": null,
+  "mlit": {
+   "common_name": "ｉ８",
+   "exact": false,
+   "maker": "ＢＭＷ"
+  },
   "model_name": "i8"
  },
  "BM_S051": {
@@ -3258,7 +3270,11 @@
    "matched": "iX",
    "slug": "ix"
   },
-  "mlit": null,
+  "mlit": {
+   "common_name": "ｉＸ",
+   "exact": false,
+   "maker": "ＢＭＷ"
+  },
   "model_name": "iX"
  },
  "BM_S072": {
@@ -3280,7 +3296,11 @@
    "matched": "i4",
    "slug": "i4"
   },
-  "mlit": null,
+  "mlit": {
+   "common_name": "ｉ４",
+   "exact": false,
+   "maker": "ＢＭＷ"
+  },
   "model_name": "i4"
  },
  "BM_S074": {
@@ -3328,7 +3348,11 @@
    "matched": "iX1",
    "slug": "ix1"
   },
-  "mlit": null,
+  "mlit": {
+   "common_name": "ｉＸ１",
+   "exact": false,
+   "maker": "ＢＭＷ"
+  },
   "model_name": "iX1"
  },
  "BM_S078": {
@@ -6929,7 +6953,11 @@
  "FI_S027": {
   "maker": "フィアット",
   "minkara": null,
-  "mlit": null,
+  "mlit": {
+   "common_name": "５００ｅ",
+   "exact": false,
+   "maker": "フィアット"
+  },
   "model_name": "500e"
  },
  "FI_S028": {
@@ -7718,13 +7746,21 @@
    "matched": "デュトロ",
    "slug": "dutro"
   },
-  "mlit": null,
+  "mlit": {
+   "common_name": "デュトロ",
+   "exact": true,
+   "maker": "日野"
+  },
   "model_name": "デュトロ"
  },
  "HI_S005": {
   "maker": "日野自動車",
   "minkara": null,
-  "mlit": null,
+  "mlit": {
+   "common_name": "デュトロハイブリッド",
+   "exact": true,
+   "maker": "日野"
+  },
   "model_name": "デュトロハイブリッド"
  },
  "HI_S006": {
@@ -7735,7 +7771,11 @@
    "matched": "スーパードルフィン",
    "slug": "superdolphinprofia"
   },
-  "mlit": null,
+  "mlit": {
+   "common_name": "スーパードルフィン",
+   "exact": true,
+   "maker": "日野"
+  },
   "model_name": "スーパードルフィン"
  },
  "HI_S008": {
@@ -7757,7 +7797,11 @@
    "matched": "プロフィア",
    "slug": "purofia"
   },
-  "mlit": null,
+  "mlit": {
+   "common_name": "プロフィア",
+   "exact": true,
+   "maker": "日野"
+  },
   "model_name": "プロフィア"
  },
  "HI_S010": {
@@ -7768,7 +7812,11 @@
    "matched": "レンジャー",
    "slug": "ranger"
   },
-  "mlit": null,
+  "mlit": {
+   "common_name": "レンジャー",
+   "exact": true,
+   "maker": "日野"
+  },
   "model_name": "レンジャー"
  },
  "HI_S012": {
@@ -7779,7 +7827,11 @@
    "matched": "レンジャープロ",
    "slug": "ranger_pro"
   },
-  "mlit": null,
+  "mlit": {
+   "common_name": "レンジャープロ",
+   "exact": true,
+   "maker": "日野"
+  },
   "model_name": "レンジャープロ"
  },
  "HI_S013": {
@@ -7796,7 +7848,11 @@
    "matched": "レインボー",
    "slug": "rainbow"
   },
-  "mlit": null,
+  "mlit": {
+   "common_name": "レインボー",
+   "exact": true,
+   "maker": "日野"
+  },
   "model_name": "レインボー"
  },
  "HI_S015": {
@@ -7807,7 +7863,11 @@
    "matched": "リエッセ",
    "slug": "liesse"
   },
-  "mlit": null,
+  "mlit": {
+   "common_name": "リエッセ",
+   "exact": true,
+   "maker": "日野"
+  },
   "model_name": "リエッセ"
  },
  "HI_S016": {
@@ -7829,7 +7889,11 @@
    "matched": "セレガ",
    "slug": "selega"
   },
-  "mlit": null,
+  "mlit": {
+   "common_name": "セレガ",
+   "exact": true,
+   "maker": "日野"
+  },
   "model_name": "セレガ"
  },
  "HI_S018": {
@@ -7840,13 +7904,21 @@
    "matched": "ブルーリボン",
    "slug": "blue_ribbon"
   },
-  "mlit": null,
+  "mlit": {
+   "common_name": "ブルーリボン",
+   "exact": true,
+   "maker": "日野"
+  },
   "model_name": "ブルーリボン"
  },
  "HI_S019": {
   "maker": "日野自動車",
   "minkara": null,
-  "mlit": null,
+  "mlit": {
+   "common_name": "ポンチョ",
+   "exact": true,
+   "maker": "日野"
+  },
   "model_name": "ポンチョ"
  },
  "HI_S020": {
@@ -7857,7 +7929,11 @@
    "matched": "メルファ",
    "slug": "hino_melpha"
   },
-  "mlit": null,
+  "mlit": {
+   "common_name": "メルファ",
+   "exact": true,
+   "maker": "日野"
+  },
   "model_name": "メルファ"
  },
  "HI_S021": {
@@ -9057,7 +9133,11 @@
    "matched": "N-BOX+",
    "slug": "n_box_plus"
   },
-  "mlit": null,
+  "mlit": {
+   "common_name": "Ｎ－ＢＯＸ＋",
+   "exact": false,
+   "maker": "ホンダ"
+  },
   "model_name": "N-BOX+"
  },
  "HO_S098": {
@@ -9191,7 +9271,11 @@
    "matched": "フリード+",
    "slug": "freed_plus"
   },
-  "mlit": null,
+  "mlit": {
+   "common_name": "フリード＋",
+   "exact": false,
+   "maker": "ホンダ"
+  },
   "model_name": "フリード+"
  },
  "HO_S111": {
@@ -12739,7 +12823,11 @@
    "matched": "eKアクティブ",
    "slug": "ek_active"
   },
-  "mlit": null,
+  "mlit": {
+   "common_name": "ｅＫアクティブ",
+   "exact": false,
+   "maker": "三菱"
+  },
   "model_name": "eKアクティブ"
  },
  "MI_S004": {
@@ -12750,7 +12838,11 @@
    "matched": "eKクラッシィ",
    "slug": "ek_classy"
   },
-  "mlit": null,
+  "mlit": {
+   "common_name": "ｅＫクラッシィ",
+   "exact": false,
+   "maker": "三菱"
+  },
   "model_name": "eKクラッシィ"
  },
  "MI_S005": {
@@ -12761,7 +12853,11 @@
    "matched": "eKスポーツ",
    "slug": "ek_sport"
   },
-  "mlit": null,
+  "mlit": {
+   "common_name": "ｅＫスポーツ",
+   "exact": false,
+   "maker": "三菱"
+  },
   "model_name": "eKスポーツ"
  },
  "MI_S006": {
@@ -12772,7 +12868,11 @@
    "matched": "eKワゴン",
    "slug": "ek_wagon"
   },
-  "mlit": null,
+  "mlit": {
+   "common_name": "ｅＫワゴン",
+   "exact": false,
+   "maker": "三菱"
+  },
   "model_name": "eKワゴン"
  },
  "MI_S007": {
@@ -13696,7 +13796,11 @@
    "matched": "eKカスタム",
    "slug": "ek_custom"
   },
-  "mlit": null,
+  "mlit": {
+   "common_name": "ｅＫカスタム",
+   "exact": false,
+   "maker": "三菱"
+  },
   "model_name": "eKカスタム"
  },
  "MI_S109": {
@@ -13707,7 +13811,11 @@
    "matched": "eKスペース",
    "slug": "ek_space"
   },
-  "mlit": null,
+  "mlit": {
+   "common_name": "ｅＫスペース",
+   "exact": false,
+   "maker": "三菱"
+  },
   "model_name": "eKスペース"
  },
  "MI_S115": {
@@ -13739,7 +13847,11 @@
    "matched": "eKクロス",
    "slug": "ek_x"
   },
-  "mlit": null,
+  "mlit": {
+   "common_name": "ｅＫクロス",
+   "exact": false,
+   "maker": "三菱"
+  },
   "model_name": "eKクロス"
  },
  "MI_S118": {
@@ -13750,7 +13862,11 @@
    "matched": "eKクロススペース",
    "slug": "ek_x_space"
   },
-  "mlit": null,
+  "mlit": {
+   "common_name": "ｅＫクロススペース",
+   "exact": false,
+   "maker": "三菱"
+  },
   "model_name": "eKクロススペース"
  },
  "MI_S119": {
@@ -13761,7 +13877,11 @@
    "matched": "eKクロス EV",
    "slug": "ek_cross_ev"
   },
-  "mlit": null,
+  "mlit": {
+   "common_name": "ｅＫクロスＥＶ",
+   "exact": false,
+   "maker": "三菱"
+  },
   "model_name": "eKクロスEV"
  },
  "MI_S120": {
@@ -14022,13 +14142,21 @@
    "matched": "ミニ",
    "slug": "minicooper1300i"
   },
-  "mlit": null,
+  "mlit": {
+   "common_name": "ミニ",
+   "exact": true,
+   "maker": "ＭＩＮＩ"
+  },
   "model_name": "ミニ"
  },
  "MN_S002": {
   "maker": "ミニ",
   "minkara": null,
-  "mlit": null,
+  "mlit": {
+   "common_name": "ミニ",
+   "exact": false,
+   "maker": "ＭＩＮＩ"
+  },
   "model_name": "ミニコンバーチブル"
  },
  "MN_S003": {
@@ -14040,13 +14168,21 @@
  "MN_S004": {
   "maker": "ミニ",
   "minkara": null,
-  "mlit": null,
+  "mlit": {
+   "common_name": "ミニ",
+   "exact": false,
+   "maker": "ＭＩＮＩ"
+  },
   "model_name": "ミニクロスオーバー"
  },
  "MN_S005": {
   "maker": "ミニ",
   "minkara": null,
-  "mlit": null,
+  "mlit": {
+   "common_name": "ミニ",
+   "exact": false,
+   "maker": "ＭＩＮＩ"
+  },
   "model_name": "ミニクーペ"
  },
  "MN_S006": {
@@ -17209,7 +17345,11 @@
    "matched": "e-208",
    "slug": "e-208"
   },
-  "mlit": null,
+  "mlit": {
+   "common_name": "ｅ－２０８",
+   "exact": false,
+   "maker": "プジョー"
+  },
   "model_name": "e-208"
  },
  "PE_S047": {
@@ -18720,7 +18860,11 @@
  "SB_S026": {
   "maker": "スバル",
   "minkara": null,
-  "mlit": null,
+  "mlit": {
+   "common_name": "レックス",
+   "exact": false,
+   "maker": "スバル"
+  },
   "model_name": "レックス（軽）"
  },
  "SB_S027": {
@@ -19265,7 +19409,11 @@
    "matched": "Kei",
    "slug": "kei"
   },
-  "mlit": null,
+  "mlit": {
+   "common_name": "Ｋｅｉ",
+   "exact": false,
+   "maker": "スズキ"
+  },
   "model_name": "Kei"
  },
  "SZ_S010": {
@@ -21194,7 +21342,11 @@
    "matched": "bB",
    "slug": "bb"
   },
-  "mlit": null,
+  "mlit": {
+   "common_name": "ｂＢ",
+   "exact": false,
+   "maker": "トヨタ"
+  },
   "model_name": "bB"
  },
  "TO_S119": {
@@ -22084,7 +22236,11 @@
    "matched": "iQ",
    "slug": "iq"
   },
-  "mlit": null,
+  "mlit": {
+   "common_name": "ｉＱ",
+   "exact": false,
+   "maker": "トヨタ"
+  },
   "model_name": "iQ"
  },
  "TO_S202": {
@@ -22766,7 +22922,11 @@
    "matched": "bZ4X",
    "slug": "bz4x"
   },
-  "mlit": null,
+  "mlit": {
+   "common_name": "ｂＺ４Ｘ",
+   "exact": false,
+   "maker": "トヨタ"
+  },
   "model_name": "bZ4X"
  },
  "TO_S263": {
@@ -22813,7 +22973,11 @@
  "TO_S266": {
   "maker": "トヨタ",
   "minkara": null,
-  "mlit": null,
+  "mlit": {
+   "common_name": "Ｃ＋ｐｏｄ",
+   "exact": false,
+   "maker": "トヨタ"
+  },
   "model_name": "C+pod"
  },
  "TO_S267": {
@@ -24661,7 +24825,11 @@
    "matched": "ID.4",
    "slug": "id4"
   },
-  "mlit": null,
+  "mlit": {
+   "common_name": "ＩＤ．４",
+   "exact": false,
+   "maker": "フォルクスワーゲン"
+  },
   "model_name": "ID.4"
  },
  "VW_S059": {

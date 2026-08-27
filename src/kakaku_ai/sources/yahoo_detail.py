@@ -81,7 +81,9 @@ def load_store() -> dict[str, dict[str, Any]]:
     if not STORE_PATH.exists():
         return {}
     out: dict[str, dict[str, Any]] = {}
-    for line in STORE_PATH.read_text(encoding="utf-8").splitlines():
+    # 改行は "\n" だけで割る。splitlines() は U+2028 などでも割るが、
+    # json.dumps はそれをエスケープしないので 1 レコードが 2 行に割れる
+    for line in STORE_PATH.read_text(encoding="utf-8").split("\n"):
         if line.strip():
             row = json.loads(line)
             out[row["auction_id"]] = row

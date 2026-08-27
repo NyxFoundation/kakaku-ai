@@ -60,10 +60,18 @@ def write(snapshot: str, dataset: str, rows: Iterable[dict[str, Any]]) -> int:
 
 
 def read(snapshot: str, dataset: str) -> list[dict[str, Any]]:
+    """JSONL を読む。**改行は `\n` だけで割る。**
+
+    `str.splitlines()` は U+2028（行区切り）や U+0085 でも割ってしまう。
+    ところが `json.dumps(ensure_ascii=False)` はこれらをエスケープしないので、
+    口コミ本文に紛れ込むと 1 レコードが 2 行に割れて JSON として壊れる。
+    実際に口コミ 1,404 車種ぶんで U+2028 が 3 個混ざっていて落ちた。
+    """
     path = snapshot_path(snapshot, dataset)
     if not path.exists():
         return []
-    return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+    return [json.loads(line) for line in path.read_text(encoding="utf-8").split("\n")
+            if line.strip()]
 
 
 def list_snapshots() -> list[str]:
