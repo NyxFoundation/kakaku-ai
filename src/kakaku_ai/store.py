@@ -26,6 +26,7 @@ DATASETS = (
     "wide_summary",  # 全車種の車種単位サマリ（カタログ兼用）
     "classic_listings",  # 旧車（1988〜2001年式）の在庫明細（1台ずつ）
     "classic_auctions",  # 旧車のヤフオク落札明細（中古車ノード全体から抽出）
+    "yahoo_used_cars",  # ヤフオク「中古車・新車」ノードの落札 全数（180日）
     "reviews",  # 口コミ明細（みんカラ）
     "review_summary",  # 車種 × 年式 の口コミ集計
     "recalls",  # 国交省リコール

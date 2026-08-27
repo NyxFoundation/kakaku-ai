@@ -1196,8 +1196,8 @@ def test_drive_pins_cover_every_book():
     from kakaku_ai import drive
 
     pins = drive.load_pins()
-    assert set(pins) == {"souba_all.xlsx", "souba_standard.xlsx",
-                         "souba_minivan.xlsx", "souba_classics.xlsx"}
+    assert set(pins) == {"souba_all.xlsx", "souba_standard.xlsx", "souba_minivan.xlsx",
+                         "souba_classics.xlsx", "souba_sportscar.xlsx"}
     assert all(isinstance(v, str) and len(v) > 20 for v in pins.values())
 
 
@@ -1232,3 +1232,39 @@ def test_book_filenames_stay_put():
 
     assert cli.OUTPUT_NAME == "souba_minivan.xlsx"
     assert classics_excel.DEFAULT_OUTPUT.name == "souba_classics.xlsx"
+
+
+def test_sports_car_detection():
+    """ボディタイプだけでは拾えない車種を名前で拾えていること。
+
+    カーセンサーは GT-R をセダン、ランエボと WRX もセダン、
+    シビックタイプR をハッチバックに分類している。
+    """
+    from kakaku_ai import sportscar
+
+    assert sportscar.is_sports("スカイラインGT-R", "セダン")
+    assert sportscar.is_sports("ランサーエボリューション", "セダン")
+    assert sportscar.is_sports("シビックタイプR", "ハッチバック")
+    # ボディタイプ由来
+    assert sportscar.is_sports("ソアラ", "クーペ")
+    assert sportscar.is_sports("ビートル", "オープン")
+    # 普通の車は拾わない
+    assert not sportscar.is_sports("セレナ", "ミニバン")
+    assert not sportscar.is_sports("N-BOX", "ハッチバック")
+    assert not sportscar.is_sports(None, "クーペ")
+
+
+def test_mileage_coefficient_needs_enough_samples():
+    """件数が足りない年式では走行距離の係数を出さないこと。
+
+    実測で、落札 4〜7 件だと 39% が「走るほど高い」という有り得ない符号に
+    なった（15 件以上なら 10%）。符号すら当てにならないものは出さない。
+    """
+    from kakaku_ai import sportscar
+
+    few = [{"mileage_km": i * 10_000, "price": 1_000_000 - i * 50_000} for i in range(5)]
+    assert sportscar._mileage_coefficient(few) is None
+
+    enough = [{"mileage_km": i * 10_000, "price": 1_000_000 - i * 50_000} for i in range(12)]
+    coef = sportscar._mileage_coefficient(enough)
+    assert coef is not None and coef < 0  # 走るほど安い

@@ -117,7 +117,7 @@ def main(argv: list[str] | None = None) -> int:
 
     bk = sub.add_parser("books", help="xlsx 4冊（全車種・ミニバン・普通車・旧車）を組む")
     bk.add_argument("--only", nargs="*",
-                    choices=["all", "minivan", "standard", "classics"],
+                    choices=["all", "minivan", "standard", "classics", "sportscar"],
                     help="作る本を絞る（既定=全部）")
     bk.add_argument("--folder-id", default=drive.DEFAULT_FOLDER_ID)
     bk.add_argument("--no-upload", action="store_true")
@@ -319,9 +319,9 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if args.command == "books":
-        from . import books, classics_excel
+        from . import books, classics_excel, sportscar
 
-        wanted = set(args.only or ["all", "minivan", "standard", "classics"])
+        wanted = set(args.only or ["all", "minivan", "standard", "classics", "sportscar"])
         snapshot = store.list_snapshots()[-1] if store.list_snapshots() else None
         built: list[Path] = []
 
@@ -355,6 +355,9 @@ def main(argv: list[str] | None = None) -> int:
             else:
                 logging.getLogger(__name__).warning(
                     "旧車データがありません。`kakaku-ai classics` を先に実行してください。")
+
+        if "sportscar" in wanted:
+            built.append(sportscar.build())
 
         if not args.no_upload:
             for path in built:
