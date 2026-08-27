@@ -55,6 +55,8 @@ class _Vehicle:
         self.mlit_common_names = ((mlit_link.get("common_name"),)
                                   if mlit_link.get("common_name") else ())
         self.generations = ()
+        # カタログ側は型式を持たないので空。リコールは通称名だけで当てる
+        self.all_models: tuple[str, ...] = ()
 
     def generation_for_model_year(self, _year: int | None) -> str:
         return self.ALL
