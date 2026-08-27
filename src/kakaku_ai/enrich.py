@@ -24,7 +24,7 @@ from __future__ import annotations
 
 import logging
 import statistics as st
-from typing import Any, Iterable
+from typing import Any, Callable, Iterable
 
 from . import links as links_mod
 from .http import Fetcher
@@ -33,6 +33,9 @@ from .sources import minkara, mlit
 log = logging.getLogger(__name__)
 
 REVIEW_PAGES = 2  # 1ページ 5〜10件。車種単位の平均を出すにはこれで足りる
+# 1車種あたりの不具合通報の上限。セレナは 2,362件あり、全部取ると 1,000車種で
+# 20時間かかる。装置の構成比と発生走行距離の中央値を出すには数百件で足りる
+DEFECT_LIMIT = 600
 
 
 class _Vehicle:
@@ -141,8 +144,17 @@ def _review_summary(rows: list[dict[str, Any]], summary: dict[str, Any],
 
 
 def collect_defects(fetcher: Fetcher, summaries: list[dict[str, Any]],
-                    snapshot: str, *, limit: int | None = None) -> tuple[list, list, list]:
-    """国交省の不具合とリコール。(不具合個票, 装置別サマリ, リコール) を返す。"""
+                    snapshot: str, *, limit: int | None = None,
+                    checkpoint: Callable[[list, list, list], None] | None = None,
+                    checkpoint_every: int = 25,
+                    defect_limit: int | None = DEFECT_LIMIT) -> tuple[list, list, list]:
+    """国交省の不具合とリコール。(不具合個票, 装置別サマリ, リコール) を返す。
+
+    人気車種は 1 車種で数百件の通報があり、全部で 10 時間近くかかる。
+    最後にまとめて書くと途中で落ちたときに全部消えるので、`checkpoint` を
+    渡せば定期的に書き出す。掲載の多い順に処理しているので、途中で止めても
+    上位がそろっていれば使える。
+    """
     links = links_mod.load_links()
     details: list[dict[str, Any]] = []
     summary_rows: list[dict[str, Any]] = []
@@ -158,7 +170,8 @@ def collect_defects(fetcher: Fetcher, summaries: list[dict[str, Any]],
         vehicle = _Vehicle(summary["carsensor_code"], summary["model_name"], link)
         maker = link["mlit"]["maker"]
         try:
-            rows = mlit.fetch_defects(fetcher, vehicle, snapshot, maker=maker)
+            rows = mlit.fetch_defects(fetcher, vehicle, snapshot, maker=maker,
+                                      limit=defect_limit)
         except Exception as exc:  # noqa: BLE001
             log.warning("  %s: %s", summary["model_name"], exc)
             continue
@@ -181,9 +194,13 @@ def collect_defects(fetcher: Fetcher, summaries: list[dict[str, Any]],
                                     "maker": summary.get("maker"),
                                     "model_name": summary.get("model_name")})
 
-        summary_rows.extend(_defect_summary(rows, summary, snapshot))
-        if i % 50 == 0:
+        summary_rows.extend(_defect_summary(rows, summary, snapshot,
+                                            truncated=bool(defect_limit)
+                                            and len(rows) >= defect_limit))
+        if i % checkpoint_every == 0:
             log.info("  %s/%s（不具合 %s件）", i, len(targets), len(details))
+            if checkpoint:
+                checkpoint(details, summary_rows, recall_rows)
 
     log.info("不具合 %s件 / 装置別 %s行 / リコール %s件",
              len(details), len(summary_rows), len(recall_rows))
@@ -191,7 +208,7 @@ def collect_defects(fetcher: Fetcher, summaries: list[dict[str, Any]],
 
 
 def _defect_summary(rows: list[dict[str, Any]], summary: dict[str, Any],
-                    snapshot: str) -> list[dict[str, Any]]:
+                    snapshot: str, *, truncated: bool = False) -> list[dict[str, Any]]:
     """装置別に件数を数える。世代では割らない（カタログ側に世代情報が無いため）。"""
     if not rows:
         return []
@@ -212,6 +229,8 @@ def _defect_summary(rows: list[dict[str, Any]], summary: dict[str, Any],
             "defective_device": device,
             "report_count": len(group),
             "share_pct": round(len(group) / len(rows) * 100, 1),
+            # 上限で打ち切ったぶんは「直近◯件のうち」であって総数ではない
+            "truncated": truncated,
             # 「だいたい何万kmで来るか」。整備の見積もり根拠になる
             "median_mileage_km": int(st.median(mileages)) if mileages else None,
             "model_year_min": min(years) if years else None,

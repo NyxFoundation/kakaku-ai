@@ -157,8 +157,18 @@ def normalize_recalls(
 # --------------------------------------------------------------------- defect
 
 
-def fetch_defects(fetcher: Fetcher, vehicle, snapshot: str, maker: str = "トヨタ") -> list[dict[str, Any]]:
-    """ユーザーが国交省に通報した不具合情報を通称名で引く。"""
+def fetch_defects(fetcher: Fetcher, vehicle, snapshot: str, maker: str = "トヨタ",
+                  limit: int | None = None) -> list[dict[str, Any]]:
+    """ユーザーが国交省に通報した不具合情報を通称名で引く。
+
+    `limit` を渡すとその件数で打ち切る。受付が新しい順に返ってくるので、
+    残るのは直近ぶん。全車種を舐めるときに要る。セレナは 2,362件（48ページ）
+    あって、これを 1,000車種でやると 20 時間かかる。装置ごとの構成比と
+    発生時の走行距離の中央値を出すだけなら数百件で十分ぶれない。
+
+    **打ち切ったら件数はもう「通報の総数」ではない。** 呼び出し側で
+    そうと分かるようにすること（`truncated` を立てている）。
+    """
     rows: list[dict[str, Any]] = []
     seen: set[str] = set()
 
@@ -185,6 +195,10 @@ def fetch_defects(fetcher: Fetcher, vehicle, snapshot: str, maker: str = "トヨ
             if m:
                 year = int(m.group(1))
                 ym = year * 100 + int(m.group(2))
+
+            if limit and len(rows) >= limit:
+                log.info("  mlit defect %s: %s件で打ち切り（上限）", vehicle.name, limit)
+                return rows
 
             rows.append(
                 {
