@@ -6,6 +6,7 @@
     uv run kakaku-ai upload                # Drive に上げる
     uv run kakaku-ai weekly                # crawl → excel → upload を通しで
     uv run kakaku-ai classics              # 旧車（1988〜2001年式）の在庫を全メーカー集める
+    uv run kakaku-ai books                 # xlsx 4冊を作り直して Drive に上げる
 """
 
 from __future__ import annotations
@@ -19,7 +20,7 @@ from . import classics, drive, excel, notify, pipeline, store, watch, wide
 from .vehicles import DATA_DIR, load_vehicles
 
 OUTPUT_DIR = DATA_DIR / "xlsx"
-OUTPUT_NAME = "minivan_souba.xlsx"
+OUTPUT_NAME = "minivan.xlsx"
 
 
 def _setup_logging(verbose: bool) -> None:
@@ -113,6 +114,13 @@ def main(argv: list[str] | None = None) -> int:
     cs.add_argument("--yahoo", action="store_true",
                     help="ヤフオクの落札（過去180日）も取る。中古車ノードを"
                          "並び順を変えて全部さらうので 40〜50分かかる")
+
+    bk = sub.add_parser("books", help="xlsx 4冊（全車種・ミニバン・普通車・旧車）を組む")
+    bk.add_argument("--only", nargs="*",
+                    choices=["all_cars", "minivan", "standard_cars", "classics"],
+                    help="作る本を絞る（既定=全部）")
+    bk.add_argument("--folder-id", default=drive.DEFAULT_FOLDER_ID)
+    bk.add_argument("--no-upload", action="store_true")
 
     sub.add_parser("list", help="収録済みスナップショットを表示する")
 
@@ -308,6 +316,50 @@ def main(argv: list[str] | None = None) -> int:
         if args.upload:
             drive.upload(path, folder_id=args.folder_id, snapshot=snapshot)
         print(f"旧車 在庫{len(listings)}台 / {len(models)}車種 / 落札{len(auctions)}台 → {path}")
+        return 0
+
+    if args.command == "books":
+        from . import books, classics_excel
+
+        wanted = set(args.only or ["all_cars", "minivan", "standard_cars", "classics"])
+        snapshot = store.list_snapshots()[-1] if store.list_snapshots() else None
+        built: list[Path] = []
+
+        if "all_cars" in wanted:
+            built.append(books.catalog_book(
+                books.OUTPUT_DIR / "all_cars.xlsx",
+                title="全車種カタログ（カーセンサー掲載の全 2,237 車種）",
+                note="車種を決めていない人向けの索引。ボディタイプとメーカーで当たりを"
+                     "付けて、決まったら用途別の本（ミニバン・普通車・旧車）に移る。",
+            ))
+        if "standard_cars" in wanted:
+            built.append(books.catalog_book(
+                books.OUTPUT_DIR / "standard_cars.xlsx",
+                title="普通車（乗用車）から選ぶ",
+                note="ミニバンとトラックを除いた乗用車。ハッチバック・セダン・SUV・"
+                     "クーペ・ワゴン・オープン。車種比較シートだけで候補を絞れるようにしてある。",
+                body_types=books.STANDARD_BODIES,
+            ))
+        if "minivan" in wanted:
+            built.append(excel.build(OUTPUT_DIR / "minivan.xlsx"))
+        if "classics" in wanted:
+            listings, snap = store.read_latest("classic_listings")
+            auctions, _ = store.read_latest("classic_auctions")
+            if listings:
+                listings = classics.reapply_catalog(listings)
+                built.append(classics_excel.build(
+                    listings, classics.by_model(listings), auctions=auctions,
+                    output=books.OUTPUT_DIR / "classics.xlsx",
+                    year_from=classics.YEAR_FROM, year_to=classics.YEAR_TO,
+                    snapshot=snap or snapshot or store.today()))
+            else:
+                logging.getLogger(__name__).warning(
+                    "旧車データがありません。`kakaku-ai classics` を先に実行してください。")
+
+        if not args.no_upload:
+            for path in built:
+                drive.upload(path, folder_id=args.folder_id, snapshot=snapshot)
+        print("作成:", ", ".join(p.name for p in built))
         return 0
 
     if args.command == "list":

@@ -24,6 +24,7 @@ from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.worksheet import Worksheet
 
 from . import aggregate, charts, store
+from .charts import _median
 from .vehicles import VehicleSet, load_vehicles
 
 log = logging.getLogger(__name__)
@@ -143,7 +144,6 @@ def _readme_sheet(
     counts: dict[str, int],
     *,
     price_date: str | None = None,
-    wide_date: str | None = None,
 ) -> None:
     ws.column_dimensions["A"].width = 26
     ws.column_dimensions["B"].width = 110
@@ -169,7 +169,7 @@ def _readme_sheet(
             "各断面の時点",
             " / ".join(
                 f"{label} {date or '未取得'}"
-                for label, date in (("深掘り20車種:", price_date), ("全車種:", wide_date))
+                for label, date in (("相場・落札:", price_date),)
             ),
         ),
         ("", ""),
@@ -213,12 +213,6 @@ def _readme_sheet(
             "年式・走行距離・修復歴に加え、商品ページから取ったグレード・車検・"
             "諸費用込み総額つき。",
         ),
-        (
-            "全車種_年式別相場",
-            "カーセンサー掲載の**全車種・全年式**の小売相場。"
-            "メーカー / 国産・輸入 / ボディタイプ（用途）/ 車種 / 年式 で絞り込める（見出し行のフィルタ）。",
-        ),
-        ("全車種_一覧", "全車種の車種単位サマリ。新車時価格・中古価格レンジ・掲載台数・評価。"),
         ("車種マスタ", "深掘り対象 20 車種の世代・型式の一覧。"),
         ("", ""),
         ("■ 相場の作り方", ""),
@@ -271,6 +265,134 @@ def _readme_sheet(
         ws.cell(row=i, column=1, value=label).font = Font(bold=label.startswith("■"))
         cell = ws.cell(row=i, column=2, value=value)
         cell.alignment = Alignment(wrap_text=True, vertical="top")
+
+
+COMPARE_COLUMNS: list[tuple[str, str]] = [
+    ("maker", "メーカー"),
+    ("vehicle_name", "車種"),
+    ("production_period", "生産期間"),
+    ("retail_n", "掲載台数"),
+    ("shop_count", "取扱\n店舗数"),
+    ("auction_n", "落札件数\n(180日)"),
+    ("auction_median_manyen", "落札中央値\n(万円)"),
+    ("retail_median_manyen", "店頭中央値\n(万円)"),
+    ("retail_premium_pct", "店頭が高い\n(%)"),
+    ("matched_years", "比較に使った\n年式数"),
+    ("new_price_manyen", "新車価格\n(万円)"),
+    ("depreciation_pct", "値落ち率\n(%/年)"),
+    ("mileage_median_km", "掲載車の\n走行中央値(km)"),
+    ("review_score", "口コミ\n総合"),
+    ("review_count", "口コミ\n件数"),
+    ("review_loading", "積載性"),
+    ("review_running_cost", "燃費"),
+    ("review_comfort", "快適性"),
+    ("defect_n", "不具合\n通報数"),
+    ("defect_top", "不具合の\n最多装置"),
+    ("recall_n", "リコール\n件数"),
+]
+
+COMPARE_FORMATS = {
+    "retail_n": INT_FMT, "shop_count": INT_FMT, "auction_n": INT_FMT,
+    "auction_median_manyen": MANYEN_FMT, "retail_median_manyen": MANYEN_FMT,
+    "retail_premium_pct": PCT_FMT, "matched_years": INT_FMT,
+    "new_price_manyen": MANYEN_FMT,
+    "depreciation_pct": PCT_FMT, "mileage_median_km": INT_FMT,
+    "review_score": "0.0", "review_count": INT_FMT,
+    "review_loading": "0.0", "review_running_cost": "0.0", "review_comfort": "0.0",
+    "defect_n": INT_FMT, "recall_n": INT_FMT,
+}
+
+
+def _compare_rows(
+    vehicles: VehicleSet,
+    price_latest: list[dict[str, Any]],
+    summary: list[dict[str, Any]],
+    defects: list[dict[str, Any]],
+    recalls: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """1 行 1 車種の比較表。**この 1 枚で候補を絞れる**ことを狙う。
+
+    相場・口コミ・整備上の弱点をそれぞれ別のシートに散らすと、20 車種を
+    突き合わせるのに何度も行き来することになる。決めるのに要る数字だけを
+    ここに集めて、残りは詳細シートに置く。
+    """
+    by_key = {r["vehicle_key"]: r for r in summary}
+    years: dict[str, list[dict[str, Any]]] = {}
+    for row in price_latest:
+        years.setdefault(row["vehicle_key"], []).append(row)
+
+    defect_n: dict[str, int] = {}
+    defect_top: dict[str, str] = {}
+    for row in defects:
+        key = row["vehicle_key"]
+        defect_n[key] = defect_n.get(key, 0) + (row.get("report_count") or 0)
+    for key in defect_n:
+        top = max((r for r in defects if r["vehicle_key"] == key),
+                  key=lambda r: r.get("report_count") or 0, default=None)
+        if top:
+            defect_top[key] = f"{top['defective_device']}（{top['report_count']}件）"
+
+    recall_n: dict[str, int] = {}
+    for row in recalls:
+        recall_n[row["vehicle_key"]] = recall_n.get(row["vehicle_key"], 0) + 1
+
+    out: list[dict[str, Any]] = []
+    for vehicle in vehicles:
+        rows = years.get(vehicle.key, [])
+        info = by_key.get(vehicle.key, {})
+
+        auctions = [(r["model_year"], r["auction_median_manyen"], r.get("auction_n") or 0)
+                    for r in rows if r.get("auction_median_manyen")]
+
+        # 落札と店頭を比べるときは**両方そろっている年式だけ**で中央値を取る。
+        # 片方にしか無い年式を混ぜると、落札は古い年式に、店頭は新しい年式に
+        # 寄っている車種で差が実態の倍以上に出る（フリードで +186% になっていた）
+        both = [(r["model_year"], r["auction_median_manyen"], r["retail_median_manyen"])
+                for r in rows
+                if r.get("auction_median_manyen") and r.get("retail_median_manyen")]
+        auction_median = _median([b[1] for b in both])
+        retail_median = _median([b[2] for b in both])
+        matched_years = len(both)
+        # 差は「年式ごとの比」の中央値で取る。中央値どうしを割ると、2 つの列を
+        # それぞれ独立に並べ替えたことになって別々の年式が突き合わされる
+        # （フリードで 2018年の落札 と 2019年の店頭 を比べていた）
+        premium = _median([b[2] / b[1] for b in both if b[1]])
+
+        # 値落ちは 落札中央値 の最古年式と最新年式から。小売は掲載側の
+        # 価格付けが入るので、実際に売れた値である落札のほうを使う
+        drop = None
+        if len(auctions) >= 2:
+            auctions.sort()
+            (old_y, old_p, _), (new_y, new_p, _) = auctions[0], auctions[-1]
+            if new_y > old_y and new_p:
+                drop = round((1 - old_p / new_p) / (new_y - old_y) * 100, 1)
+
+        new_price = info.get("kakaku_new_price_min_manyen")
+        out.append({
+            "maker": vehicle.maker,
+            "vehicle_name": vehicle.name,
+            "production_period": info.get("carsensor_production_period"),
+            "retail_n": info.get("carsensor_listing_count"),
+            "shop_count": info.get("carsensor_shop_count"),
+            "auction_n": sum(a[2] for a in auctions),
+            "auction_median_manyen": auction_median,
+            "retail_median_manyen": retail_median,
+            "matched_years": matched_years,
+            "retail_premium_pct": round((premium - 1) * 100, 1) if premium else None,
+            "new_price_manyen": new_price,
+            "depreciation_pct": drop,
+            "mileage_median_km": info.get("carsensor_retail_median_mileage_km"),
+            "review_score": info.get("carsensor_review_score_overall"),
+            "review_count": info.get("carsensor_review_count"),
+            "review_loading": info.get("carsensor_review_loading"),
+            "review_running_cost": info.get("carsensor_review_running_cost"),
+            "review_comfort": info.get("carsensor_review_comfort"),
+            "defect_n": defect_n.get(vehicle.key),
+            "defect_top": defect_top.get(vehicle.key),
+            "recall_n": recall_n.get(vehicle.key),
+        })
+    out.sort(key=lambda r: -(r.get("retail_n") or 0))
+    return out
 
 
 def _pivot(
@@ -378,8 +500,6 @@ def build(output: Path, *, vehicles: VehicleSet | None = None) -> Path:
     listings_pool = store.pooled_auction_listings()
     jmty_latest, _ = store.read_latest("jmty_listings")
     delisted, _ = store.read_latest("carsensor_delisted")
-    wide_year, wide_date = store.read_latest("wide_by_year")
-    wide_sum, _ = store.read_latest("wide_summary")
 
     wb = Workbook()
     counts = {
@@ -393,16 +513,23 @@ def build(output: Path, *, vehicles: VehicleSet | None = None) -> Path:
         "落札明細（最新断面のみ）": len(listings_latest),
         "参考_ジモティー掲載": len(jmty_latest),
         "店頭_成約推定": len(delisted),
-        "全車種_年式別相場": len(wide_year),
-        "全車種_一覧": len(wide_sum),
     }
 
     _readme_sheet(wb.active, vehicles, snapshots, counts,
-                  price_date=price_date, wide_date=wide_date)
+                  price_date=price_date)
     wb.active.title = "README"
 
     # --- グラフ（断面）。表より先に置いて、開いてすぐ絵が見えるようにする ---
     charts.build(wb, price_latest, listings_pool, summary_latest, vehicles.model_year_from)
+
+    # --- 車種比較: この 1 枚で候補を絞れるようにする ---
+    _write_table(
+        wb.create_sheet("車種比較"),
+        COMPARE_COLUMNS,
+        _compare_rows(vehicles, price_latest, summary_latest, defects_latest, recalls_latest),
+        number_formats=COMPARE_FORMATS,
+        wrap_columns={"defect_top"},
+    )
 
     # --- 車種マスタ ---
     ws = wb.create_sheet("車種マスタ")
@@ -747,64 +874,6 @@ def build(output: Path, *, vehicles: VehicleSet | None = None) -> Path:
         ):
             cell = ws.cell(row=i, column=1, value=line)
             cell.alignment = Alignment(wrap_text=True, vertical="top")
-
-    # --- 全車種 × 年式（フィルタで絞る用） ---
-    if wide_year:
-        _write_table(
-            wb.create_sheet("全車種_年式別相場"),
-            [
-                ("maker", "メーカー"),
-                ("origin", "国産/輸入"),
-                ("body_type", "ボディタイプ\n(用途)"),
-                ("model_name", "車種"),
-                ("model_year", "年式"),
-                ("is_open_bucket", "以前/以降\nまとめ"),
-                ("listing_count", "掲載台数"),
-                ("retail_p25_manyen", "25%(万円)"),
-                ("retail_median_manyen", "中央値(万円)"),
-                ("retail_mean_manyen", "平均(万円)"),
-                ("retail_p75_manyen", "75%(万円)"),
-                ("production_period", "生産期間"),
-                ("carsensor_code", "コード"),
-                ("url", "URL"),
-            ],
-            sorted(
-                wide_year,
-                key=lambda r: (r.get("maker") or "", r.get("model_name") or "", -(r.get("model_year") or 0)),
-            ),
-            number_formats={
-                "listing_count": INT_FMT,
-                "retail_p25_manyen": MANYEN_FMT,
-                "retail_median_manyen": MANYEN_FMT,
-                "retail_mean_manyen": MANYEN_FMT,
-                "retail_p75_manyen": MANYEN_FMT,
-            },
-        )
-    if wide_sum:
-        _write_table(
-            wb.create_sheet("全車種_一覧"),
-            [
-                ("maker", "メーカー"),
-                ("origin", "国産/輸入"),
-                ("body_type", "ボディタイプ\n(用途)"),
-                ("model_name", "車種"),
-                ("production_period", "生産期間"),
-                ("retail_price_min_manyen", "中古下限\n(万円)"),
-                ("retail_price_max_manyen", "中古上限\n(万円)"),
-                ("listing_count", "掲載台数"),
-                ("shop_count", "取扱店舗"),
-                ("retail_median_mileage_km", "掲載車の\n中央走行距離(km)"),
-                ("review_score_overall", "総合評価"),
-                ("review_count", "口コミ件数"),
-                ("ranking_position", "同ボディ\nランキング"),
-                ("carsensor_code", "コード"),
-            ],
-            sorted(wide_sum, key=lambda r: (r.get("maker") or "", r.get("model_name") or "")),
-            number_formats={
-                "listing_count": INT_FMT, "shop_count": INT_FMT,
-                "review_count": INT_FMT, "retail_median_mileage_km": INT_FMT,
-            },
-        )
 
     # --- 参考: ジモティー掲載明細 ---
     _write_table(
