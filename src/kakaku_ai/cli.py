@@ -357,7 +357,14 @@ def main(argv: list[str] | None = None) -> int:
                     "旧車データがありません。`kakaku-ai classics` を先に実行してください。")
 
         if "sportscar" in wanted:
-            built.append(sportscar.build())
+            built.append(books.catalog_book(
+                books.OUTPUT_DIR / "souba_sportscar.xlsx",
+                title="スポーツカーから選ぶ",
+                note="クーペ・オープンに加えて、カーセンサーではセダンや"
+                     "ハッチバックに分類されている GT-R・ランエボ・WRX・"
+                     "シビックタイプR なども車種名で拾っている。",
+                select=lambda r: sportscar.is_sports(r.get("model_name"), r.get("body_type")),
+            ))
 
         if not args.no_upload:
             for path in built:

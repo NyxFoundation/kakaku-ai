@@ -29,7 +29,7 @@ import statistics as st
 from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any, Callable, Iterable
 
 from openpyxl import Workbook
 from openpyxl.chart import BarChart, LineChart, Reference
@@ -391,6 +391,7 @@ def _readme(ws, title: str, note: str, counts: list[tuple[str, str]],
         ("souba_minivan.xlsx", "ミニバン。深掘り20車種は口コミ・不具合・リコールまで入っている。"),
         ("souba_standard.xlsx", "乗用車（ミニバン・トラックを除く）。"),
         ("souba_classics.xlsx", "1988〜2001年式の旧車。1台ずつの在庫とヤフオク落札。"),
+        ("souba_sportscar.xlsx", "スポーツカー（クーペ・オープン＋GT-R/ランエボ等）。"),
     ]
     for i, (key, value) in enumerate(lines, start=3):
         cell = ws.cell(row=i, column=1, value=key)
@@ -407,8 +408,15 @@ def catalog_book(
     note: str,
     body_types: Iterable[str] | None = None,
     makers: Iterable[str] | None = None,
+    select: Callable[[dict[str, Any]], bool] | None = None,
 ) -> Path:
-    """全車種クロールのデータから、比較・検討用のブックを 1 冊組む。"""
+    """全車種クロールのデータから、比較・検討用のブックを 1 冊組む。
+
+    絞り込みは ボディタイプ / メーカー / 任意の述語（`select`）。述語は
+    ボディタイプでは切れない括りに使う。たとえばスポーツカーは
+    カーセンサー上 GT-R がセダン、ランエボと WRX もセダン、
+    シビックタイプR がハッチバックに入っていて、ボディタイプだけでは拾えない。
+    """
     summaries, snapshot = store.read_latest("wide_summary")
     by_year, _ = store.read_latest("wide_by_year")
     if not summaries:
@@ -420,6 +428,8 @@ def catalog_book(
     if makers is not None:
         wanted_makers = set(makers)
         summaries = [r for r in summaries if (r.get("maker") or "") in wanted_makers]
+    if select is not None:
+        summaries = [r for r in summaries if select(r)]
 
     codes = {r["carsensor_code"] for r in summaries}
     by_year = [r for r in by_year if r["carsensor_code"] in codes]
