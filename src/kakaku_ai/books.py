@@ -56,6 +56,7 @@ STANDARD_BODIES = tuple(b for b in PASSENGER_BODIES if b not in MINIVAN_BODIES)
 
 TOP_MAKERS = 20
 TOP_MODELS = 25
+MIN_PIVOT_LISTINGS = 3  # これ未満の年式はノイズなのでピボットに出さない
 
 
 # --------------------------------------------------------------- 車種比較
@@ -163,7 +164,8 @@ def year_pivot(ws, compare: list[dict[str, Any]], by_year: list[dict[str, Any]],
         "車種 × 年式 の小売相場（中央値・万円）",
         "掲載台数の多い順に上位%s車種。行のなかで安い年式ほど白く、高いほど濃い。"
         "段差が出ているところがモデルチェンジの境目で、その手前が狙い目になりやすい。"
-        % limit,
+        "掲載が%s台未満の年式と、年式が確定しない「それ以前／それ以降」は出していない。"
+        % (limit, MIN_PIVOT_LISTINGS),
     )
 
     codes = [r["carsensor_code"] for r in compare[:limit]]
@@ -174,7 +176,14 @@ def year_pivot(ws, compare: list[dict[str, Any]], by_year: list[dict[str, Any]],
     table: dict[str, dict[int, float]] = defaultdict(dict)
     years: set[int] = set()
     for row in by_year:
-        if row["carsensor_code"] in wanted and row.get("retail_median_manyen"):
+        # 「それ以前 / それ以降」バケットは年式が確定していない。しかも
+        # 発売前の年に 1 台だけ載っていることがあり（スペーシアの 2012年に
+        # 220万が 1 台）、そのまま出すと色スケールがその 1 台に引っぱられる。
+        # ここは「どの年式が狙い目か」を見る表なので、年式が確定した行だけ使う
+        if (row["carsensor_code"] in wanted
+                and row.get("retail_median_manyen")
+                and not row.get("is_open_bucket")
+                and (row.get("listing_count") or 0) >= MIN_PIVOT_LISTINGS):
             table[row["carsensor_code"]][row["model_year"]] = row["retail_median_manyen"]
             years.add(row["model_year"])
 

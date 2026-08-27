@@ -1183,3 +1183,17 @@ def test_normalize_catalog_fills_the_other_bucket():
     assert catalog["VO_S999"]["model_name"] == "ボルボ その他"
     # 判定表を直したぶんは既存のカタログにも引き直される
     assert catalog["HI_S001"]["origin"] == "国産"
+
+
+def test_legacy_names_point_at_files_the_books_command_builds():
+    """旧名の対応表が、実際に作っている本の名前とずれていないこと。
+
+    ここがずれると、共有 URL を貼った人にいつまでも古い中身が見え続ける。
+    """
+    from kakaku_ai import drive
+
+    built = {"all_cars.xlsx", "standard_cars.xlsx", "minivan.xlsx", "classics.xlsx"}
+    assert set(drive.LEGACY_NAMES) <= built
+    # 旧名と新名がぶつかっていたら上書き合戦になる
+    legacy = {n for names in drive.LEGACY_NAMES.values() for n in names}
+    assert not (legacy & built)
