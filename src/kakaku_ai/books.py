@@ -36,7 +36,7 @@ from openpyxl.chart import BarChart, LineChart, Reference
 from openpyxl.formatting.rule import ColorScaleRule
 from openpyxl.utils import get_column_letter
 
-from . import store
+from . import enrich, store
 from .charts import BORDER, INT_FMT, MANYEN_FMT, _header, _title
 from .excel import TITLE_FONT, _write_table
 from .vehicles import DATA_DIR
@@ -53,6 +53,70 @@ PASSENGER_BODIES = (
 )
 MINIVAN_BODIES = ("ミニバン",)
 STANDARD_BODIES = tuple(b for b in PASSENGER_BODIES if b not in MINIVAN_BODIES)
+
+REVIEW_COLUMNS: list[tuple[str, str]] = [
+    ("maker", "メーカー"),
+    ("model_name", "車種"),
+    ("body_type", "ボディタイプ"),
+    ("review_count", "口コミ\n件数"),
+    ("score_overall", "総合"),
+    ("score_design", "デザイン"),
+    ("score_driving", "走行性能"),
+    ("score_ride", "乗り心地"),
+    ("score_loading", "積載性"),
+    ("score_price", "価格"),
+    ("score_fuel_economy", "燃費"),
+    ("good_points", "満足している点"),
+    ("bad_points", "不満な点"),
+]
+
+REVIEW_FORMATS = {
+    "review_count": INT_FMT,
+    **{k: "0.0" for k in ("score_overall", "score_design", "score_driving",
+                          "score_ride", "score_loading", "score_price",
+                          "score_fuel_economy")},
+}
+
+REVIEW_DETAIL_COLUMNS: list[tuple[str, str]] = [
+    ("maker", "メーカー"),
+    ("model_name", "車種"),
+    ("model_year", "年式"),
+    ("grade", "グレード"),
+    ("score_overall", "総合"),
+    ("good_points", "満足している点"),
+    ("bad_points", "不満な点"),
+    ("summary", "総評"),
+    ("url", "URL"),
+]
+
+DEFECT_COLUMNS: list[tuple[str, str]] = [
+    ("maker", "メーカー"),
+    ("model_name", "車種"),
+    ("defective_device", "不具合装置"),
+    ("report_count", "通報件数"),
+    ("share_pct", "その車種の\n通報に占める%"),
+    ("median_mileage_km", "発生時の走行距離\n中央値(km)"),
+    ("model_year_min", "対象\n最古年式"),
+    ("model_year_max", "対象\n最新年式"),
+    ("examples", "実際の症状（直近3件）"),
+]
+
+DEFECT_FORMATS = {
+    "report_count": INT_FMT, "share_pct": "0.0",
+    "median_mileage_km": INT_FMT, "model_year_min": "0", "model_year_max": "0",
+}
+
+RECALL_COLUMNS: list[tuple[str, str]] = [
+    ("maker", "メーカー"),
+    ("model_name", "車種"),
+    ("notification_date", "届出日"),
+    ("notification_no", "届出番号"),
+    ("defective_device", "不具合装置"),
+    ("target_units", "対象台数"),
+    ("models", "対象型式"),
+    ("situation", "不具合の状況"),
+    ("measures", "改善措置"),
+]
 
 TOP_MAKERS = 20
 TOP_MODELS = 25
@@ -77,6 +141,11 @@ COMPARE_COLUMNS: list[tuple[str, str]] = [
     ("price_spread_pct", "価格の幅\n(最高/最安 倍)"),
     ("mileage_median_km", "走行中央値\n(km)"),
     ("depreciation_pct", "値落ち率\n(%/年)"),
+    ("review_score", "口コミ\n総合"),
+    ("review_count", "口コミ\n件数"),
+    ("defect_n", "不具合\n通報数"),
+    ("defect_top", "不具合の\n最多装置"),
+    ("defect_top_mileage_km", "その装置の\n発生走行(km)"),
     ("url", "相場ページ"),
 ]
 
@@ -91,6 +160,10 @@ COMPARE_FORMATS = {
     "price_spread_pct": "0.0",
     "mileage_median_km": INT_FMT,
     "depreciation_pct": "0.0",
+    "review_score": "0.0",
+    "review_count": INT_FMT,
+    "defect_n": INT_FMT,
+    "defect_top_mileage_km": INT_FMT,
 }
 
 
@@ -435,6 +508,17 @@ def catalog_book(
     by_year = [r for r in by_year if r["carsensor_code"] in codes]
     compare = compare_rows(summaries, by_year)
 
+    # 口コミ・整備情報。まだ集めていない車種は空欄になるだけで落ちない
+    reviews, _ = store.read_latest("catalog_review_summary")
+    review_details, _ = store.read_latest("catalog_reviews")
+    defects, _ = store.read_latest("catalog_defect_summary")
+    recalls, _ = store.read_latest("catalog_recalls")
+    reviews = [r for r in reviews if r["carsensor_code"] in codes]
+    review_details = [r for r in review_details if r.get("carsensor_code") in codes]
+    defects = [r for r in defects if r["carsensor_code"] in codes]
+    recalls = [r for r in recalls if r.get("carsensor_code") in codes]
+    enrich.merge_into(compare, reviews, defects)
+
     total_listings = sum(r.get("listing_count") or 0 for r in compare)
     wb = Workbook()
     _readme(
@@ -449,7 +533,14 @@ def catalog_book(
          ("車種比較", "1行1車種。価格帯・掲載台数・走行距離・値落ち率を横並びにしたメイン表。"
                   "メーカー・ボディタイプ・価格でフィルタして候補を絞る。"),
          ("年式別相場", "車種 × 年式のマトリクス。車種を決めたあと、どの年式が狙い目かを見る。"),
-         ("年式別相場_明細", "上の元データ。掲載台数や四分位も入っている。")],
+         ("年式別相場_明細", "上の元データ。掲載台数や四分位も入っている。"),
+         ("口コミ", "みんカラのレビューを車種単位で集計したもの。総合評価と6軸、"
+                "代表的な満足点・不満点。"),
+         ("口コミ_明細", "レビュー個票。年式・グレードつき。"),
+         ("壊れやすい点", "国交省に寄せられた不具合通報を装置別に集計。"
+                    "**発生時の走行距離の中央値**が入っているので、"
+                    "整備の見積もりと交換時期の目安になる。"),
+         ("リコール", "国交省リコール届出。不具合装置・状況・改善措置つき。")],
         snapshot,
     )
     wb.active.title = "README"
@@ -476,7 +567,28 @@ def catalog_book(
                         "retail_mean_manyen": MANYEN_FMT, "retail_p75_manyen": MANYEN_FMT},
     )
 
+    if reviews:
+        _write_table(wb.create_sheet("口コミ"), REVIEW_COLUMNS,
+                     sorted(reviews, key=lambda r: -(r.get("review_count") or 0)),
+                     number_formats=REVIEW_FORMATS,
+                     wrap_columns={"good_points", "bad_points"})
+    if review_details:
+        _write_table(wb.create_sheet("口コミ_明細"), REVIEW_DETAIL_COLUMNS,
+                     review_details, number_formats={"model_year": "0",
+                                                     "score_overall": "0.0"},
+                     wrap_columns={"good_points", "bad_points", "summary"})
+    if defects:
+        _write_table(wb.create_sheet("壊れやすい点"), DEFECT_COLUMNS,
+                     sorted(defects, key=lambda r: (r.get("model_name") or "",
+                                                    -(r.get("report_count") or 0))),
+                     number_formats=DEFECT_FORMATS, wrap_columns={"examples"})
+    if recalls:
+        _write_table(wb.create_sheet("リコール"), RECALL_COLUMNS, recalls,
+                     number_formats={"target_units": INT_FMT},
+                     wrap_columns={"situation", "measures", "models"})
+
     path.parent.mkdir(parents=True, exist_ok=True)
     wb.save(path)
-    log.info("%s（%s車種 / 掲載 %s台）", path.name, len(compare), f"{total_listings:,}")
+    log.info("%s（%s車種 / 掲載 %s台 / 口コミ %s車種 / 不具合 %s行）",
+             path.name, len(compare), f"{total_listings:,}", len(reviews), len(defects))
     return path

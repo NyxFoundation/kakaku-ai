@@ -122,6 +122,13 @@ def main(argv: list[str] | None = None) -> int:
     bk.add_argument("--folder-id", default=drive.DEFAULT_FOLDER_ID)
     bk.add_argument("--no-upload", action="store_true")
 
+    en = sub.add_parser("enrich", help="全車種の口コミ・不具合・リコールを集める")
+    en.add_argument("--step", nargs="*", choices=["index", "links", "reviews", "defects"],
+                    help="工程を絞る（既定=全部）")
+    en.add_argument("--limit", type=int, help="車種数の上限（掲載の多い順）")
+    en.add_argument("--snapshot", help="YYYY-MM-DD（既定=今日）")
+    en.add_argument("--no-cache", action="store_true")
+
     sub.add_parser("list", help="収録済みスナップショットを表示する")
 
     args = parser.parse_args(argv)
@@ -370,6 +377,36 @@ def main(argv: list[str] | None = None) -> int:
             for path in built:
                 drive.upload(path, folder_id=args.folder_id, snapshot=snapshot)
         print("作成:", ", ".join(p.name for p in built))
+        return 0
+
+    if args.command == "enrich":
+        from . import enrich, links
+        from .http import Fetcher
+        from .pipeline import CACHE_DIR
+        from .sources import minkara_index
+
+        steps = set(args.step or ["index", "links", "reviews", "defects"])
+        snapshot = args.snapshot or store.today()
+        fetcher = Fetcher(cache_dir=CACHE_DIR, snapshot=snapshot, use_cache=not args.no_cache)
+        summaries, _ = store.read_latest("wide_summary")
+        # 掲載の多い順に埋める。途中で止めても上位がそろっていれば使える
+        summaries.sort(key=lambda r: -(r.get("listing_count") or 0))
+
+        if "index" in steps:
+            minkara_index.build(fetcher)
+        if "links" in steps:
+            links.build(fetcher, summaries)
+        if "reviews" in steps:
+            details, summary_rows = enrich.collect_reviews(
+                fetcher, summaries, snapshot, limit=args.limit)
+            store.write(snapshot, "catalog_reviews", details)
+            store.write(snapshot, "catalog_review_summary", summary_rows)
+        if "defects" in steps:
+            details, summary_rows, recalls = enrich.collect_defects(
+                fetcher, summaries, snapshot, limit=args.limit)
+            store.write(snapshot, "catalog_defects", details)
+            store.write(snapshot, "catalog_defect_summary", summary_rows)
+            store.write(snapshot, "catalog_recalls", recalls)
         return 0
 
     if args.command == "list":

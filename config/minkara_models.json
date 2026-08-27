@@ -1,0 +1,38 @@
+{
+ "アバルト 124スパイダー": {
+  "maker_ja": "アバルト",
+  "maker_slug": "abarth",
+  "name_ja": "124スパイダー",
+  "slug": "abarth_124_spider"
+ },
+ "アバルト 500 （ハッチバック）": {
+  "maker_ja": "アバルト",
+  "maker_slug": "abarth",
+  "name_ja": "500 （ハッチバック）",
+  "slug": "abarth_500_hatchback"
+ },
+ "アバルト 500C （カブリオレ）": {
+  "maker_ja": "アバルト",
+  "maker_slug": "abarth",
+  "name_ja": "500C （カブリオレ）",
+  "slug": "abarth_500_cabriolet"
+ },
+ "アバルト 500e（ハッチバック）": {
+  "maker_ja": "アバルト",
+  "maker_slug": "abarth",
+  "name_ja": "500e（ハッチバック）",
+  "slug": "abarth_500e_hatchback"
+ },
+ "アバルト 595 （ハッチバック）": {
+  "maker_ja": "アバルト",
+  "maker_slug": "abarth",
+  "name_ja": "595 （ハッチバック）",
+  "slug": "abarth_595_hatchback"
+ },
+ "アバルト 595C （カブリオレ）": {
+  "maker_ja": "アバルト",
+  "maker_slug": "abarth",
+  "name_ja": "595C （カブリオレ）",
+  "slug": "abarth_595c_cabriolet"
+ }
+}
