@@ -1185,15 +1185,16 @@ def test_normalize_catalog_fills_the_other_bucket():
     assert catalog["HI_S001"]["origin"] == "国産"
 
 
-def test_legacy_names_point_at_files_the_books_command_builds():
-    """旧名の対応表が、実際に作っている本の名前とずれていないこと。
+def test_book_filenames_stay_put():
+    """Drive の共有 URL はファイル名に紐づく。勝手に改名しないこと。
 
-    ここがずれると、共有 URL を貼った人にいつまでも古い中身が見え続ける。
+    rclone は同じ名前なら既存ファイルを update するのでファイル ID が
+    変わらない＝共有済みの URL が生きる。名前を変えると新しいファイルに
+    なってしまい、旧 URL を共有した人には古い中身が見え続ける。
+    minivan_souba / classics_90s は中身の対象が広がったあとも改名していない。
     """
-    from kakaku_ai import drive
+    from kakaku_ai import cli
+    from kakaku_ai import classics_excel
 
-    built = {"all_cars.xlsx", "standard_cars.xlsx", "minivan.xlsx", "classics.xlsx"}
-    assert set(drive.LEGACY_NAMES) <= built
-    # 旧名と新名がぶつかっていたら上書き合戦になる
-    legacy = {n for names in drive.LEGACY_NAMES.values() for n in names}
-    assert not (legacy & built)
+    assert cli.OUTPUT_NAME == "minivan_souba.xlsx"
+    assert classics_excel.DEFAULT_OUTPUT.name == "classics_90s.xlsx"

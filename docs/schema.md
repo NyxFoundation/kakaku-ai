@@ -18,12 +18,28 @@ data/
 │  │  ├─ review_summary.jsonl     車種 × 年式 の口コミ集計
 │  │  ├─ recalls.jsonl            国交省リコール
 │  │  ├─ defects.jsonl            国交省 不具合情報（個票）
-│  │  └─ defect_summary.jsonl     装置別の不具合集計＝壊れやすい点
+│  │  ├─ defect_summary.jsonl     装置別の不具合集計＝壊れやすい点
+│  │  ├─ wide_summary.jsonl       全車種の車種単位サマリ（カタログ兼用）
+│  │  ├─ wide_by_year.jsonl       全車種 × 年式 の小売相場
+│  │  ├─ classic_listings.jsonl   旧車の在庫 1 台ずつ
+│  │  └─ classic_auctions.jsonl   旧車のヤフオク落札 1 台ずつ
 │  ├─ 2026-08-29/
 │  └─ …
 ├─ cache/                        取得した生レスポンス（git 管理外）
-└─ xlsx/minivan_souba.xlsx
+├─ catalog.jsonl                 車種カタログ（全車種クロールが育てる）
+└─ xlsx/
+   ├─ all_cars.xlsx              全 2,237 車種のカタログと年式別相場
+   ├─ standard_cars.xlsx         乗用車（ミニバン・トラックを除く）
+   ├─ minivan_souba.xlsx         ミニバン（深掘り20車種）
+   └─ classics_90s.xlsx          1988〜2001年式の旧車
 ```
+
+xlsx のファイル名は変えない。Drive の共有 URL はファイル名に紐づいていて、
+同じ名前に上書きすれば rclone が既存ファイルを update するのでファイル ID が
+変わらず、共有済みの URL がそのまま生きる。改名すると新しいファイルになり、
+旧 URL を共有した人には古い中身が見え続ける。`minivan_souba` は対象が
+トヨタミニバンから 7人乗りミニバン全体に広がったあとも、`classics_90s` は
+1988〜2001年式を指すようになったあとも、名前はそのままにしてある。
 
 JSONL にしたのは、1 行 1 レコードで追記・grep・部分再処理がやりやすいから。
 CSV と違って列が増えても既存行を壊さない。

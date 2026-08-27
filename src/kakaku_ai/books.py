@@ -7,9 +7,9 @@
 | ファイル | 中身 | 誰が見るか |
 |---|---|---|
 | `all_cars.xlsx`      | 全 2,237 車種のカタログと年式別相場 | 車種を決めていない人 |
-| `minivan.xlsx`       | ミニバン。深掘り20車種は口コミ・不具合まで | ミニバンから選ぶ人 |
+| `minivan_souba.xlsx` | ミニバン。深掘り20車種は口コミ・不具合まで | ミニバンから選ぶ人 |
 | `standard_cars.xlsx` | 乗用車（ミニバン・トラックを除く） | 普通の車から選ぶ人 |
-| `classics.xlsx`      | 1988〜2001年式の旧車 | 旧車から選ぶ人 |
+| `classics_90s.xlsx`  | 1988〜2001年式の旧車 | 旧車から選ぶ人 |
 
 特化ブック（下 3 つ）は「その中から 1 台選ぶ」ための構成にする。共通で
 
@@ -388,9 +388,9 @@ def _readme(ws, title: str, note: str, counts: list[tuple[str, str]],
         ("", ""),
         ("■ 他の本", ""),
         ("all_cars.xlsx", "全2,237車種のカタログ。車種を決めていないときの索引。"),
-        ("minivan.xlsx", "ミニバン。深掘り20車種は口コミ・不具合・リコールまで入っている。"),
+        ("minivan_souba.xlsx", "ミニバン。深掘り20車種は口コミ・不具合・リコールまで入っている。"),
         ("standard_cars.xlsx", "乗用車（ミニバン・トラックを除く）。"),
-        ("classics.xlsx", "1988〜2001年式の旧車。1台ずつの在庫とヤフオク落札。"),
+        ("classics_90s.xlsx", "1988〜2001年式の旧車。1台ずつの在庫とヤフオク落札。"),
     ]
     for i, (key, value) in enumerate(lines, start=3):
         cell = ws.cell(row=i, column=1, value=key)

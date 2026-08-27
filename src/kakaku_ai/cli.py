@@ -20,7 +20,7 @@ from . import classics, drive, excel, notify, pipeline, store, watch, wide
 from .vehicles import DATA_DIR, load_vehicles
 
 OUTPUT_DIR = DATA_DIR / "xlsx"
-OUTPUT_NAME = "minivan.xlsx"
+OUTPUT_NAME = "minivan_souba.xlsx"
 
 
 def _setup_logging(verbose: bool) -> None:
@@ -341,7 +341,7 @@ def main(argv: list[str] | None = None) -> int:
                 body_types=books.STANDARD_BODIES,
             ))
         if "minivan" in wanted:
-            built.append(excel.build(OUTPUT_DIR / "minivan.xlsx"))
+            built.append(excel.build(OUTPUT_DIR / OUTPUT_NAME))
         if "classics" in wanted:
             listings, snap = store.read_latest("classic_listings")
             auctions, _ = store.read_latest("classic_auctions")
@@ -349,7 +349,7 @@ def main(argv: list[str] | None = None) -> int:
                 listings = classics.reapply_catalog(listings)
                 built.append(classics_excel.build(
                     listings, classics.by_model(listings), auctions=auctions,
-                    output=books.OUTPUT_DIR / "classics.xlsx",
+                    output=classics_excel.DEFAULT_OUTPUT,
                     year_from=classics.YEAR_FROM, year_to=classics.YEAR_TO,
                     snapshot=snap or snapshot or store.today()))
             else:
