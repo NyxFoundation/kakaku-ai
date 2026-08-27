@@ -1196,7 +1196,7 @@ def test_drive_pins_cover_every_book():
     from kakaku_ai import drive
 
     pins = drive.load_pins()
-    assert set(pins) == {"all_cars.xlsx", "souba_standard.xlsx",
+    assert set(pins) == {"souba_all.xlsx", "souba_standard.xlsx",
                          "souba_minivan.xlsx", "souba_classics.xlsx"}
     assert all(isinstance(v, str) and len(v) > 20 for v in pins.values())
 

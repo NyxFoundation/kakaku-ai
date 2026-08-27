@@ -28,7 +28,7 @@ data/
 ├─ cache/                        取得した生レスポンス（git 管理外）
 ├─ catalog.jsonl                 車種カタログ（全車種クロールが育てる）
 └─ xlsx/
-   ├─ all_cars.xlsx              全 2,237 車種のカタログと年式別相場
+   ├─ souba_all.xlsx             全 2,237 車種のカタログと年式別相場
    ├─ souba_standard.xlsx        乗用車（ミニバン・トラックを除く）
    ├─ souba_minivan.xlsx         ミニバン（深掘り20車種）
    └─ souba_classics.xlsx        1988〜2001年式の旧車

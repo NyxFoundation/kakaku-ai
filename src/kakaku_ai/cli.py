@@ -117,7 +117,7 @@ def main(argv: list[str] | None = None) -> int:
 
     bk = sub.add_parser("books", help="xlsx 4冊（全車種・ミニバン・普通車・旧車）を組む")
     bk.add_argument("--only", nargs="*",
-                    choices=["all_cars", "minivan", "standard_cars", "classics"],
+                    choices=["all", "minivan", "standard", "classics"],
                     help="作る本を絞る（既定=全部）")
     bk.add_argument("--folder-id", default=drive.DEFAULT_FOLDER_ID)
     bk.add_argument("--no-upload", action="store_true")
@@ -321,18 +321,18 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "books":
         from . import books, classics_excel
 
-        wanted = set(args.only or ["all_cars", "minivan", "standard_cars", "classics"])
+        wanted = set(args.only or ["all", "minivan", "standard", "classics"])
         snapshot = store.list_snapshots()[-1] if store.list_snapshots() else None
         built: list[Path] = []
 
-        if "all_cars" in wanted:
+        if "all" in wanted:
             built.append(books.catalog_book(
-                books.OUTPUT_DIR / "all_cars.xlsx",
+                books.OUTPUT_DIR / "souba_all.xlsx",
                 title="全車種カタログ（カーセンサー掲載の全 2,237 車種）",
                 note="車種を決めていない人向けの索引。ボディタイプとメーカーで当たりを"
                      "付けて、決まったら用途別の本（ミニバン・普通車・旧車）に移る。",
             ))
-        if "standard_cars" in wanted:
+        if "standard" in wanted:
             built.append(books.catalog_book(
                 books.OUTPUT_DIR / "souba_standard.xlsx",
                 title="普通車（乗用車）から選ぶ",
