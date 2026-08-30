@@ -71,6 +71,33 @@ VERY_OLD_CAR_YEARS = 18
 COMPULSORY_INSURANCE_24M = 17_650       # 自賠責 24ヶ月（2023年4月〜）
 
 
+# 装置別の想定修理費（円）。**これは実測ではなく相場観**。国交省の不具合情報は
+# 「何が壊れたか」は教えてくれるが「いくらかかったか」は入っていないので、
+# 一般的な工賃＋部品代を置いている。ディーラーか町工場か、リビルト品を使うかで
+# 倍は動くので、そこは各自で差し替える前提。
+REPAIR_COST = {
+    "エンジン": 250_000,
+    "動力伝達": 300_000,      # AT・CVT・駆動系。いちばん高くつく
+    "制動装置": 60_000,
+    "保安灯火": 40_000,
+    "車枠・車体": 80_000,
+    "乗車装置": 70_000,
+    "かじ取り": 90_000,
+    "緩衝装置": 80_000,
+    "電気装置": 60_000,
+    "排ｶﾞｽ･騒音": 100_000,
+    "燃料装置": 90_000,
+    "冷房装置": 120_000,
+    "その他": 50_000,
+}
+REPAIR_COST_DEFAULT = 60_000
+
+# 通報の多い装置のうち、上位いくつまでを見るか。裾は 1〜2 件しかなく、
+# 「その車種の弱点」とは言えない
+TOP_DEVICES = 6
+MIN_DEVICE_SHARE_PCT = 3.0
+
+
 @dataclass
 class Assumptions:
     """人によって桁が変わるところ。既定は持ち家駐車場・年8,000km の想定。"""
@@ -85,6 +112,14 @@ class Assumptions:
     real_fuel_economy: dict[float, float] = field(default_factory=lambda: {
         1.5: 15.0, 2.0: 11.5, 2.5: 10.0, 3.0: 8.5, 3.5: 8.0,
     })
+    # 保有期間。修理の見積もりはこの期間に何km走るかで決まる
+    ownership_years: int = 5
+    # 「典型発生距離を通過する装置」のうち、実際に何割が自分に起きるとみるか。
+    # 通報件数から確率は出せない（母数＝その車種の総保有台数が分からないし、
+    # 通報するのはトラブルに遭った人のごく一部）ので、これは**素の仮定**。
+    # 0.5 は「弱点として挙がっている装置の半分は当たる」という置き方
+    repair_hit_rate: float = 0.5
+    repair_cost: dict[str, int] = field(default_factory=lambda: dict(REPAIR_COST))
 
 
 def _bracket(value: float, table) -> Any:
@@ -202,6 +237,93 @@ def depreciation_at(year: int, points: list[tuple[int, float]]) -> tuple[int | N
     return round(drop * MANYEN), basis
 
 
+# --------------------------------------------------------------- 走行距離
+
+
+def annual_km_of(price_rows: list[dict[str, Any]], today_year: int) -> int | None:
+    """その車種が実際に **1年あたり何km走られているか** を落札実績から出す。
+
+    年8,000km のような一律の仮定を置くと、車種で燃料費が変わらなくなってしまう。
+    落札明細には走行距離が入っているので、年式ごとの中央値を車齢で割れば
+    その車種の使われ方が出る。実際ミニバンは車種で 1万〜1.5万km/年 と差がある。
+
+    年式ごとに `走行距離 ÷ 車齢` を出して中央値を取る。落札が 3 件未満の年式は
+    使わない（1台の走行距離がそのまま中央値になってしまうため）。
+    """
+    rates = [
+        r["auction_median_mileage_km"] / (today_year - r["model_year"])
+        for r in price_rows
+        if r.get("auction_median_mileage_km")
+        and (r.get("auction_n") or 0) >= MIN_SAMPLES_PER_YEAR
+        and today_year - r["model_year"] >= 2      # 車齢1年以下は分母が小さすぎる
+    ]
+    return round(st.median(rates)) if len(rates) >= 3 else None
+
+
+# --------------------------------------------------------------- 修理の見積もり
+
+
+def repair_outlook(
+    defect_rows: list[dict[str, Any]],
+    *,
+    odometer_km: float,
+    annual_km: float,
+    assumptions: Assumptions,
+) -> dict[str, Any]:
+    """保有期間中に **典型的な故障の距離帯を通過するか** を見て修理費を積む。
+
+    国交省の不具合情報には装置ごとに「発生時の走行距離の中央値」が入っている。
+    いま何kmで、これから何km走るかが分かれば、その距離帯を通過するかどうかは
+    言える。通過するなら、その装置の修理費を見ておくべき、という積み方。
+
+    **通報件数から発生確率は出せない。** 母数（その車種が何台走っているか）が
+    分からないうえ、不具合に遭っても通報する人はごく一部だから。なので
+    「通過する装置ぜんぶの修理費」を上限として出し、そこに `repair_hit_rate`
+    （既定 0.5）を掛けたものを予備費としている。この 0.5 は素の仮定。
+
+    リコールはここに入れない。**リコールはメーカー負担で無償修理**なので
+    持ち主の出費にはならない。別途「未対策なら確認すべき」として件数だけ出す。
+    """
+    end_km = odometer_km + annual_km * assumptions.ownership_years
+    devices = sorted(
+        (d for d in defect_rows if (d.get("share_pct") or 0) >= MIN_DEVICE_SHARE_PCT),
+        key=lambda d: -(d.get("report_count") or 0),
+    )[:TOP_DEVICES]
+
+    at_risk: list[dict[str, Any]] = []
+    for device in devices:
+        at_km = device.get("median_mileage_km")
+        if not at_km or at_km > end_km:
+            continue
+        # 買った時点で既に通過している装置も risk に入れる。「通過済みだから
+        # もう安全」ではない。前オーナーが直していれば済んでいるが、
+        # 手つかずなら遅れているだけで、むしろ来やすい。記録簿で要確認
+        already = at_km <= odometer_km
+        at_risk.append({
+            "device": device["defective_device"],
+            "at_km": at_km,
+            "share_pct": device.get("share_pct"),
+            "cost_yen": assumptions.repair_cost.get(device["defective_device"],
+                                                    REPAIR_COST_DEFAULT),
+            "already_passed": already,
+        })
+
+    worst = sum(c["cost_yen"] for c in at_risk)
+    upcoming = [c for c in at_risk if not c["already_passed"]]
+    passed = [c for c in at_risk if c["already_passed"]]
+    return {
+        "start_km": round(odometer_km),
+        "end_km": round(end_km),
+        "devices": at_risk,
+        "worst_case_yen": worst,
+        "reserve_yen": round(worst * assumptions.repair_hit_rate),
+        "reserve_per_year_yen": round(worst * assumptions.repair_hit_rate
+                                      / assumptions.ownership_years),
+        "note": "、".join(f"{c['device']}({c['at_km']:,}km)" for c in upcoming),
+        "passed_note": "、".join(f"{c['device']}({c['at_km']:,}km)" for c in passed),
+    }
+
+
 # --------------------------------------------------------------- 積み上げ
 
 
@@ -214,6 +336,8 @@ def estimate(
     depreciation_yen: int | None,
     depreciation_basis: str,
     assumptions: Assumptions,
+    annual_km: float | None = None,
+    repair: dict[str, Any] | None = None,
     today_year: int | None = None,
 ) -> dict[str, Any]:
     """1 台ぶんの年間維持費を積み上げる。"""
@@ -229,12 +353,14 @@ def estimate(
 
     economy = _bracket(displacement_l,
                        tuple(sorted(assumptions.real_fuel_economy.items())))
-    fuel = round(assumptions.annual_km / economy * assumptions.fuel_yen_per_litre)
+    km = annual_km if annual_km else assumptions.annual_km
+    fuel = round(km / economy * assumptions.fuel_yen_per_litre)
+    repair_reserve = (repair or {}).get("reserve_per_year_yen") or 0
 
     fixed = (vehicle_tax + weight_tax + compulsory + inspection
              + assumptions.voluntary_insurance + assumptions.maintenance
              + assumptions.parking)
-    total = fixed + fuel + (depreciation or 0)
+    total = fixed + fuel + repair_reserve + (depreciation or 0)
 
     return {
         "vehicle_name": vehicle_name,
@@ -255,9 +381,17 @@ def estimate(
         "parking_yen": assumptions.parking,
         "fuel_yen": fuel,
         "fuel_economy_kml": economy,
+        "annual_km": round(km),
+        "annual_km_source": "落札実績" if annual_km else "仮定",
+        "odometer_km": (repair or {}).get("start_km"),
+        "odometer_end_km": (repair or {}).get("end_km"),
+        "repair_devices": (repair or {}).get("note") or "",
+        "repair_passed": (repair or {}).get("passed_note") or "",
+        "repair_worst_yen": (repair or {}).get("worst_case_yen"),
+        "repair_reserve_yen": repair_reserve,
         "is_old_car": age >= OLD_CAR_YEARS,
         # 値落ちを除いた「出ていく現金」。手放すまで実感しないぶんを分けて出す
-        "cash_out_yen": fixed + fuel,
+        "cash_out_yen": fixed + fuel + repair_reserve,
         "total_yen": total,
         "total_manyen": round(total / MANYEN, 1),
         "monthly_yen": round(total / 12),
@@ -268,6 +402,7 @@ def build_table(
     listings: list[dict[str, Any]],
     price_rows: list[dict[str, Any]],
     *,
+    defects: list[dict[str, Any]] | None = None,
     ages: tuple[int, ...] = (3, 6, 10, 14),
     assumptions: Assumptions | None = None,
     today_year: int | None = None,
@@ -286,6 +421,11 @@ def build_table(
     prices_by_vehicle: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for row in price_rows:
         prices_by_vehicle[row.get("vehicle_name") or ""].append(row)
+    # 不具合は世代で割れているので、車種まるごとのロールアップ行だけ使う
+    defects_by_vehicle: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for row in defects or []:
+        if row.get("generation") in (None, "", "（車種全体）"):
+            defects_by_vehicle[row.get("vehicle_name") or ""].append(row)
 
     out: list[dict[str, Any]] = []
     for name, rows in sorted(by_vehicle.items()):
@@ -296,16 +436,31 @@ def build_table(
         # 価格そのものも、落札が薄い年式は使わない
         points = usable_years(prices)
         median_by_year = dict(points)
+        km_per_year = annual_km_of(prices, today_year)
+        odometer_by_year = {
+            r["model_year"]: r["auction_median_mileage_km"]
+            for r in prices
+            if r.get("auction_median_mileage_km")
+            and (r.get("auction_n") or 0) >= MIN_SAMPLES_PER_YEAR
+        }
         for age in ages:
             year = today_year - age
             price = median_by_year.get(year)
             if price is None:
                 continue
             drop, basis = depreciation_at(year, points)
+            odometer = odometer_by_year.get(year)
+            repair = None
+            if odometer is not None and defects_by_vehicle.get(name):
+                repair = repair_outlook(
+                    defects_by_vehicle[name], odometer_km=odometer,
+                    annual_km=km_per_year or assumptions.annual_km,
+                    assumptions=assumptions,
+                )
             out.append(estimate(
                 vehicle_name=name, model_year=year, price_manyen=price,
                 displacement_l=displacement, depreciation_yen=drop,
-                depreciation_basis=basis,
+                depreciation_basis=basis, annual_km=km_per_year, repair=repair,
                 assumptions=assumptions, today_year=today_year,
             ))
     out.sort(key=lambda r: (r["vehicle_name"], r["model_year"]))

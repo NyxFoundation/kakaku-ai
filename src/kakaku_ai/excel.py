@@ -215,13 +215,24 @@ def _readme_sheet(
         ),
         (
             "年間維持費",
-            "1年あたりいくらかかるか。**現金支出（自動車税・重量税・自賠責・任意保険・"
-            "車検・整備・燃料）はここが本体**で、車種と排気量でほぼ決まる。"
-            "値落ちは年式ごとの落札中央値の差から出しているが、1年式あたりの落札が"
-            "3〜8件しかなく世代交代もまたぐので参考値。根拠列が「頭打ち(世代交代)」の"
-            "行は、モデルチェンジの段差を値落ちとして数えないよう抑えた行。"
-            "任意保険6万・車検基本料6万/2年・整備3万・年8,000km・175円/L・駐車場0円を"
-            "仮定している。",
+            "1年あたりいくらかかるか。**現金支出（税・自賠責・任意保険・車検・整備・"
+            "燃料・整備予備費）はここが本体**で、車種と排気量と走行距離で決まる。\n"
+            "年間走行距離は落札実績から出している（年式ごとの走行距離中央値÷車齢の"
+            "中央値）。一律の仮定ではないので、ミニバンでも 1.0万〜1.5万km/年 と"
+            "車種で差が出る。燃料費はここに効く。\n"
+            "整備予備費は、国交省の不具合情報にある「装置ごとの発生時走行距離」を"
+            "保有5年で通過するかで見積もったもの。**通報件数から発生確率は出せない**"
+            "（母数＝その車種の総保有台数が分からず、遭っても通報する人はごく一部）"
+            "ので、通過する装置の修理費を全部足したものに 0.5 を掛けている。"
+            "この 0.5 は素の仮定。修理費そのものも相場観であって実測ではない。\n"
+            "「購入時点で通過済み」の装置は、前オーナーが直していれば済んでいるが、"
+            "手つかずなら遅れているだけ。**記録簿で確認すべき項目**として出している。\n"
+            "リコールは入れていない。メーカー負担の無償修理なので持ち主の出費に"
+            "ならない（未対策かどうかは別途「リコール」シートで確認）。\n"
+            "値落ちは年式ごとの落札中央値の差から。1年式あたりの落札が3〜8件しか"
+            "なく世代交代もまたぐので参考値。根拠列が「頭打ち(世代交代)」の行は、"
+            "モデルチェンジの段差を値落ちとして数えないよう抑えた行。\n"
+            "任意保険6万・車検基本料6万/2年・整備3万・175円/L・駐車場0円を仮定。",
         ),
         ("車種マスタ", "深掘り対象 20 車種の世代・型式の一覧。"),
         ("", ""),
@@ -418,8 +429,16 @@ COST_COLUMNS: list[tuple[str, str]] = [
     ("inspection_yen", "車検\n(年割)"),
     ("maintenance_yen", "整備・消耗品"),
     ("parking_yen", "駐車場"),
+    ("annual_km", "年間走行\n(km)"),
+    ("annual_km_source", "走行距離の\n出どころ"),
     ("fuel_yen", "燃料"),
     ("fuel_economy_kml", "実燃費\n(km/L)"),
+    ("odometer_km", "購入時\n走行(km)"),
+    ("odometer_end_km", "5年後\n走行(km)"),
+    ("repair_devices", "保有中に来る\n故障（距離帯）"),
+    ("repair_passed", "購入時点で\n通過済み"),
+    ("repair_worst_yen", "修理費\n全部起きたら"),
+    ("repair_reserve_yen", "整備予備費\n/年"),
     ("cash_out_yen", "現金支出\n合計/年"),
     ("depreciation_yen", "値落ち\n(参考)"),
     ("depreciation_basis", "値落ちの\n根拠"),
@@ -435,7 +454,8 @@ COST_FORMATS = {
         "vehicle_tax_yen", "weight_tax_yen", "compulsory_insurance_yen",
         "voluntary_insurance_yen", "inspection_yen", "maintenance_yen",
         "parking_yen", "fuel_yen", "cash_out_yen", "depreciation_yen",
-        "total_yen", "monthly_yen")},
+        "total_yen", "monthly_yen", "annual_km", "odometer_km",
+        "odometer_end_km", "repair_worst_yen", "repair_reserve_yen")},
 }
 
 
@@ -576,11 +596,13 @@ def build(output: Path, *, vehicles: VehicleSet | None = None) -> Path:
     )
 
     # --- 年間維持費 ---
-    cost_rows = running_cost.build_table(listings_pool, price_latest)
+    cost_rows = running_cost.build_table(listings_pool, price_latest,
+                                         defects=defects_latest)
     if cost_rows:
         ws = wb.create_sheet("年間維持費")
         _write_table(ws, COST_COLUMNS, cost_rows, number_formats=COST_FORMATS,
-                     wrap_columns={"depreciation_basis"})
+                     wrap_columns={"depreciation_basis", "repair_devices",
+                                   "repair_passed"})
 
     # --- 車種マスタ ---
     ws = wb.create_sheet("車種マスタ")
