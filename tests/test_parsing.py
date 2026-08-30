@@ -1316,3 +1316,54 @@ def test_jsonl_survives_unicode_line_separators(tmp_path, monkeypatch):
     rows = [{"text": f"満足{sep}している点"} for sep in (" ", " ", "\x85", "")]
     store.write("2026-01-01", "reviews", rows)
     assert store.read("2026-01-01", "reviews") == rows
+
+
+def test_vehicle_tax_uses_the_right_rate_table():
+    """2019年10月に税率が下がった。それ以前の登録は旧税率のまま。"""
+    from kakaku_ai.running_cost import annual_vehicle_tax
+
+    assert annual_vehicle_tax(2.0, 2020, 2026) == 36_000   # 減税後
+    assert annual_vehicle_tax(2.0, 2016, 2026) == 39_500   # 旧税率
+    assert annual_vehicle_tax(2.5, 2020, 2026) == 43_500
+    # 13年超のガソリン車は約15%重課
+    assert annual_vehicle_tax(2.0, 2013, 2026) == 45_400
+
+
+def test_weight_tax_is_halved_and_surcharged_with_age():
+    """重量税は2年ぶんで払うので年額はその半分。13年超・18年超で重課。"""
+    from kakaku_ai.running_cost import annual_weight_tax
+
+    assert annual_weight_tax(2.0, 2020, 2026) == 16_400    # 32,800 / 2
+    assert annual_weight_tax(2.0, 2013, 2026) == 22_800    # 13年超
+    assert annual_weight_tax(2.0, 2005, 2026) == 25_200    # 18年超
+
+
+def test_depreciation_caps_generation_changes():
+    """世代交代の段差を1年ぶんの値落ちとして数えないこと。
+
+    ヴォクシーは 2013年式 36.5万 / 2014年式 73.0万 で、2014年1月の 80系登場を
+    挟んで倍近い差がある。そのまま使うと年27%という有り得ない値落ちになる。
+    """
+    from kakaku_ai.running_cost import depreciation_at
+
+    points = [(2013, 36.5), (2014, 73.0)]
+    drop, basis = depreciation_at(2014, points)
+    assert basis == "頭打ち(世代交代)"
+    assert drop == round(73.0 * 0.25 * 10_000)
+
+    # 素直な値落ちはそのまま差額
+    drop, basis = depreciation_at(2016, [(2015, 100.0), (2016, 110.0)])
+    assert basis == "隣接" and drop == 100_000
+
+    # 古いほうが高い（旧車化）ときは 0
+    drop, basis = depreciation_at(2016, [(2015, 120.0), (2016, 110.0)])
+    assert basis == "値落ちなし" and drop == 0
+
+
+def test_displacement_comes_from_the_auction_grade():
+    """排気量はグレード表記から取る。カタログを引かずに済む。"""
+    from kakaku_ai.running_cost import displacement_of
+
+    rows = [{"grade": "2.5 S Cパッケージ"}, {"grade": "2.5 X"}, {"grade": "3.5 SC"}]
+    assert displacement_of(rows) == 2.5
+    assert displacement_of([{"grade": ""}]) is None

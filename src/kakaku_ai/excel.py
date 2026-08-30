@@ -23,7 +23,7 @@ from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.worksheet import Worksheet
 
-from . import aggregate, charts, store
+from . import aggregate, charts, running_cost, store
 from .charts import _median
 from .vehicles import VehicleSet, load_vehicles
 
@@ -213,6 +213,16 @@ def _readme_sheet(
             "年式・走行距離・修復歴に加え、商品ページから取ったグレード・車検・"
             "諸費用込み総額つき。",
         ),
+        (
+            "年間維持費",
+            "1年あたりいくらかかるか。**現金支出（自動車税・重量税・自賠責・任意保険・"
+            "車検・整備・燃料）はここが本体**で、車種と排気量でほぼ決まる。"
+            "値落ちは年式ごとの落札中央値の差から出しているが、1年式あたりの落札が"
+            "3〜8件しかなく世代交代もまたぐので参考値。根拠列が「頭打ち(世代交代)」の"
+            "行は、モデルチェンジの段差を値落ちとして数えないよう抑えた行。"
+            "任意保険6万・車検基本料6万/2年・整備3万・年8,000km・175円/L・駐車場0円を"
+            "仮定している。",
+        ),
         ("車種マスタ", "深掘り対象 20 車種の世代・型式の一覧。"),
         ("", ""),
         ("■ 相場の作り方", ""),
@@ -395,6 +405,40 @@ def _compare_rows(
     return out
 
 
+COST_COLUMNS: list[tuple[str, str]] = [
+    ("vehicle_name", "車種"),
+    ("model_year", "年式"),
+    ("age", "車齢"),
+    ("displacement_l", "排気量\n(L)"),
+    ("price_manyen", "車両価格\n(万円)"),
+    ("vehicle_tax_yen", "自動車税"),
+    ("weight_tax_yen", "重量税\n(年割)"),
+    ("compulsory_insurance_yen", "自賠責\n(年割)"),
+    ("voluntary_insurance_yen", "任意保険"),
+    ("inspection_yen", "車検\n(年割)"),
+    ("maintenance_yen", "整備・消耗品"),
+    ("parking_yen", "駐車場"),
+    ("fuel_yen", "燃料"),
+    ("fuel_economy_kml", "実燃費\n(km/L)"),
+    ("cash_out_yen", "現金支出\n合計/年"),
+    ("depreciation_yen", "値落ち\n(参考)"),
+    ("depreciation_basis", "値落ちの\n根拠"),
+    ("total_yen", "総額/年"),
+    ("monthly_yen", "月あたり"),
+    ("is_old_car", "13年超\n重課"),
+]
+
+COST_FORMATS = {
+    "model_year": "0", "age": "0", "displacement_l": "0.0",
+    "price_manyen": MANYEN_FMT, "fuel_economy_kml": "0.0",
+    **{k: INT_FMT for k in (
+        "vehicle_tax_yen", "weight_tax_yen", "compulsory_insurance_yen",
+        "voluntary_insurance_yen", "inspection_yen", "maintenance_yen",
+        "parking_yen", "fuel_yen", "cash_out_yen", "depreciation_yen",
+        "total_yen", "monthly_yen")},
+}
+
+
 def _pivot(
     ws: Worksheet,
     rows: list[dict[str, Any]],
@@ -530,6 +574,13 @@ def build(output: Path, *, vehicles: VehicleSet | None = None) -> Path:
         number_formats=COMPARE_FORMATS,
         wrap_columns={"defect_top"},
     )
+
+    # --- 年間維持費 ---
+    cost_rows = running_cost.build_table(listings_pool, price_latest)
+    if cost_rows:
+        ws = wb.create_sheet("年間維持費")
+        _write_table(ws, COST_COLUMNS, cost_rows, number_formats=COST_FORMATS,
+                     wrap_columns={"depreciation_basis"})
 
     # --- 車種マスタ ---
     ws = wb.create_sheet("車種マスタ")
