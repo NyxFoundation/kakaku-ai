@@ -465,3 +465,171 @@ def build_table(
             ))
     out.sort(key=lambda r: (r["vehicle_name"], r["model_year"]))
     return out
+
+
+# --------------------------------------------------------------- 年次シミュレーション
+
+
+def simulate(
+    *,
+    vehicle_name: str,
+    model_year: int,
+    price_manyen: float,
+    displacement_l: float,
+    odometer_km: float,
+    annual_km: float,
+    year_prices: dict[int, float],
+    defect_rows: list[dict[str, Any]],
+    assumptions: Assumptions,
+    years: int = 10,
+    today_year: int | None = None,
+) -> list[dict[str, Any]]:
+    """買ってから 1 年目、2 年目…と積み上げて、累計いくらかかるかを出す。
+
+    1 年ぶんの平均で割るのではなく年ごとに計算するのは、**段差が出る費目が
+    あるから**。車検は 2 年に 1 回だし、13 年目・18 年目に税が上がる。
+    修理も「その距離に達した年」に来る。均すとそれが見えなくなる。
+
+    値落ちは年式ごとの落札中央値をそのまま辿る。データが無い年式まで来たら
+    そこで値落ちは 0 にする（十分古くなれば実際ほぼ止まる）。
+    """
+    today_year = today_year or date.today().year
+    weight = weight_class(displacement_l)
+    economy = _bracket(displacement_l,
+                       tuple(sorted(assumptions.real_fuel_economy.items())))
+
+    # 装置ごとに「何kmで来るか」。既に通過しているものは 1 年目に置く
+    devices = sorted(
+        (d for d in defect_rows if (d.get("share_pct") or 0) >= MIN_DEVICE_SHARE_PCT
+         and d.get("median_mileage_km")),
+        key=lambda d: -(d.get("report_count") or 0),
+    )[:TOP_DEVICES]
+
+    # 買った時点で既に発生距離を過ぎている装置は「いつ来てもおかしくない」。
+    # 全部 1 年目に積むと初年度だけ跳ね上がって、その後 10 年ずっと修理ゼロと
+    # いう嘘の形になる。順番に割り振って、数年かけて片付いていく形にする
+    overdue = [d for d in devices if d["median_mileage_km"] <= odometer_km]
+    overdue_at_year = {id(d): (i % max(min(len(overdue), years), 1)) + 1
+                       for i, d in enumerate(overdue)}
+
+    rows: list[dict[str, Any]] = []
+    km = odometer_km
+    value = price_manyen
+    cumulative = 0
+    for t in range(1, years + 1):
+        calendar_year = today_year + t
+        age = calendar_year - model_year
+        km_start, km = km, km + annual_km
+
+        vehicle_tax = annual_vehicle_tax(displacement_l, model_year, calendar_year)
+        weight_tax = annual_weight_tax(weight, model_year, calendar_year)
+        compulsory = round(COMPULSORY_INSURANCE_24M / 2)
+        fuel = round(annual_km / economy * assumptions.fuel_yen_per_litre)
+        # 車検は 2 年に 1 回。買った年に受けたとみて 2 年目から
+        inspection = assumptions.inspection_fee_2y if t % 2 == 0 else 0
+
+        # その年に通過する装置の修理。1 年目は「既に通過済み」のぶんも見る
+        repair = 0
+        hit: list[str] = []
+        for device in devices:
+            at_km = device["median_mileage_km"]
+            crossed_now = km_start < at_km <= km
+            due_now = overdue_at_year.get(id(device)) == t
+            if crossed_now or due_now:
+                cost = assumptions.repair_cost.get(device["defective_device"],
+                                                   REPAIR_COST_DEFAULT)
+                repair += round(cost * assumptions.repair_hit_rate)
+                hit.append(device["defective_device"])
+
+        # 値落ちは年式表を 1 年ずつ遡る形で辿る
+        next_value = year_prices.get(model_year - (t - 1) - 1)
+        depreciation = 0
+        if next_value is not None and next_value < value:
+            # 年式表は世代交代の段差を含む。1年ぶんの値落ちとして扱えるのは
+            # 車両価格の25%まで（単年で3割4割落ちるのはモデルチェンジの段差）
+            drop = min(value - next_value, value * DEPRECIATION_CAP)
+            depreciation = round(drop * MANYEN)
+            value -= drop
+
+        total = (vehicle_tax + weight_tax + compulsory + fuel + inspection
+                 + assumptions.voluntary_insurance + assumptions.maintenance
+                 + assumptions.parking + repair + depreciation)
+        cumulative += total
+        rows.append({
+            "vehicle_name": vehicle_name,
+            "model_year": model_year,
+            "year": t,
+            "age": age,
+            "odometer_km": round(km),
+            "vehicle_tax_yen": vehicle_tax,
+            "weight_tax_yen": weight_tax,
+            "compulsory_insurance_yen": compulsory,
+            "voluntary_insurance_yen": assumptions.voluntary_insurance,
+            "inspection_yen": inspection,
+            "maintenance_yen": assumptions.maintenance,
+            "fuel_yen": fuel,
+            "repair_yen": repair,
+            "repair_devices": "、".join(hit),
+            "depreciation_yen": depreciation,
+            "total_yen": total,
+            "cumulative_yen": cumulative,
+            "cumulative_manyen": round(cumulative / MANYEN, 1),
+            "is_old_car": age >= OLD_CAR_YEARS,
+        })
+    return rows
+
+
+def simulate_table(
+    listings: list[dict[str, Any]],
+    price_rows: list[dict[str, Any]],
+    *,
+    defects: list[dict[str, Any]] | None = None,
+    ages: tuple[int, ...] = (3, 10),
+    years: int = 10,
+    assumptions: Assumptions | None = None,
+    today_year: int | None = None,
+) -> list[dict[str, Any]]:
+    """車種 × 年式ぶんの年次シミュレーションをまとめて回す。"""
+    assumptions = assumptions or Assumptions()
+    today_year = today_year or date.today().year
+
+    by_vehicle: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for row in listings:
+        by_vehicle[row.get("vehicle_name") or ""].append(row)
+    prices_by_vehicle: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for row in price_rows:
+        prices_by_vehicle[row.get("vehicle_name") or ""].append(row)
+    defects_by_vehicle: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for row in defects or []:
+        if row.get("generation") in (None, "", "（車種全体）"):
+            defects_by_vehicle[row.get("vehicle_name") or ""].append(row)
+
+    out: list[dict[str, Any]] = []
+    for name, rows in sorted(by_vehicle.items()):
+        displacement = displacement_of(rows)
+        prices = prices_by_vehicle.get(name) or []
+        points = usable_years(prices)
+        if not displacement or not points:
+            continue
+        year_prices = dict(points)
+        km_per_year = annual_km_of(prices, today_year) or assumptions.annual_km
+        odometer_by_year = {
+            r["model_year"]: r["auction_median_mileage_km"]
+            for r in prices
+            if r.get("auction_median_mileage_km")
+            and (r.get("auction_n") or 0) >= MIN_SAMPLES_PER_YEAR
+        }
+        for age in ages:
+            model_year = today_year - age
+            price = year_prices.get(model_year)
+            odometer = odometer_by_year.get(model_year)
+            if price is None or odometer is None:
+                continue
+            out.extend(simulate(
+                vehicle_name=name, model_year=model_year, price_manyen=price,
+                displacement_l=displacement, odometer_km=odometer,
+                annual_km=km_per_year, year_prices=year_prices,
+                defect_rows=defects_by_vehicle.get(name) or [],
+                assumptions=assumptions, years=years, today_year=today_year,
+            ))
+    return out

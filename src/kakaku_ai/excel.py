@@ -39,6 +39,7 @@ ALT_FILL = PatternFill("solid", fgColor="F2F5FA")
 MANYEN_FMT = "#,##0.0"
 INT_FMT = "#,##0"
 PCT_FMT = "0.0"
+MAX_COST_SERIES = 12   # 折れ線はこれ以上並べると読めない
 
 
 def _write_table(
@@ -324,6 +325,62 @@ COMPARE_FORMATS = {
 }
 
 
+def _cost_chart_sheet(ws: Worksheet, sim_rows: list[dict[str, Any]]) -> None:
+    """横軸=何年目 / 縦軸=維持費の累計 の折れ線。系列は 車種 × 年式。
+
+    段差が意味を持つグラフなので、均さずに年ごとの実額を積んでいる。
+    2 年に 1 回の車検、13年目・18年目の増税、修理が来た年がそのまま
+    折れ線の傾きの変化として出る。
+
+    系列が多すぎると読めないので、10 年目の累計が安い順に絞る。
+    """
+    series: dict[str, dict[int, float]] = {}
+    meta: dict[str, dict[str, Any]] = {}
+    for row in sim_rows:
+        key = f"{row['vehicle_name']} {row['model_year']}年式"
+        series.setdefault(key, {})[row["year"]] = row["cumulative_manyen"]
+        meta[key] = row
+    if not series:
+        return
+
+    years = sorted({r["year"] for r in sim_rows})
+    ordered = sorted(series, key=lambda k: series[k].get(years[-1], 0))[:MAX_COST_SERIES]
+
+    charts._title(
+        ws,
+        f"買ってから何年目までに、累計いくらかかるか（万円）",
+        "車両価格・税・自賠責・任意保険・車検・整備・燃料・修理・値落ちの累計。"
+        "2年に1回の車検、13年目と18年目の増税、修理が来た年で傾きが変わる。"
+        "安い順に上位%s系列。値落ちと修理は仮定を含むので、順位の目安として読むこと。"
+        % len(ordered),
+    )
+
+    start = 4
+    charts._header(ws, start, ["経過年", *ordered])
+    for offset, year in enumerate(years, start=1):
+        ws.cell(row=start + offset, column=1, value=year).border = BORDER
+        for col, key in enumerate(ordered, start=2):
+            cell = ws.cell(row=start + offset, column=col, value=series[key].get(year))
+            cell.number_format = MANYEN_FMT
+            cell.border = BORDER
+    last = start + len(years)
+
+    chart = LineChart()
+    chart.title = "維持費の累計（万円）"
+    chart.y_axis.title = "累計（万円）"
+    chart.x_axis.title = "経過年"
+    chart.height, chart.width = 16, 30
+    chart.add_data(Reference(ws, min_col=2, max_col=1 + len(ordered),
+                             min_row=start, max_row=last), titles_from_data=True)
+    chart.set_categories(Reference(ws, min_col=1, min_row=start + 1, max_row=last))
+    ws.add_chart(chart, f"A{last + 3}")
+
+    ws.column_dimensions["A"].width = 10
+    for col in range(2, len(ordered) + 2):
+        ws.column_dimensions[get_column_letter(col)].width = 16
+    ws.row_dimensions[start].height = 40
+
+
 def _compare_rows(
     vehicles: VehicleSet,
     price_latest: list[dict[str, Any]],
@@ -594,6 +651,12 @@ def build(output: Path, *, vehicles: VehicleSet | None = None) -> Path:
         number_formats=COMPARE_FORMATS,
         wrap_columns={"defect_top"},
     )
+
+    # --- グラフ_維持費: 何年目までにいくらか ---
+    sim_rows = running_cost.simulate_table(listings_pool, price_latest,
+                                           defects=defects_latest)
+    if sim_rows:
+        _cost_chart_sheet(wb.create_sheet("グラフ_維持費"), sim_rows)
 
     # --- 年間維持費 ---
     cost_rows = running_cost.build_table(listings_pool, price_latest,
