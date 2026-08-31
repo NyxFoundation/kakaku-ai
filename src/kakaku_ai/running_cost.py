@@ -619,10 +619,19 @@ def simulate_table(
             if r.get("auction_median_mileage_km")
             and (r.get("auction_n") or 0) >= MIN_SAMPLES_PER_YEAR
         }
+        # 落札は新しい年式ほど薄い（個人売買に出てこないため）。無い年式は
+        # 小売の中央値で代える。買値としてはこちらのほうが実態に近くもある
+        retail_by_year = {
+            r["model_year"]: r["retail_median_manyen"]
+            for r in prices if r.get("retail_median_manyen")
+        }
         for age in ages:
             model_year = today_year - age
-            price = year_prices.get(model_year)
+            price = year_prices.get(model_year) or retail_by_year.get(model_year)
+            # 走行距離も無ければ「その車種の年間走行 × 車齢」で置く
             odometer = odometer_by_year.get(model_year)
+            if odometer is None and age > 0:
+                odometer = km_per_year * age
             if price is None or odometer is None:
                 continue
             out.extend(simulate(

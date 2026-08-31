@@ -403,6 +403,7 @@ def pick(
     budget_manyen: float | None = None,
     individual_only: bool = False,
     model_year_from: int | None = None,
+    year_from_by_vehicle: dict[str, int] | None = None,
     repair: str = "any",
     cheap_only: bool = False,
 ) -> list[dict[str, Any]]:
@@ -417,7 +418,12 @@ def pick(
             continue
         # 対象年式より古いものは流さない。古い個体は相場モデルの外挿になりやすく、
         # そもそも 13年超は自動車税が重課で選択肢から外れる。
-        if model_year_from and (r.get("model_year") or 0) < model_year_from:
+        #
+        # 下限は車種ごとに違う。同じ「何年式以降なら安心か」でも、世代交代の
+        # 時期と初期ロットの落ち着き方が車種で異なるため（フリードは2代目の
+        # 2017年式から、ノアは80系が落ち着く2016年式から、ヴォクシーは2017年式から）。
+        floor = (year_from_by_vehicle or {}).get(r.get("vehicle_key") or "") or model_year_from
+        if floor and (r.get("model_year") or 0) < floor:
             continue
         if not repair_ok(r, repair):
             continue

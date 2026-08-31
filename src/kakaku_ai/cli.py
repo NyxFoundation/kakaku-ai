@@ -207,6 +207,8 @@ def main(argv: list[str] | None = None) -> int:
             budget_manyen=args.budget,
             individual_only=args.individual_only,
             model_year_from=args.year_from or vehicles.model_year_from,
+            year_from_by_vehicle={v.key: v.model_year_from for v in vehicles
+                                  if v.model_year_from},
             repair=args.repair,
             cheap_only=not args.include_pricey,
         )

@@ -75,6 +75,9 @@ class Vehicle:
     minkara_maker: str
     mlit_maker: str
     mlit_common_names: tuple[str, ...]
+    # 車種ごとの年式下限。世代交代や初期ロットの不具合で「この年式より前は
+    # 買わない」が車種ごとに違うため、セット全体の下限とは別に持つ
+    model_year_from: int | None = None
     generations: tuple[Generation, ...] = field(default=())
 
     def generation_for(self, year_month: int | None) -> Generation | None:
@@ -240,6 +243,8 @@ def _parse_vehicles(raw: dict[str, Any], meta: dict[str, Any]) -> list[Vehicle]:
                 minkara_maker=item.get("minkara_maker") or MINKARA_MAKER.get(maker, "toyota"),
                 mlit_maker=item.get("mlit_maker") or MLIT_MAKER.get(maker, maker),
                 mlit_common_names=tuple(item.get("mlit_common_name") or (item["name"],)),
+                model_year_from=(int(item["model_year_from"])
+                                 if item.get("model_year_from") else None),
                 generations=gens,
             )
         )

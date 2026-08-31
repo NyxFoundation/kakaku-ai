@@ -78,6 +78,8 @@ vehicles:
 
   - key: noah
     name: ノア
+    # 80系が落ち着くのが2016年式から（2015年式は8.7件/100台でワースト）
+    model_year_from: 2016
     name_en: Noah
     yahoo_category: [2084016682]
     carsensor_code: null
@@ -115,6 +117,8 @@ vehicles:
 
   - key: voxy
     name: ヴォクシー
+    # 2017年式から通報が急減
+    model_year_from: 2017
     name_en: Voxy
     yahoo_category: [2084049058]
     carsensor_code: null

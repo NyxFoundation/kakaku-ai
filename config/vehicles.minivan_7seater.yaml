@@ -48,6 +48,8 @@ vehicles:
 
   - key: freed
     name: フリード
+    # 2017年式から通報が急減
+    model_year_from: 2017
     name_en: Freed
     maker: ホンダ
     yahoo_category: [2084243774]
