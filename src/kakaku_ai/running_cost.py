@@ -443,13 +443,20 @@ def build_table(
             if r.get("auction_median_mileage_km")
             and (r.get("auction_n") or 0) >= MIN_SAMPLES_PER_YEAR
         }
+        # 落札は新しい年式ほど薄い（個人売買に出てこない）。無ければ小売で代える
+        retail_by_year = {
+            r["model_year"]: r["retail_median_manyen"]
+            for r in prices if r.get("retail_median_manyen")
+        }
         for age in ages:
             year = today_year - age
-            price = median_by_year.get(year)
+            price = median_by_year.get(year) or retail_by_year.get(year)
             if price is None:
                 continue
             drop, basis = depreciation_at(year, points)
             odometer = odometer_by_year.get(year)
+            if odometer is None and age > 0:
+                odometer = (km_per_year or assumptions.annual_km) * age
             repair = None
             if odometer is not None and defects_by_vehicle.get(name):
                 repair = repair_outlook(
