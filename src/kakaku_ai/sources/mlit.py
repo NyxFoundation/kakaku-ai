@@ -95,10 +95,30 @@ def _recall_types(row: dict[str, Any]) -> list[dict[str, Any]]:
     return out
 
 
+# リコールの通称名は「アウディ　Ａ８　６０Ｔｑ」「Ａ６・Ａ８」のように
+# メーカー名とグレードがくっついた形で入っている。全角スペースと中黒で
+# 割れば「Ａ８」が単独のトークンとして出てくる
+_NAME_SEPARATORS = re.compile(r"[\u3000\s・･,、/／]+")
+
+
+def _name_tokens(name: str) -> set[str]:
+    return {t for t in _NAME_SEPARATORS.split(name or "") if t}
+
+
 def normalize_recalls(
-    rows: list[dict[str, Any]], vehicle, snapshot: str
+    rows: list[dict[str, Any]], vehicle, snapshot: str, *, match: str = "exact"
 ) -> list[dict[str, Any]]:
-    """全件のリコールから、この車種に該当するものだけを取り出す。"""
+    """全件のリコールから、この車種に該当するものだけを取り出す。
+
+    `match="token"` にすると通称名をトークンに割って照合する。深掘り20車種は
+    型式を持っているので完全一致で足りるが、カタログ側は型式が無く通称名だけが
+    頼りで、しかもリコールの通称名は「アウディ　Ａ８　６０Ｔｑ」のように
+    メーカー名とグレードがくっついている。完全一致だと 1 件も当たらない
+    （アウディのリコール160件に対して A8 が 0 件になっていた）。
+
+    「Ａ８Ｌ」は「Ａ８」のトークンにはならないので拾わない。ロングホイール
+    ベースは別の車で、A8 に乗っている人には関係ないリコールだから。
+    """
     wanted_names = {n for n in vehicle.mlit_common_names}
     wanted_models = {m.upper() for m in vehicle.all_models}
     # 排ガス記号を落とした素の型式（AGH30W 等）でも拾えるようにする
@@ -112,7 +132,9 @@ def normalize_recalls(
             common = (t.get("recall_type_data_car_mlit_common_name") or "").strip()
             model = (t.get("recall_type_data_car_mlit_model_name") or "").strip().upper()
             bare = model.split("-")[-1]
-            if common in wanted_names or model in wanted_models or bare in wanted_bare:
+            hit_name = (common in wanted_names or
+                        (match == "token" and bool(_name_tokens(common) & wanted_names)))
+            if hit_name or model in wanted_models or bare in wanted_bare:
                 matched.append(t)
         if not matched:
             continue

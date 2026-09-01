@@ -101,6 +101,11 @@ def build(
     defects = [r for r in defects if r.get("carsensor_code") == carsensor_code]
     reviews, _ = store.read_latest("catalog_review_summary")
     reviews = [r for r in reviews if r.get("carsensor_code") == carsensor_code]
+    review_details, _ = store.read_latest("catalog_reviews")
+    review_details = [r for r in review_details
+                      if r.get("carsensor_code") == carsensor_code]
+    recalls, _ = store.read_latest("catalog_recalls")
+    recalls = [r for r in recalls if r.get("carsensor_code") == carsensor_code]
 
     cost_rows = _cost_rows(target, defects, displacement_l, assumptions, today_year)
 
@@ -136,10 +141,21 @@ def build(
         _write_table(wb.create_sheet("壊れやすい点"), DEFECT_COLUMNS,
                      sorted(defects, key=lambda r: -(r.get("report_count") or 0)),
                      number_formats=DEFECT_FORMATS, wrap_columns={"examples"})
+    if recalls:
+        _write_table(wb.create_sheet("リコール"), RECALL_COLUMNS,
+                     sorted(recalls, key=lambda r: r.get("notification_date") or "",
+                            reverse=True),
+                     number_formats={"target_units": INT_FMT},
+                     wrap_columns={"situation", "measures", "models", "common_names"})
     if reviews:
         _write_table(wb.create_sheet("口コミ"), REVIEW_COLUMNS, reviews,
                      number_formats={"review_count": INT_FMT},
                      wrap_columns={"good_points", "bad_points"})
+    if review_details:
+        _write_table(wb.create_sheet("口コミ_明細"), REVIEW_DETAIL_COLUMNS,
+                     review_details, number_formats={"model_year": "0",
+                                                     "score_overall": "0.0"},
+                     wrap_columns={"good_points", "bad_points", "summary"})
 
     output.parent.mkdir(parents=True, exist_ok=True)
     wb.save(output)
@@ -219,6 +235,20 @@ DEFECT_COLUMNS: list[tuple[str, str]] = [
 DEFECT_FORMATS = {"report_count": INT_FMT, "share_pct": "0.0",
                   "median_mileage_km": INT_FMT,
                   "model_year_min": "0", "model_year_max": "0"}
+
+RECALL_COLUMNS: list[tuple[str, str]] = [
+    ("notification_date", "届出日"), ("notification_no", "届出番号"),
+    ("defective_device", "不具合装置"), ("target_units", "対象台数"),
+    ("common_names", "対象の通称名"), ("models", "対象型式"),
+    ("production_from", "生産期間 から"), ("production_to", "まで"),
+    ("situation", "不具合の状況"), ("measures", "改善措置"),
+]
+
+REVIEW_DETAIL_COLUMNS: list[tuple[str, str]] = [
+    ("model_year", "年式"), ("grade", "グレード"), ("score_overall", "総合"),
+    ("good_points", "満足している点"), ("bad_points", "不満な点"),
+    ("summary", "総評"), ("url", "URL"),
+]
 
 REVIEW_COLUMNS: list[tuple[str, str]] = [
     ("review_count", "口コミ件数"), ("score_overall", "総合"),
@@ -396,6 +426,11 @@ def _readme(ws, title: str, grade_label: str, year_from: int, year_to: int,
                     "ので件数は期待できない。"),
         ("年式別相場", "カーセンサー掲載の年式別価格分布（全グレード込み）。"),
         ("壊れやすい点", "国交省の不具合通報を装置別に。発生時の走行距離つき。"),
+        ("リコール", "国交省リコール届出。**対象の通称名**の列を見て、"
+                 "自分のグレードが入っているか確認する。"
+                 "リコールはメーカー負担の無償修理なので費用はかからないが、"
+                 "未対策のまま流通していることがあるので購入前に販売店に聞くこと。"),
+        ("口コミ", "みんカラのレビュー集計と個票。"),
         ("", ""),
         ("■ グレードの判定について", ""),
         ("やり方",

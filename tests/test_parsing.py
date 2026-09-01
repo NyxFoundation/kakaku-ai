@@ -1196,8 +1196,10 @@ def test_drive_pins_cover_every_book():
     from kakaku_ai import drive
 
     pins = drive.load_pins()
-    assert set(pins) == {"souba_all.xlsx", "souba_standard.xlsx", "souba_minivan.xlsx",
-                         "souba_classics.xlsx", "souba_sportscar.xlsx"}
+    # 5冊は必ず控えてあること。grade で作る単発の本はそのつど増えるので
+    # 完全一致では見ない
+    assert {"souba_all.xlsx", "souba_standard.xlsx", "souba_minivan.xlsx",
+            "souba_classics.xlsx", "souba_sportscar.xlsx"} <= set(pins)
     assert all(isinstance(v, str) and len(v) > 20 for v in pins.values())
 
 
@@ -1367,3 +1369,31 @@ def test_displacement_comes_from_the_auction_grade():
     rows = [{"grade": "2.5 S Cパッケージ"}, {"grade": "2.5 X"}, {"grade": "3.5 SC"}]
     assert displacement_of(rows) == 2.5
     assert displacement_of([{"grade": ""}]) is None
+
+
+def test_recall_token_match_handles_maker_prefixed_names():
+    """リコールの通称名はメーカー名とグレードがくっついている。
+
+    「アウディ　Ａ８　６０Ｔｑ」を完全一致で「Ａ８」と突き合わせても当たらず、
+    アウディのリコール160件に対して A8 が 0 件になっていた。
+    """
+    from kakaku_ai.sources import mlit
+
+    class _V:
+        key, name = "AD_S022", "A8"
+        mlit_common_names = ("Ａ８",)
+        all_models = ()
+
+    rows = [{
+        "recall_data_car_mlit_notification_no": "1",
+        "typeList": [{"recall_type_data_car_mlit_common_name": "アウディ\u3000Ａ８\u3000６０Ｔｑ",
+                      "recall_type_data_car_mlit_model_name": "AAA-4NCZSF"}],
+    }, {
+        "recall_data_car_mlit_notification_no": "2",
+        "typeList": [{"recall_type_data_car_mlit_common_name": "アウディ\u3000Ａ８Ｌ\u3000６０Ｔｑ",
+                      "recall_type_data_car_mlit_model_name": "AAA-4NCZSL"}],
+    }]
+    assert mlit.normalize_recalls(rows, _V(), "2026-09-01") == []
+    hit = mlit.normalize_recalls(rows, _V(), "2026-09-01", match="token")
+    # A8L はロングホイールベースの別の車なので拾わない
+    assert [r["notification_no"] for r in hit] == ["1"]

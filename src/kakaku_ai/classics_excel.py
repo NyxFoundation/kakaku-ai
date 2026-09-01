@@ -17,7 +17,7 @@ from openpyxl import Workbook
 from openpyxl.formatting.rule import ColorScaleRule
 from openpyxl.utils import get_column_letter
 
-from . import classics_charts
+from . import books, classics_charts, store
 from .excel import ALT_FILL, INT_FMT, MANYEN_FMT, TITLE_FONT, _write_table
 from .vehicles import DATA_DIR
 
@@ -175,6 +175,13 @@ def _readme(ws, listings: list[dict[str, Any]], models: list[dict[str, Any]],
                     "出品者が個人か業者かも出している。"),
         ("車種別サマリ", "車種ごとの在庫台数・価格帯・走行中央値。どの車種が現実的か俯瞰する用。"),
         ("メーカー別サマリ", "メーカー単位の台数と価格帯。"),
+        ("口コミ", "みんカラのレビューを車種単位で集計したもの。旧車は口コミが"
+               "残っている車種と無い車種の差が大きい。"),
+        ("口コミ_明細", "レビュー個票。"),
+        ("壊れやすい点", "国交省の不具合通報を装置別に集計。**発生時の走行距離の中央値**"
+                    "つき。30年落ちの整備計画を立てる材料になる。"),
+        ("リコール", "国交省リコール届出。古い車ほど未対策のまま流通していることが"
+                 "あるので、購入前に販売店に確認する材料。"),
         ("", ""),
         ("■ 状態スコアの内訳", ""),
         ("走行距離",
@@ -277,6 +284,25 @@ def build(
 
     ws = wb.create_sheet("車種別サマリ")
     _write_table(ws, MODEL_COLUMNS, models, number_formats=MODEL_FORMATS)
+
+    # 口コミ・整備情報。全車種ぶん集めてあるので、旧車に該当するものだけ引く
+    codes = {r.get("carsensor_code") for r in listings}
+    for sheet, dataset, columns, formats, wrap in (
+        ("口コミ", "catalog_review_summary", books.REVIEW_COLUMNS,
+         books.REVIEW_FORMATS, {"good_points", "bad_points"}),
+        ("口コミ_明細", "catalog_reviews", books.REVIEW_DETAIL_COLUMNS,
+         {"model_year": "0", "score_overall": "0.0"},
+         {"good_points", "bad_points", "summary"}),
+        ("壊れやすい点", "catalog_defect_summary", books.DEFECT_COLUMNS,
+         books.DEFECT_FORMATS, {"examples"}),
+        ("リコール", "catalog_recalls", books.RECALL_COLUMNS,
+         {"target_units": INT_FMT}, {"situation", "measures", "models"}),
+    ):
+        rows, _ = store.read_latest(dataset)
+        rows = [r for r in rows if r.get("carsensor_code") in codes]
+        if rows:
+            _write_table(wb.create_sheet(sheet), columns, rows,
+                         number_formats=formats, wrap_columns=wrap)
 
     ws = wb.create_sheet("メーカー別サマリ")
     _write_table(ws, [

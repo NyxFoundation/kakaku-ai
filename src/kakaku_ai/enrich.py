@@ -186,13 +186,13 @@ def collect_defects(fetcher: Fetcher, summaries: list[dict[str, Any]],
             except Exception as exc:  # noqa: BLE001
                 log.warning("  リコール %s: %s", maker, exc)
                 recall_cache[maker] = []
-        # 型式を持っていないので、通称名で当てる
-        common = link["mlit"]["common_name"]
-        for recall in mlit.normalize_recalls(recall_cache[maker], vehicle, snapshot):
-            if common in (recall.get("common_names") or ""):
-                recall_rows.append({**recall, "carsensor_code": summary["carsensor_code"],
-                                    "maker": summary.get("maker"),
-                                    "model_name": summary.get("model_name")})
+        # 型式を持っていないので通称名だけで当てる。リコールの通称名は
+        # メーカー名とグレードがくっついているのでトークンに割って照合する
+        for recall in mlit.normalize_recalls(recall_cache[maker], vehicle, snapshot,
+                                             match="token"):
+            recall_rows.append({**recall, "carsensor_code": summary["carsensor_code"],
+                                "maker": summary.get("maker"),
+                                "model_name": summary.get("model_name")})
 
         summary_rows.extend(_defect_summary(rows, summary, snapshot,
                                             truncated=bool(defect_limit)
