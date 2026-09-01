@@ -110,7 +110,7 @@ class Assumptions:
     parking: int = 0                    # 月極なら 12 か月ぶんを入れる
     # 実燃費（km/L）。排気量から引く。カタログ値ではなく実走行の目安
     real_fuel_economy: dict[float, float] = field(default_factory=lambda: {
-        1.5: 15.0, 2.0: 11.5, 2.5: 10.0, 3.0: 8.5, 3.5: 8.0,
+        1.5: 15.0, 2.0: 11.5, 2.5: 10.0, 3.0: 8.5, 3.5: 8.0, 4.0: 7.0,
     })
     # 保有期間。修理の見積もりはこの期間に何km走るかで決まる
     ownership_years: int = 5

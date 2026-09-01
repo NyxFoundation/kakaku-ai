@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+import re
 import sys
 from pathlib import Path
 
@@ -128,6 +129,18 @@ def main(argv: list[str] | None = None) -> int:
     en.add_argument("--limit", type=int, help="車種数の上限（掲載の多い順）")
     en.add_argument("--snapshot", help="YYYY-MM-DD（既定=今日）")
     en.add_argument("--no-cache", action="store_true")
+
+    gr = sub.add_parser("grade", help="1車種の1グレードを狙う専用 xlsx を作る")
+    gr.add_argument("--code", required=True, help="カーセンサーの車種コード（例 AD_S022）")
+    gr.add_argument("--grade", required=True, help="グレード名（例 60 TFSI）")
+    gr.add_argument("--pattern", help="タイトル判定の正規表現（既定=グレード名）")
+    gr.add_argument("--year-from", type=int, required=True)
+    gr.add_argument("--year-to", type=int, required=True)
+    gr.add_argument("--displacement", type=float, required=True, help="排気量(L)。税と燃費に使う")
+    gr.add_argument("-o", "--output")
+    gr.add_argument("--folder-id", default=drive.DEFAULT_FOLDER_ID)
+    gr.add_argument("--no-upload", action="store_true")
+    gr.add_argument("--no-cache", action="store_true")
 
     sub.add_parser("list", help="収録済みスナップショットを表示する")
 
@@ -409,6 +422,38 @@ def main(argv: list[str] | None = None) -> int:
             store.write(snapshot, "catalog_defects", details)
             store.write(snapshot, "catalog_defect_summary", summary_rows)
             store.write(snapshot, "catalog_recalls", recalls)
+        return 0
+
+    if args.command == "grade":
+        from . import grade_book
+        from .http import Fetcher
+        from .pipeline import CACHE_DIR
+        from .wide import load_catalog
+
+        meta = load_catalog().get(args.code)
+        if not meta:
+            raise SystemExit(f"{args.code} がカタログにありません")
+        model_name = meta["model_name"]
+        snapshot = store.today()
+        fetcher = Fetcher(cache_dir=CACHE_DIR, snapshot=snapshot,
+                          use_cache=not args.no_cache)
+        stock = grade_book.collect_stock(fetcher, args.code, model_name,
+                                         args.year_from, args.year_to)
+        slug = f"{meta.get('maker') or ''}{model_name}_{args.grade}".replace(" ", "")
+        path = Path(args.output) if args.output else (
+            grade_book.OUTPUT_DIR / f"souba_{args.code}_{args.grade.replace(' ', '')}.xlsx")
+        grade_book.build(
+            output=path,
+            title=f"{meta.get('maker')} {model_name} {args.grade}"
+                  f"（{args.year_from}〜{args.year_to}年式）を探す",
+            carsensor_code=args.code, model_name=model_name,
+            grade_label=args.grade, grade_pattern=args.pattern or re.escape(args.grade),
+            year_from=args.year_from, year_to=args.year_to,
+            stock=stock, displacement_l=args.displacement,
+        )
+        if not args.no_upload:
+            drive.upload(path, folder_id=args.folder_id, snapshot=snapshot)
+        print(f"{slug} → {path}")
         return 0
 
     if args.command == "list":
