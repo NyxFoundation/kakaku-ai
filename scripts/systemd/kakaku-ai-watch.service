@@ -1,5 +1,5 @@
 [Unit]
-Description=kakaku-ai 出品監視（相場との乖離とリスクを見て Slack へ）
+Description=kakaku-ai 在庫監視（相場との乖離とリスクを見て Slack へ）
 Wants=network-online.target
 After=network-online.target
 

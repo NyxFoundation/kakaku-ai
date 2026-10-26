@@ -47,12 +47,35 @@ def collect_stock(
     year_to: int,
     *,
     max_pages: int = 10,
+    by_drive: bool = False,
 ) -> list[dict[str, Any]]:
-    """その車種の在庫を年式レンジで拾う。グレードの判定はあとで。"""
+    """その車種の在庫を年式レンジで拾う。グレードの判定はあとで。
+
+    **年式は 1 年ずつ引く。** まとめて引くとページ送りが深くなり、在庫の多い
+    車種では 2 ページ目以降が 1 ページ目と同じものを返してくる（CX-8 の
+    1,074台で実測。打ち切り判定が効いて 300台で止まっていた）。
+
+    `by_drive=True` のときは 4WD と 2WD を**別々に**引いて、どちらだったかを
+    `drive_type` に残す。タイトルの「4WD」表記で分けると 7% 取りこぼすため
+    （`cl.DRIVE_PARAM` のコメント参照）。
+    """
     vehicle = classics._Vehicle(carsensor_code, model_name)
-    rows = cl.fetch_range(fetcher, vehicle, carsensor_code,
-                          year_from, year_to, max_pages=max_pages)
-    log.info("  %s %s〜%s: %s台", model_name, year_from, year_to, len(rows))
+    passes: list[tuple[str | None, dict[str, Any] | None]] = (
+        [(d, {"KUDO": v}) for d, v in cl.DRIVE_PARAM.items()] if by_drive else [(None, None)]
+    )
+
+    rows: list[dict[str, Any]] = []
+    for drive, params in passes:
+        for year in range(year_from, year_to + 1):
+            got = cl.fetch_range(fetcher, vehicle, carsensor_code, year, year,
+                                 max_pages=max_pages, params=params)
+            for row in got:
+                row["drive_type"] = drive
+            rows.extend(got)
+        if drive:
+            log.info("  %s %s〜%s %s: %s台", model_name, year_from, year_to, drive,
+                     sum(1 for r in rows if r.get("drive_type") == drive))
+    log.info("  %s %s〜%s: 計 %s台", model_name, year_from, year_to, len(rows))
     return rows
 
 
@@ -74,19 +97,35 @@ def build(
     carsensor_code: str,
     model_name: str,
     grade_label: str,
-    grade_pattern: str,
+    grade_pattern: str | None = None,
+    drive: str | None = None,
     year_from: int,
     year_to: int,
     stock: list[dict[str, Any]],
     displacement_l: float,
     assumptions: running_cost.Assumptions | None = None,
 ) -> Path:
+    """狙いの個体と、その比較対象を 1 冊にまとめる。
+
+    絞り込みの軸は 2 通り。`drive` を渡すと**カーセンサーの駆動方式フィルタ**で
+    分ける（取りこぼしが無い）。`grade_pattern` を渡すとタイトルでグレードを
+    判定して分ける（検索軸が無いので仕方なく文字列を見ている）。
+    """
     assumptions = assumptions or running_cost.Assumptions()
     catalog = load_catalog().get(carsensor_code) or {}
     today_year = datetime.now().year
 
-    target = [r for r in stock if matches_grade(r.get("title") or "", grade_pattern)]
-    others = [r for r in stock if r not in target]
+    if drive:
+        target = [r for r in stock if r.get("drive_type") == drive]
+        others = [r for r in stock if r.get("drive_type") != drive]
+        other_label = next(d for d in cl.DRIVE_PARAM if d != drive)
+        other_sheet = f"他の駆動方式_{other_label}"
+    else:
+        target = [r for r in stock if matches_grade(r.get("title") or "", grade_pattern or "")]
+        picked = {id(r) for r in target}
+        others = [r for r in stock if id(r) not in picked]
+        other_label = "他グレード"
+        other_sheet = "他グレード"
     for row in stock:
         row["maker"] = catalog.get("maker")
         row["model_name"] = model_name
@@ -110,18 +149,20 @@ def build(
     cost_rows = _cost_rows(target, defects, displacement_l, assumptions, today_year)
 
     wb = Workbook()
-    _readme(wb.active, title, grade_label, year_from, year_to,
+    _readme(wb.active, title, grade_label, other_label, drive, year_from, year_to,
             target, others, auctions, defects, displacement_l, assumptions)
     wb.active.title = "README"
 
     if target:
+        _year_compare(wb.create_sheet("年式比較"), target, others,
+                      grade_label, other_label, today_year)
         _price_chart(wb.create_sheet("グラフ_価格と走行"), target, others, grade_label)
 
     _write_table(wb.create_sheet(f"候補_{grade_label}"), STOCK_COLUMNS,
                  sorted((_flatten(r) for r in target), key=lambda r: -(r["score"] or 0)),
                  number_formats=STOCK_FORMATS, wrap_columns={"why", "title"})
     if others:
-        _write_table(wb.create_sheet("他グレード"), STOCK_COLUMNS,
+        _write_table(wb.create_sheet(other_sheet), STOCK_COLUMNS,
                      sorted((_flatten(r) for r in others),
                             key=lambda r: (r.get("grade_head") or "", -(r["score"] or 0))),
                      number_formats=STOCK_FORMATS, wrap_columns={"why", "title"})
@@ -169,6 +210,7 @@ def build(
 
 STOCK_COLUMNS: list[tuple[str, str]] = [
     ("model_year", "年式"),
+    ("drive_type", "駆動"),
     ("grade_head", "グレード"),
     ("score", "状態スコア"),
     ("total_price_manyen", "支払総額\n(万円)"),
@@ -333,6 +375,129 @@ def _cost_rows(target: list[dict[str, Any]], defects: list[dict[str, Any]],
     return out
 
 
+def _wareki(year: int) -> str:
+    """西暦 → 和暦の略記。中古車の広告は年式を和暦で書くことが多い。
+
+    1月1日〜7日生まれは厳密には前の元号だが、年式は年単位でしか出回らないので
+    その年のほとんどを占めるほうに寄せる（2018年＝H30、2019年＝R1）。
+    """
+    return f"H{year - 1988}" if year <= 2018 else f"R{year - 2018}"
+
+
+def _stats(rows: list[dict[str, Any]]) -> dict[str, Any] | None:
+    prices = sorted(r["total_price_manyen"] for r in rows if r.get("total_price_manyen"))
+    if not prices:
+        return None
+    km = sorted(r["mileage_km"] for r in rows if r.get("mileage_km"))
+    return {
+        "n": len(rows),
+        "min": prices[0],
+        "p25": prices[len(prices) // 4],
+        "median": st.median(prices),
+        "p75": prices[len(prices) * 3 // 4],
+        "max": prices[-1],
+        "km": st.median(km) / 10000 if km else None,
+    }
+
+
+def _year_compare(ws, target: list[dict[str, Any]], others: list[dict[str, Any]],
+                  label: str, other_label: str, today_year: int) -> None:
+    """**まずここ。** 年式を 1 行にして、全年式を横並びで比べる。
+
+    「どの年式を買うか」は値段と走行距離と残り寿命の折り合いで決まるので、
+    年式ごとの価格帯・在庫の厚み・1年新しくすると何万円かかるかを並べる。
+
+    `1年の差` は**隣り合う年式の中央値の差**であって値落ちカーブではない。
+    同じ車を追いかけた数字ではなく、いま売られている別々の個体の比較なので、
+    「2019年式を狙うなら2018年式より +43万円」という買い手側の差額として読む。
+    """
+    _title(ws, f"{label} の年式比較（全{len(target)}台）",
+           f"年式ごとの支払総額と在庫の厚み。`1年の差` は隣の年式との中央値の差で、"
+           f"1年新しくするのに要る上乗せ額。`{other_label}との差` が小さい年式は、"
+           f"{label} を選ぶコストが安い年式。")
+
+    by_year: dict[int, list[dict[str, Any]]] = {}
+    for r in target:
+        if r.get("model_year"):
+            by_year.setdefault(r["model_year"], []).append(r)
+    other_by_year: dict[int, list[dict[str, Any]]] = {}
+    for r in others:
+        if r.get("model_year"):
+            other_by_year.setdefault(r["model_year"], []).append(r)
+
+    head = ["年式", "和暦", "車齢", "台数", "最安\n(万円)", "25%\n(万円)",
+            "中央値\n(万円)", "75%\n(万円)", "最高\n(万円)", "走行中央\n(万km)",
+            "1年の差\n(万円)", f"{other_label}\n中央値(万円)", f"{other_label}\nとの差(万円)"]
+    start = 4
+    _header(ws, start, head)
+
+    rows: list[list[Any]] = []
+    prev: float | None = None
+    for year in sorted(by_year):
+        stat = _stats(by_year[year])
+        if not stat:
+            continue
+        other = _stats(other_by_year.get(year) or [])
+        rows.append([
+            year, _wareki(year), today_year - year, stat["n"],
+            round(stat["min"], 1), round(stat["p25"], 1), round(stat["median"], 1),
+            round(stat["p75"], 1), round(stat["max"], 1),
+            round(stat["km"], 1) if stat["km"] is not None else None,
+            round(stat["median"] - prev, 1) if prev is not None else None,
+            round(other["median"], 1) if other else None,
+            round(stat["median"] - other["median"], 1) if other else None,
+        ])
+        prev = stat["median"]
+
+    for offset, record in enumerate(rows):
+        for col, value in enumerate(record, start=1):
+            cell = ws.cell(row=start + 1 + offset, column=col, value=value)
+            cell.border = BORDER
+            if col in (1, 3):
+                cell.number_format = "0"
+            elif col == 4:
+                cell.number_format = INT_FMT
+            elif col == 10:
+                cell.number_format = "0.0"
+            elif col >= 5:
+                cell.number_format = MANYEN_FMT
+    last = start + len(rows)
+    if not rows:
+        return
+
+    # 中央値の推移。狙いの区分と比較区分を重ねる
+    chart = BarChart()
+    chart.type = "col"
+    chart.grouping = "clustered"
+    chart.title = f"年式別の支払総額 中央値（{label} と {other_label}）"
+    chart.y_axis.title = "万円"
+    chart.height, chart.width = 10, 22
+    chart.add_data(Reference(ws, min_col=7, max_col=7, min_row=start, max_row=last),
+                   titles_from_data=True)
+    chart.add_data(Reference(ws, min_col=12, max_col=12, min_row=start, max_row=last),
+                   titles_from_data=True)
+    chart.set_categories(Reference(ws, min_col=1, min_row=start + 1, max_row=last))
+    ws.add_chart(chart, "O4")
+
+    # 在庫の厚みを色で。台数が少ない年式は「選べない」ので値段以前の問題になる
+    ws.conditional_formatting.add(
+        f"D{start + 1}:D{last}",
+        ColorScaleRule(start_type="min", start_color="F8696B",
+                       mid_type="percentile", mid_value=50, mid_color="FFEB84",
+                       end_type="max", end_color="63BE7B"),
+    )
+    ws.conditional_formatting.add(
+        f"G{start + 1}:G{last}",
+        ColorScaleRule(start_type="min", start_color="63BE7B",
+                       mid_type="percentile", mid_value=50, mid_color="FFEB84",
+                       end_type="max", end_color="F8696B"),
+    )
+    ws.freeze_panes = ws[f"A{start + 1}"]
+    for col, width in zip("ABCDEFGHIJKLM",
+                          (8, 8, 7, 8, 11, 11, 12, 11, 11, 12, 12, 14, 14)):
+        ws.column_dimensions[col].width = width
+
+
 def _price_chart(ws, target: list[dict[str, Any]], others: list[dict[str, Any]],
                  grade_label: str) -> None:
     _title(ws, f"{grade_label} の在庫（年式別）と他グレードとの差",
@@ -393,7 +558,8 @@ def _price_chart(ws, target: list[dict[str, Any]], others: list[dict[str, Any]],
         ws.column_dimensions[col].width = 15
 
 
-def _readme(ws, title: str, grade_label: str, year_from: int, year_to: int,
+def _readme(ws, title: str, grade_label: str, other_label: str, drive: str | None,
+            year_from: int, year_to: int,
             target: list[dict[str, Any]], others: list[dict[str, Any]],
             auctions: list[dict[str, Any]], defects: list[dict[str, Any]],
             displacement_l: float, assumptions: running_cost.Assumptions) -> None:
@@ -407,20 +573,23 @@ def _readme(ws, title: str, grade_label: str, year_from: int, year_to: int,
     lines = [
         ("生成日時", datetime.now().strftime("%Y-%m-%d %H:%M")),
         ("対象", f"{year_from}〜{year_to}年式 / {grade_label} / 全国"),
-        ("狙いのグレード",
+        ("狙い",
          f"{len(target)}台"
          + (f"（{min(prices):.0f}〜{max(prices):.0f}万円 / "
             f"走行 {min(km) / 10000:.1f}〜{max(km) / 10000:.1f}万km）"
             if prices and km else "")),
-        ("同年式の他グレード", f"{len(others)}台"),
+        (f"比較対象（{other_label}）", f"{len(others)}台"),
         ("排気量", f"{displacement_l}L（自動車税・重量税・燃費はこれで決まる）"),
         ("", ""),
         ("■ シート", ""),
-        (f"候補_{grade_label}", "狙いのグレードの在庫を1台ずつ。状態スコア順。"
+        ("年式比較", "**まずここ。** 年式を1行にして全年式を横並びで比較する。"
+                 "台数・価格帯・走行距離・1年新しくするのに要る上乗せ額。"),
+        (f"候補_{grade_label}", "狙いの在庫を1台ずつ。状態スコア順。"
                             "走行距離・修復歴・車検残・保証で採点している。"),
-        ("他グレード", "同じ車種・同じ年式の他グレード。"
-                  "狙いのグレードが少ないときの比較用。"),
-        ("グラフ_価格と走行", "年式ごとの価格帯と走行距離。他グレードとの差も並べてある。"),
+        (f"他の駆動方式_{other_label}" if drive else "他グレード",
+         f"同じ車種・同じ年式の {other_label}。狙いの在庫が薄い年式で、"
+         "そちらに回る価値があるかを見るための比較用。"),
+        ("グラフ_価格と走行", "年式ごとの価格帯と走行距離。比較区分との差も並べてある。"),
         ("年間維持費", "税・保険・車検・燃料・整備予備費の年額。"),
         ("ヤフオク落札", "過去180日の落札実績。**この価格帯の車はほとんど出てこない**"
                     "ので件数は期待できない。"),
@@ -432,13 +601,21 @@ def _readme(ws, title: str, grade_label: str, year_from: int, year_to: int,
                  "未対策のまま流通していることがあるので購入前に販売店に聞くこと。"),
         ("口コミ", "みんカラのレビュー集計と個票。"),
         ("", ""),
-        ("■ グレードの判定について", ""),
+        ("■ 絞り込みの方法", ""),
         ("やり方",
+         "カーセンサーの駆動方式フィルタ（KUDO）で 4WD と 2WD を別々に引き、"
+         "どちらで取れたかを各行に残している。**検索側で絞っているので"
+         "取りこぼしが無い。**"
+         if drive else
          "カーセンサーの在庫検索にグレードで絞る軸が無いので、車種と年式で引いてから"
          "**出品タイトルの先頭でグレードを判定**している。タイトルは"
          "「A8 60 TFSI クワトロ 4WD …」のように 車種名→グレード→装備 と並ぶ。"
          "装備の羅列まで見ると「60」が別の意味で当たるので、先頭24文字だけを見ている。"),
-        ("取りこぼし",
+        ("なぜタイトルで見ないか" if drive else "取りこぼし",
+         "出品タイトルの「4WD」で数えると実数の93%しか拾えなかった"
+         "（CX-8 の2018年式以降でタイトル判定 363台 / 公式フィルタ 391台）。"
+         "販売店がタイトルに書いていないだけの4WDが7%ある。"
+         if drive else
          "販売店がグレードを書いていない出品は拾えない。「他グレード」シートに"
          "落ちているので、そちらも一度は目で見ること。"),
         ("", ""),

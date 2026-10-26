@@ -1,9 +1,10 @@
 [Unit]
-Description=kakaku-ai 出品監視（ヤフオクの新着を Slack に通知）
+Description=kakaku-ai 在庫監視（カーセンサーの新着を Slack に通知）
 
 [Timer]
-# 1日4回。ヤフオクの出品期間は数日〜1週間で、終了間際に判定するので
-# 週次だと終わってから気づくことになる。正時は避ける。
+# 1日4回。カーセンサーの掲載には終了時刻が無いので「間際」は無いが、
+# 相場より安い個体は数日で売れる。週次だと売れてから気づくことになる。
+# 正時は避ける。
 OnCalendar=*-*-* 07,12,18,22:07:00
 Persistent=false
 RandomizedDelaySec=300

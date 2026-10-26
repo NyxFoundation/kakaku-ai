@@ -60,6 +60,10 @@ def _token() -> str:
 
 HISTORY_URL = "https://slack.com/api/conversations.history"
 AUCTION_ID = re.compile(r"/jp/auction/([a-z]?\d+)")
+# カーセンサー在庫。ヤフオクと同じ既読ファイルに入れるので、
+# どちらの ID かが見て分かるよう `cs:` を付けて持つ（整理の対象が違うため）
+LISTING_ID = re.compile(r"/usedcar/detail/([A-Z0-9]+)/")
+STOCK_PREFIX = "cs:"
 # 終了からこの日数が過ぎた出品は既読から落とす（同じIDで再出品されることはない）
 SEEN_RETENTION_DAYS = 14
 
@@ -117,7 +121,9 @@ def posted_in_channel(channel: str = DEFAULT_CHANNEL, limit: int = 400) -> set[s
                 log.warning("  Slack 履歴の取得に失敗: %s", data.get("error"))
                 break
             for message in data.get("messages") or []:
-                found |= set(AUCTION_ID.findall(json.dumps(message, ensure_ascii=False)))
+                blob = json.dumps(message, ensure_ascii=False)
+                found |= set(AUCTION_ID.findall(blob))
+                found |= {STOCK_PREFIX + i for i in LISTING_ID.findall(blob)}
             cursor = (data.get("response_metadata") or {}).get("next_cursor")
             if not cursor:
                 break
@@ -252,6 +258,84 @@ def _format(row: dict[str, Any]) -> dict[str, Any]:
     return {"color": color, "blocks": blocks, "fallback": f"{row['vehicle_name']} {headline}"}
 
 
+def _format_stock(row: dict[str, Any]) -> dict[str, Any]:
+    """カーセンサー在庫 1件 = 1 attachment。
+
+    オークションと違って終了時刻も入札も無いので、急かす表示はしない。
+    代わりに店頭で効く「保証・車検・修復歴」を前に出す。
+
+    **参考情報（ℹ️）と判定根拠（📊）は出さない。** 中身の大半は上のフィールドに
+    既に出ている修復歴・保証・車検の焼き直しで、残りの不具合通報もこの車種では
+    全台で同じ文面が立つ（通報11件しか無い）。薄い文字が3行続くと、
+    本当に読むべき ⚠️ まで流し読みされる。強い注意だけ残す。
+    """
+    headline, color, mark = _headline(row)
+    mileage = row.get("mileage_km")
+    mileage_s = f"{mileage / 10000:.1f}万km" if mileage else "距離不明"
+    total = row.get("total_price_manyen")
+    base = row.get("base_price_manyen")
+    expected = row.get("expected_manyen")
+
+    title = row["title"][:64] + ("…" if len(row["title"]) > 64 else "")
+    head: dict[str, Any] = {
+        "type": "section",
+        "text": {
+            "type": "mrkdwn",
+            "text": (
+                f"{mark} *<{row['url']}|{title}>*\n"
+                f"{row['vehicle_name']} {row.get('model_year') or '?'}年"
+                + (f"（{row['wareki']}）" if row.get("wareki") else "")
+                + (f" {row['drive_type']}" if row.get("drive_type") else "")
+                + f" ・ {mileage_s}"
+            ),
+        },
+    }
+    if row.get("image_url"):
+        head["accessory"] = {
+            "type": "image",
+            "image_url": row["image_url"],
+            "alt_text": row["vehicle_name"],
+        }
+
+    fields = [{
+        "type": "mrkdwn",
+        "text": f"*支払総額 {total:.1f}万円*"
+                + (f"\n車両本体 {base:.1f}万円" if base else ""),
+    }, {
+        "type": "mrkdwn",
+        "text": f"*判定*\n{headline}"
+                + (f"\n同年式・同距離の相場 {expected}万円" if expected else ""),
+    }, {
+        "type": "mrkdwn",
+        "text": f"*修復歴*\n{row.get('repair_history') or '記載なし'}",
+    }, {
+        "type": "mrkdwn",
+        "text": f"*保証*\n{row.get('warranty') or '記載なし'}",
+    }, {
+        "type": "mrkdwn",
+        "text": f"*車検*\n{row.get('inspection') or '記載なし'}",
+    }]
+    blocks: list[dict[str, Any]] = [head, {"type": "section", "fields": fields}]
+
+    if row.get("risk_strong"):
+        blocks.append({
+            "type": "context",
+            "elements": [{"type": "mrkdwn",
+                          "text": "⚠️ " + " ・ ".join(row["risk_strong"])}],
+        })
+    return {"color": color, "blocks": blocks,
+            "fallback": f"{row['vehicle_name']} {headline}"}
+
+
+def _is_stock(row: dict[str, Any]) -> bool:
+    return row.get("source") == "carsensor_stock"
+
+
+def _price_label(row: dict[str, Any]) -> str:
+    value = row.get("total_price_manyen") if _is_stock(row) else row.get("current_manyen")
+    return f"{value}万" if value is not None else "?万"
+
+
 def post(
     rows: list[dict[str, Any]],
     *,
@@ -275,17 +359,17 @@ def post(
     if subtitle:
         top.append({"type": "context", "elements": [{"type": "mrkdwn", "text": subtitle}]})
 
-    attachments = [_format(r) for r in rows]
+    attachments = [(_format_stock if _is_stock(r) else _format)(r) for r in rows]
     text = f"{header or '気になる出品'} {len(rows)}件: " + " / ".join(
-        f"{r['vehicle_name']}{r.get('model_year')}年 {r.get('current_manyen')}万" for r in rows[:3]
+        f"{r['vehicle_name']}{r.get('model_year')}年 {_price_label(r)}" for r in rows[:3]
     )
 
     if dry_run:
         log.info("  [dry-run] %s件を %s へ送るところ", len(rows), channel)
         for r in rows:
             head, color, mark = _headline(r)
-            log.info("    %s %-8s %s年 現在%s万 %s (%s)", mark, r["vehicle_name"],
-                     r.get("model_year"), r.get("current_manyen"), head, r["url"])
+            log.info("    %s %-8s %s年 %s %s (%s)", mark, r["vehicle_name"],
+                     r.get("model_year"), _price_label(r), head, r["url"])
         return {"ok": True, "posted": 0, "dry_run": True}
 
     resp = requests.post(

@@ -7,6 +7,8 @@
     uv run kakaku-ai weekly                # crawl → excel → upload を通しで
     uv run kakaku-ai classics              # 旧車（1988〜2001年式）の在庫を全メーカー集める
     uv run kakaku-ai books                 # xlsx 4冊を作り直して Drive に上げる
+    uv run kakaku-ai watch-stock --code MA_S094 --drive 4WD --year-from 2018
+                                           # カーセンサー在庫を監視して Slack へ
 """
 
 from __future__ import annotations
@@ -15,9 +17,11 @@ import argparse
 import logging
 import re
 import sys
+from datetime import date
 from pathlib import Path
 
 from . import classics, drive, excel, notify, pipeline, store, watch, wide
+from .sources.carsensor_listings import DRIVE_PARAM
 from .vehicles import DATA_DIR, load_vehicles
 
 OUTPUT_DIR = DATA_DIR / "xlsx"
@@ -35,6 +39,23 @@ def _setup_logging(verbose: bool) -> None:
 
 def _output_path(args: argparse.Namespace) -> Path:
     return Path(args.output) if args.output else OUTPUT_DIR / OUTPUT_NAME
+
+
+def _assumptions(args: argparse.Namespace):
+    """維持費の前提。燃料まわりだけコマンドラインで上書きできるようにする。
+
+    既定の実燃費は排気量から引いているが、これはガソリン車の目安。
+    ディーゼルやハイブリッドは同じ排気量でも実燃費が 3〜4割違うので、
+    そのままだと燃料費が年 5 万円単位でずれる。
+    """
+    from . import running_cost
+
+    assumptions = running_cost.Assumptions()
+    if args.fuel_yen:
+        assumptions.fuel_yen_per_litre = args.fuel_yen
+    if args.fuel_economy:
+        assumptions.real_fuel_economy[args.displacement] = args.fuel_economy
+    return assumptions
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -92,6 +113,22 @@ def main(argv: list[str] | None = None) -> int:
         help="修復歴の絞り方。none=申告が「なし」のものだけ（既定） / any=絞らない",
     )
 
+    ws = sub.add_parser(
+        "watch-stock",
+        help="カーセンサーの在庫を監視して Slack に通知する（ヤフオクに出ない車種向け）")
+    ws.add_argument("--code", required=True, help="カーセンサーの車種コード（例 MA_S094）")
+    ws.add_argument("--drive", choices=sorted(DRIVE_PARAM), help="駆動方式で絞る")
+    ws.add_argument("--year-from", type=int, required=True, help="対象年式の下限")
+    ws.add_argument("--year-to", type=int, help="対象年式の上限（既定=今年）")
+    ws.add_argument("--budget", type=float, help="支払総額の上限（万円）")
+    ws.add_argument("--channel", default=notify.DEFAULT_CHANNEL)
+    ws.add_argument("--dry-run", action="store_true", help="Slack に送らず内容だけ表示")
+    ws.add_argument("--all", action="store_true", help="既に通知したものも対象にする")
+    ws.add_argument("--include-pricey", action="store_true",
+                    help="相場より高いものも流す（既定は安いものだけ）")
+    ws.add_argument("--repair", choices=watch.REPAIR_MODES, default="none",
+                    help="修復歴の絞り方。none=申告が「なし」のものだけ（既定）")
+
     wd = sub.add_parser("wide", help="全車種・全年式の小売相場を集める（カーセンサー）")
     wd.add_argument("--snapshot", help="YYYY-MM-DD（既定=今日）")
     wd.add_argument("--prefix", help="メーカー接頭辞で絞る（例 TO）")
@@ -130,13 +167,19 @@ def main(argv: list[str] | None = None) -> int:
     en.add_argument("--snapshot", help="YYYY-MM-DD（既定=今日）")
     en.add_argument("--no-cache", action="store_true")
 
-    gr = sub.add_parser("grade", help="1車種の1グレードを狙う専用 xlsx を作る")
+    gr = sub.add_parser("grade", help="1車種を絞り込んで探す専用 xlsx を作る")
     gr.add_argument("--code", required=True, help="カーセンサーの車種コード（例 AD_S022）")
-    gr.add_argument("--grade", required=True, help="グレード名（例 60 TFSI）")
+    gr.add_argument("--grade", help="グレード名（例 60 TFSI）。タイトルで判定する")
     gr.add_argument("--pattern", help="タイトル判定の正規表現（既定=グレード名）")
+    gr.add_argument("--drive", choices=sorted(DRIVE_PARAM),
+                    help="駆動方式で絞る。カーセンサーの検索側で絞るので取りこぼしが無い")
     gr.add_argument("--year-from", type=int, required=True)
     gr.add_argument("--year-to", type=int, required=True)
     gr.add_argument("--displacement", type=float, required=True, help="排気量(L)。税と燃費に使う")
+    gr.add_argument("--fuel-yen", type=int,
+                    help="燃料単価(円/L)。ディーゼル車は軽油価格を入れる（既定175=ガソリン）")
+    gr.add_argument("--fuel-economy", type=float,
+                    help="実燃費(km/L)。既定は排気量から引くので、ディーゼルやHVは実測を入れる")
     gr.add_argument("-o", "--output")
     gr.add_argument("--folder-id", default=drive.DEFAULT_FOLDER_ID)
     gr.add_argument("--no-upload", action="store_true")
@@ -290,6 +333,65 @@ def main(argv: list[str] | None = None) -> int:
             notify.save_seen(seen)
         return 0
 
+    if args.command == "watch-stock":
+        from . import watch_stock
+        from .http import Fetcher
+        from .wide import load_catalog
+
+        meta = load_catalog().get(args.code)
+        if not meta:
+            raise SystemExit(f"{args.code} がカタログにありません")
+        model_name = meta["model_name"]
+        year_to = args.year_to or date.today().year
+
+        # 監視なのでキャッシュは使わない。新着を拾えないと意味がない
+        stock = watch_stock.collect(
+            Fetcher(use_cache=False), args.code, model_name,
+            year_from=args.year_from, year_to=year_to, drive=args.drive,
+        )
+        defects = watch_stock.load_defects(args.code)
+        picked = watch_stock.pick(
+            watch_stock.evaluate(stock, watch_stock.build_model(stock), defects),
+            budget_manyen=args.budget,
+            model_year_from=args.year_from,
+            repair_free=args.repair == "none",
+            cheap_only=not args.include_pricey,
+        )
+
+        seen = {} if args.all else notify.load_seen()
+        already = set(seen)
+        if not args.all:
+            # ローカルの既読が失われていても二度流さないよう、Slack の履歴も見る
+            from_channel = notify.posted_in_channel(args.channel)
+            new_to_file = from_channel - already
+            if new_to_file:
+                logging.getLogger(__name__).info(
+                    "  Slack 履歴から既読 %s件を回収（ローカルに無かった分）", len(new_to_file)
+                )
+                for key in new_to_file:
+                    seen[key] = ""
+            already |= from_channel
+
+        fresh = [r for r in picked if watch_stock.seen_key(r) not in already]
+        logging.getLogger(__name__).info(
+            "在庫 %s台 → 該当 %s台 → 未通知 %s台", len(stock), len(picked), len(fresh)
+        )
+
+        # 抽出条件と母数は見出しに出さない。毎回同じ文面が薄い字で並ぶだけで、
+        # 読み手が知りたいのは「どの車か」なので。ログには残っている。
+        notify.post(
+            fresh,
+            channel=args.channel,
+            dry_run=args.dry_run,
+            header=(f"{meta.get('maker')} {model_name} "
+                    f"{min(len(fresh), notify.MAX_PER_RUN)}台"),
+        )
+        if not args.dry_run:
+            for r in fresh[: notify.MAX_PER_RUN]:
+                seen[watch_stock.seen_key(r)] = ""
+            notify.save_seen(watch_stock.prune_seen(seen, stock))
+        return 0
+
     if args.command == "classics":
         from . import classics_excel
         from .http import Fetcher
@@ -430,6 +532,8 @@ def main(argv: list[str] | None = None) -> int:
         from .pipeline import CACHE_DIR
         from .wide import load_catalog
 
+        if not args.grade and not args.drive:
+            raise SystemExit("--grade か --drive のどちらかを指定してください")
         meta = load_catalog().get(args.code)
         if not meta:
             raise SystemExit(f"{args.code} がカタログにありません")
@@ -438,22 +542,26 @@ def main(argv: list[str] | None = None) -> int:
         fetcher = Fetcher(cache_dir=CACHE_DIR, snapshot=snapshot,
                           use_cache=not args.no_cache)
         stock = grade_book.collect_stock(fetcher, args.code, model_name,
-                                         args.year_from, args.year_to)
-        slug = f"{meta.get('maker') or ''}{model_name}_{args.grade}".replace(" ", "")
+                                         args.year_from, args.year_to,
+                                         by_drive=bool(args.drive))
+        label = " ".join(x for x in (args.drive, args.grade) if x)
         path = Path(args.output) if args.output else (
-            grade_book.OUTPUT_DIR / f"souba_{args.code}_{args.grade.replace(' ', '')}.xlsx")
+            grade_book.OUTPUT_DIR / f"souba_{args.code}_{label.replace(' ', '')}.xlsx")
         grade_book.build(
             output=path,
-            title=f"{meta.get('maker')} {model_name} {args.grade}"
+            title=f"{meta.get('maker')} {model_name} {label}"
                   f"（{args.year_from}〜{args.year_to}年式）を探す",
             carsensor_code=args.code, model_name=model_name,
-            grade_label=args.grade, grade_pattern=args.pattern or re.escape(args.grade),
+            grade_label=label,
+            grade_pattern=(args.pattern or re.escape(args.grade)) if args.grade else None,
+            drive=args.drive,
             year_from=args.year_from, year_to=args.year_to,
             stock=stock, displacement_l=args.displacement,
+            assumptions=_assumptions(args),
         )
         if not args.no_upload:
             drive.upload(path, folder_id=args.folder_id, snapshot=snapshot)
-        print(f"{slug} → {path}")
+        print(f"{label} → {path}")
         return 0
 
     if args.command == "list":

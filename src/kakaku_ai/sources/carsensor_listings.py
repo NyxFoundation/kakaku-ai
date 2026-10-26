@@ -103,6 +103,15 @@ def _parse_card(card, vehicle, code: str) -> dict[str, Any] | None:
     # グレード＋装備が全部つながった長い文字列。頭のほうにグレードが来る
     title = card.select_one(".cassetteMain__title")
 
+    # 主写真。カード内の img は 販売店バナーや店舗ロゴも混ざるので、
+    # 写真枠（.cassetteMain__mainImg）を名指しで引く。中身は <noscript> に
+    # 入っていて、素の img には読み込み中の gif が入っている。
+    # URL はスキーム無し（//ccsrpcma...）で来るので https を付ける。
+    photo = card.select_one(".cassetteMain__mainImg img")
+    image_url = (photo.get("src") or "") if photo else ""
+    if image_url.startswith("//"):
+        image_url = "https:" + image_url
+
     return {
         "listing_id": listing_id,
         "vehicle_key": vehicle.key,
@@ -118,6 +127,7 @@ def _parse_card(card, vehicle, code: str) -> dict[str, Any] | None:
         "inspection_ym": inspection_year_month(spec.get("車検")),
         "repair_history": spec.get("修復歴", ""),
         "warranty": spec.get("保証", ""),
+        "image_url": image_url or None,
         "url": f"https://www.carsensor.net/usedcar/detail/{listing_id}/index.html",
     }
 
@@ -155,6 +165,13 @@ def _fetch_year(
     return rows
 
 
+# 検索の絞り込みパラメータ。駆動方式は `KUDO`（4WD1=4WD / 4WD0=2WD）。
+# タイトルの「4WD」表記で数えると取りこぼす（CX-8 の 2018年式以降で、
+# タイトル判定 363台 に対して公式フィルタは 391台。販売店が書いていないだけの
+# 4WD が 7% ある）ので、駆動方式で絞るときは必ずこちらを使う。
+DRIVE_PARAM = {"4WD": "4WD1", "2WD": "4WD0"}
+
+
 def fetch_range(
     fetcher: Fetcher,
     vehicle,
@@ -163,6 +180,7 @@ def fetch_range(
     year_to: int,
     *,
     max_pages: int = 5,
+    params: dict[str, Any] | None = None,
 ) -> list[dict[str, Any]]:
     """年式の**範囲**をまとめて取る。
 
@@ -170,14 +188,17 @@ def fetch_range(
     なる。`YMIN`/`YMAX` は範囲指定がそのまま効くので、旧車のように年式が
     散らばっていて 1 年あたりの在庫が少ないものは、こちらのほうが桁違いに軽い。
     在庫の無い車種は 1 回で 0 件と分かる。
+
+    `params` は検索の絞り込みを足すためのもの（`DRIVE_PARAM` 参照）。
     """
     maker, model = code.split("_S")
     rows: list[dict[str, Any]] = []
     seen: set[str] = set()
+    query = {"YMIN": year_from, "YMAX": year_to, **(params or {})}
     for page in range(1, max_pages + 1):
         url = BASE.format(maker=maker, model=f"{int(model):03d}", page="" if page == 1 else page)
         try:
-            html = fetcher.get_text(url, {"YMIN": year_from, "YMAX": year_to})
+            html = fetcher.get_text(url, query)
         except Exception as exc:  # noqa: BLE001
             if "404" not in str(exc):
                 log.warning("  carsensor在庫 %s %s-%s p%s: %s",

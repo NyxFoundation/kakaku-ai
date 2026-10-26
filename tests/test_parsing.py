@@ -1397,3 +1397,146 @@ def test_recall_token_match_handles_maker_prefixed_names():
     hit = mlit.normalize_recalls(rows, _V(), "2026-09-01", match="token")
     # A8L はロングホイールベースの別の車なので拾わない
     assert [r["notification_no"] for r in hit] == ["1"]
+
+
+# ------------------------------------------------------------ 在庫監視
+
+
+def _stock(listing_id, year, price, km, *, repair="なし"):
+    return {
+        "listing_id": listing_id, "model_year": year, "mileage_km": km,
+        "total_price_manyen": price, "repair_history": repair,
+        "title": f"CX-8 {year}", "vehicle_name": "CX-8",
+        "url": f"https://www.carsensor.net/usedcar/detail/{listing_id}/index.html",
+    }
+
+
+def _pool():
+    """同じ年式に 6台。中央値 200万・走行 6万km のあたりに固める。"""
+    return [_stock(f"AU{i:010d}", 2018, price, 60_000)
+            for i, price in enumerate((180, 190, 195, 205, 210, 220))]
+
+
+def test_watch_stock_flags_cheap_against_same_year():
+    from kakaku_ai import watch_stock
+
+    rows = _pool() + [_stock("AUcheap", 2018, 140, 60_000)]
+    model = watch_stock.build_model(rows)
+    picked = watch_stock.pick(watch_stock.evaluate(rows, model, []),
+                              model_year_from=2018)
+    assert [r["listing_id"] for r in picked] == ["AUcheap"]
+
+
+def test_watch_stock_skips_repaired_and_over_budget():
+    from kakaku_ai import watch_stock
+
+    rows = _pool() + [
+        _stock("AUrepaired", 2018, 140, 60_000, repair="あり"),
+        _stock("AUblank", 2018, 140, 60_000, repair=""),
+    ]
+    picked = watch_stock.pick(
+        watch_stock.evaluate(rows, watch_stock.build_model(rows), []),
+        model_year_from=2018,
+    )
+    # 「あり」も「記載なし」も通さない。申告が「なし」のものだけ
+    assert picked == []
+
+
+def test_watch_stock_year_floor_excludes_older():
+    from kakaku_ai import watch_stock
+
+    rows = _pool() + [_stock("AUold", 2018, 140, 60_000)]
+    rows[-1]["model_year"] = 2017
+    picked = watch_stock.pick(
+        watch_stock.evaluate(rows, watch_stock.build_model(rows), []),
+        model_year_from=2018,
+    )
+    assert picked == []
+
+
+def test_watch_stock_defect_flag_demoted_when_it_fires_for_everyone():
+    """典型発生距離が在庫のふつうの走行距離より下なら、強い注意にはしない。
+
+    CX-8 のエンジンは通報11件・中央1.5万km で、在庫の走行中央は6.7万km。
+    そのまま警告にすると全台で立って通知が全部同じ顔になる。
+    """
+    from datetime import date
+
+    from kakaku_ai import watch_stock
+
+    defects = [{"defective_device": "エンジン", "report_count": 11,
+                "share_pct": 18.3, "median_mileage_km": 15_000}]
+    row = _stock("AU1", 2018, 200, 67_000)
+
+    strong, notes = watch_stock.risk_flags(row, defects, date(2026, 10, 26),
+                                           typical_km=67_000)
+    assert not strong
+    assert any("中央走行距離" in n for n in notes)
+
+    # 典型発生距離のほうが上なら、ちゃんと強い注意として立つ
+    strong, _ = watch_stock.risk_flags(row, defects, date(2026, 10, 26),
+                                       typical_km=10_000)
+    assert any("中央走行距離" in s for s in strong)
+
+
+def test_watch_stock_prune_seen_only_touches_stock_keys():
+    from kakaku_ai import watch_stock
+
+    seen = {"x1234567890": "2026-11-01T00:00:00+00:00",  # ヤフオク
+            "cs:AUalive": "", "cs:AUgone": ""}
+    kept = watch_stock.prune_seen(seen, [_stock("AUalive", 2018, 200, 60_000)])
+    assert set(kept) == {"x1234567890", "cs:AUalive"}
+
+    # 取得に失敗して 0台のときは何もしない（全部消してしまうため）
+    assert watch_stock.prune_seen(seen, []) == seen
+
+
+def test_carsensor_card_picks_the_car_photo_not_the_shop_banner():
+    """主写真は <noscript> の中にあり、素の img は読み込み中の gif。
+
+    カード内には販売店バナーや店舗ロゴの img も混ざるので、写真枠を
+    名指しで引けているかを押さえる。スキーム無しの URL に https を
+    付ける処理もここで守る。
+    """
+    from bs4 import BeautifulSoup
+
+    from kakaku_ai.sources import carsensor_listings as cl
+
+    html = """
+    <div class="cassette" id="AU1234567890_cas">
+      <div class="cassetteMain__inner">
+        <div class="cassetteMain__carImgContainer">
+          <div class="cassetteMain__mainImg">
+            <a><noscript><img src="//ccsrpcma.carsensor.net/CSphoto/bkkn/1/2/X/X_001L.JPG"
+               width="240" height="180" alt="マツダ CX-8"></noscript></a>
+          </div>
+        </div>
+        <img src="/static/cmn/img/loading/animation_S.gif" class="js-lazy js_shop"
+             data-original="//ccsrpcma.carsensor.net/shopinfo/options/1/Scoupon.jpg" alt="店舗">
+        <div class="cassetteMain__title">CX-8 2.2 XD プロアクティブ 4WD</div>
+      </div>
+    </div>
+    """
+    card = BeautifulSoup(html, "lxml").select_one('div.cassette[id$="_cas"]')
+    row = cl._parse_card(card, _FakeVehicle(), "MA_S094")
+    assert row["image_url"] == (
+        "https://ccsrpcma.carsensor.net/CSphoto/bkkn/1/2/X/X_001L.JPG"
+    )
+
+
+def test_stock_notification_drops_the_faint_annotations():
+    """参考情報（ℹ️）と判定根拠（📊）は出さない。強い注意（⚠️）だけ残す。"""
+    from kakaku_ai import notify
+
+    row = {
+        "source": "carsensor_stock", "vehicle_name": "CX-8", "model_year": 2018,
+        "title": "CX-8 XD", "url": "https://example.invalid/x",
+        "total_price_manyen": 150.0, "mileage_km": 60_000, "deviation_pct": -20.0,
+        "risk_notes": ["修復歴なし（申告）", "保証なし"],
+        "price_basis": "2018年の掲載 126台 + 距離補正",
+        "risk_strong": ["修復歴あり"],
+    }
+    blob = json.dumps(notify._format_stock(row), ensure_ascii=False)
+    assert "⚠️" in blob and "修復歴あり" in blob
+    assert "ℹ️" not in blob
+    assert "📊" not in blob and "距離補正" not in blob
