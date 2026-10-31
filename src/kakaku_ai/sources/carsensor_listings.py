@@ -171,6 +171,120 @@ def _fetch_year(
 # 4WD が 7% ある）ので、駆動方式で絞るときは必ずこちらを使う。
 DRIVE_PARAM = {"4WD": "4WD1", "2WD": "4WD0"}
 
+# 燃料は `FUEL`、乗車定員は `TEIIN`、走行距離の上下限は `SMAX`/`SMIN`（km）。
+# 走行距離の選択肢は 5000 と 1万km 刻みしか無いので、半端な上限は後段で切ること。
+FUEL_PARAM = {"ガソリン": "1", "ディーゼル": "2", "ハイブリッド": "3", "電気": "4"}
+
+
+# グレードの絞り込みコードは `GRDKC`。`<車種コード>_F<世代>_K<グレード>` の形で、
+# 一覧ページの絞り込みチェックボックス（name="grdkc"）に世代ごとに並んでいる。
+# **タイトル判定より確実にグレードが分かる唯一の経路**なので、グレードで絞る
+# ときはこれを使う。ただし在庫のあるグレードしか出てこない。
+GRADE_CODE_RE = re.compile(r"^(?P<code>[A-Z]{2}_S\d+)_F(?P<generation>\d+)_K\d+$")
+
+
+def grade_codes(fetcher: Fetcher, code: str) -> list[dict[str, Any]]:
+    """その車種の**公式グレード一覧**を、絞り込みコードつきで返す。
+
+    返すのは `grade_code` / `grade_name` / `generation`。グレード名は
+    「2.7 TX Lパッケージ 70th アニバーサリー リミテッド 4WD」のように
+    排気量 → グレード → 仕様 と並ぶので、排気量と燃料はここから引ける。
+    """
+    maker, model = code.split("_S")
+    url = BASE.format(maker=maker, model=f"{int(model):03d}", page="")
+    soup = BeautifulSoup(fetcher.get_text(url), "lxml")
+
+    out: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for box in soup.find_all("input", attrs={"name": "grdkc"}):
+        value = box.get("value") or ""
+        m = GRADE_CODE_RE.match(value)
+        if not m or m.group("code") != code or value in seen:
+            continue
+        seen.add(value)
+        parent = box.parent
+        name = re.sub(r"\s+", " ", parent.get_text(" ", strip=True)) if parent else ""
+        out.append({
+            "grade_code": value,
+            "grade_name": name,
+            "generation": f"F{m.group('generation')}",
+        })
+    log.info("  %s のグレード: %s件", code, len(out))
+    return out
+
+
+GENERATION_RE = re.compile(
+    r"(?P<from_y>\d{4})年(?P<from_m>\d{2})月[～~](?:(?P<to_y>\d{4})年(?P<to_m>\d{2})月)?"
+)
+
+
+def generations(fetcher: Fetcher, code: str) -> list[dict[str, Any]]:
+    """その車種の**世代（フルモデルチェンジ区切り）**を期間つきで返す。
+
+    一覧ページの `fmcc` チェックボックスに「2009年09月～ (749)」のように
+    期間と在庫台数が出ている。グレードコードは世代ごとに割り振られていて、
+    車種全体では 89 件（プラドの実測）にもなるので、**年式に当たる世代だけに
+    絞らないと、在庫 0 の世代を何十回も叩くことになる。**
+
+    なお世代の区切りはフルモデルチェンジであって、マイナーチェンジ（前期/後期）
+    では割れない。前期と後期を分けたいときは年式で切るしかない。
+    """
+    maker, model = code.split("_S")
+    url = BASE.format(maker=maker, model=f"{int(model):03d}", page="")
+    soup = BeautifulSoup(fetcher.get_text(url), "lxml")
+
+    out: list[dict[str, Any]] = []
+    for box in soup.find_all("input", attrs={"name": "fmcc"}):
+        value = box.get("value") or ""
+        if not value.startswith(f"{code}_F"):
+            continue
+        parent = box.parent
+        text = re.sub(r"\s+", " ", parent.get_text(" ", strip=True)) if parent else ""
+        m = GENERATION_RE.search(text)
+        count = re.search(r"\((\d+)\)", text)
+        out.append({
+            "generation": value.rsplit("_", 1)[-1],
+            "year_from": int(m.group("from_y")) if m else None,
+            "year_to": int(m.group("to_y")) if m and m.group("to_y") else None,
+            "listing_count": int(count.group(1)) if count else None,
+        })
+    return out
+
+
+def generations_for_years(
+    fetcher: Fetcher, code: str, year_from: int, year_to: int
+) -> set[str]:
+    """年式レンジに重なる世代コード（`F004` など）。在庫 0 の世代は落とす。
+
+    生産期間と年式（初度登録年）は 1 年ずれることがある（年末生産・翌年登録）
+    ので、判定はレンジを 1 年ぶん緩めて取る。
+    """
+    out = set()
+    for gen in generations(fetcher, code):
+        if gen["listing_count"] == 0:
+            continue
+        start = gen["year_from"] or 0
+        end = gen["year_to"] or 9999
+        if start - 1 <= year_to and end + 1 >= year_from:
+            out.add(gen["generation"])
+    return out
+
+
+def grade_fuel(grade_name: str) -> str:
+    """グレード名から燃料を読む。カーセンサーの検索には燃料の軸もあるが、
+    グレード別に引いているなら名前で分かるので、往復を増やさない。"""
+    if "ディーゼル" in grade_name:
+        return "ディーゼル"
+    if "ハイブリッド" in grade_name or "ＰＨＥＶ" in grade_name or "PHEV" in grade_name:
+        return "ハイブリッド"
+    return "ガソリン"
+
+
+def grade_displacement(grade_name: str) -> float | None:
+    """グレード名の先頭の「2.7」を排気量(L)として読む。"""
+    m = re.match(r"\s*(\d\.\d)\s", grade_name)
+    return float(m.group(1)) if m else None
+
 
 def fetch_range(
     fetcher: Fetcher,

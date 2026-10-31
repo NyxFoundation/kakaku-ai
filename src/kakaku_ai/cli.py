@@ -21,7 +21,7 @@ from datetime import date
 from pathlib import Path
 
 from . import classics, drive, excel, notify, pipeline, store, watch, wide
-from .sources.carsensor_listings import DRIVE_PARAM
+from .sources.carsensor_listings import DRIVE_PARAM, FUEL_PARAM
 from .vehicles import DATA_DIR, load_vehicles
 
 OUTPUT_DIR = DATA_DIR / "xlsx"
@@ -173,9 +173,19 @@ def main(argv: list[str] | None = None) -> int:
     gr.add_argument("--pattern", help="タイトル判定の正規表現（既定=グレード名）")
     gr.add_argument("--drive", choices=sorted(DRIVE_PARAM),
                     help="駆動方式で絞る。カーセンサーの検索側で絞るので取りこぼしが無い")
+    gr.add_argument("--grade-code", nargs="*",
+                    help="カーセンサーの公式グレードコード（例 TO_S152_F004_K075）。"
+                         "末尾の K075 だけでも可。--list-grades で一覧を出せる")
+    gr.add_argument("--list-grades", action="store_true",
+                    help="その車種の公式グレードコードを並べて終わる")
+    gr.add_argument("--fuel", choices=sorted(FUEL_PARAM),
+                    help="燃料で絞る（グレード名から判定する）")
+    gr.add_argument("--seats", type=int, help="乗車定員で絞る（例 7）")
+    gr.add_argument("--mileage-max", type=int, help="走行距離の上限(km)。例 40000")
+    gr.add_argument("--label", help="出力ファイル名とシート名に使う呼び名")
     gr.add_argument("--year-from", type=int, required=True)
     gr.add_argument("--year-to", type=int, required=True)
-    gr.add_argument("--displacement", type=float, required=True, help="排気量(L)。税と燃費に使う")
+    gr.add_argument("--displacement", type=float, help="排気量(L)。税と燃費に使う")
     gr.add_argument("--fuel-yen", type=int,
                     help="燃料単価(円/L)。ディーゼル車は軽油価格を入れる（既定175=ガソリン）")
     gr.add_argument("--fuel-economy", type=float,
@@ -532,8 +542,8 @@ def main(argv: list[str] | None = None) -> int:
         from .pipeline import CACHE_DIR
         from .wide import load_catalog
 
-        if not args.grade and not args.drive:
-            raise SystemExit("--grade か --drive のどちらかを指定してください")
+        from .sources import carsensor_listings as cl
+
         meta = load_catalog().get(args.code)
         if not meta:
             raise SystemExit(f"{args.code} がカタログにありません")
@@ -541,12 +551,49 @@ def main(argv: list[str] | None = None) -> int:
         snapshot = store.today()
         fetcher = Fetcher(cache_dir=CACHE_DIR, snapshot=snapshot,
                           use_cache=not args.no_cache)
-        stock = grade_book.collect_stock(fetcher, args.code, model_name,
-                                         args.year_from, args.year_to,
-                                         by_drive=bool(args.drive))
-        label = " ".join(x for x in (args.drive, args.grade) if x)
+
+        if args.list_grades:
+            wanted = cl.generations_for_years(fetcher, args.code,
+                                              args.year_from, args.year_to)
+            for grade in cl.grade_codes(fetcher, args.code):
+                if grade["generation"] in wanted:
+                    print(f"{grade['grade_code']}  {grade['grade_name']}")
+            return 0
+
+        if args.displacement is None:
+            raise SystemExit("--displacement を指定してください（税と燃費に使います）")
+        by_grade = bool(args.grade_code or args.fuel or args.seats
+                        or args.mileage_max is not None)
+        if not (args.grade or args.drive or by_grade):
+            raise SystemExit(
+                "--grade-code / --fuel / --seats / --mileage-max / --grade / --drive "
+                "のいずれかを指定してください")
+
+        selection = None
+        if by_grade:
+            stock = grade_book.collect_stock_by_grade(
+                fetcher, args.code, model_name, args.year_from, args.year_to,
+                seats=args.seats)
+            # 末尾だけ（K075）で指定されたものは、実際に引けたコードに付け合わせる
+            known = {r["grade_code"] for r in stock if r.get("grade_code")}
+            codes = tuple(
+                next((k for k in known if k == c or k.endswith(f"_{c}")), c)
+                for c in (args.grade_code or ()))
+            selection = grade_book.Selection(
+                grade_codes=codes, fuel=args.fuel, seats=args.seats,
+                mileage_max_km=args.mileage_max,
+            )
+        else:
+            stock = grade_book.collect_stock(fetcher, args.code, model_name,
+                                             args.year_from, args.year_to,
+                                             by_drive=bool(args.drive))
+        label = args.label or " ".join(
+            x for x in (args.drive, args.grade,
+                        selection.describe() if selection else None) if x)
+        # ファイル名に使うので、区切り文字とスペースは落とす
+        stem = re.sub(r"[\\/:*?\"<>|\s]+", "", label) or args.code
         path = Path(args.output) if args.output else (
-            grade_book.OUTPUT_DIR / f"souba_{args.code}_{label.replace(' ', '')}.xlsx")
+            grade_book.OUTPUT_DIR / f"souba_{args.code}_{stem}.xlsx")
         grade_book.build(
             output=path,
             title=f"{meta.get('maker')} {model_name} {label}"
@@ -555,6 +602,7 @@ def main(argv: list[str] | None = None) -> int:
             grade_label=label,
             grade_pattern=(args.pattern or re.escape(args.grade)) if args.grade else None,
             drive=args.drive,
+            selection=selection,
             year_from=args.year_from, year_to=args.year_to,
             stock=stock, displacement_l=args.displacement,
             assumptions=_assumptions(args),
