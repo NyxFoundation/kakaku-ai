@@ -427,6 +427,7 @@
 {"carsensor_code": "CH_S027", "model_name": "カプリスワゴン", "maker": "シボレー", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "CH_S028", "model_name": "サバーバン", "maker": "シボレー", "origin": "輸入", "body_type": "クロカン・ＳＵＶ", "production_period": "2014年2月～"}
 {"carsensor_code": "CH_S029", "model_name": "シェビー", "maker": "シボレー", "origin": "輸入", "body_type": null, "production_period": null}
+{"carsensor_code": "CH_S031", "model_name": "マリブセダン", "maker": "シボレー", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "CH_S032", "model_name": "モンテカルロ", "maker": "シボレー", "origin": "輸入", "body_type": null, "production_period": null}
 {"carsensor_code": "CH_S033", "model_name": "HHR", "maker": "シボレー", "origin": "輸入", "body_type": "ハッチバック", "production_period": "2006年12月～2011年11月"}
 {"carsensor_code": "CH_S034", "model_name": "SSR", "maker": "シボレー", "origin": "輸入", "body_type": null, "production_period": null}
@@ -1251,7 +1252,7 @@
 {"carsensor_code": "MI_S009", "model_name": "コルトプラス", "maker": "三菱", "origin": "国産", "body_type": "ステーションワゴン", "production_period": "2004年10月～2012年6月"}
 {"carsensor_code": "MI_S010", "model_name": "タウンボックス", "maker": "三菱", "origin": "国産", "body_type": "ハッチバック", "production_period": "2015年3月～"}
 {"carsensor_code": "MI_S011", "model_name": "デリカスペースギア", "maker": "三菱", "origin": "国産", "body_type": "ミニバン", "production_period": "1994年5月～2007年1月"}
-{"carsensor_code": "MI_S012", "model_name": "パジェロ", "maker": "三菱", "origin": "国産", "body_type": "クロカン・ＳＵＶ", "production_period": "2006年10月～2019年10月"}
+{"carsensor_code": "MI_S012", "model_name": "パジェロ", "maker": "三菱", "origin": "国産", "body_type": "クロカン・ＳＵＶ", "production_period": "2026年12月～"}
 {"carsensor_code": "MI_S013", "model_name": "パジェロイオ", "maker": "三菱", "origin": "国産", "body_type": "クロカン・ＳＵＶ", "production_period": "1998年6月～2007年6月"}
 {"carsensor_code": "MI_S014", "model_name": "パジェロミニ", "maker": "三菱", "origin": "国産", "body_type": "クロカン・ＳＵＶ", "production_period": "1998年10月～2012年6月"}
 {"carsensor_code": "MI_S015", "model_name": "ミニカ", "maker": "三菱", "origin": "国産", "body_type": "ハッチバック", "production_period": "1998年10月～2011年5月"}
@@ -1995,7 +1996,7 @@
 {"carsensor_code": "TO_S119", "model_name": "bBオープンデッキ", "maker": "トヨタ", "origin": "国産", "body_type": "ピックアップトラック", "production_period": "2001年6月～2003年3月"}
 {"carsensor_code": "TO_S120", "model_name": "ファンカーゴ", "maker": "トヨタ", "origin": "国産", "body_type": "ハッチバック", "production_period": "1999年8月～2005年9月"}
 {"carsensor_code": "TO_S121", "model_name": "プラッツ", "maker": "トヨタ", "origin": "国産", "body_type": "セダン", "production_period": "1999年8月～2005年10月"}
-{"carsensor_code": "TO_S122", "model_name": "プリウス", "maker": "トヨタ", "origin": "国産", "body_type": "ハッチバック", "production_period": "2022年12月～"}
+{"carsensor_code": "TO_S122", "model_name": "プリウス", "maker": "トヨタ", "origin": "国産", "body_type": "ハッチバック", "production_period": "2023年1月～"}
 {"carsensor_code": "TO_S123", "model_name": "ブリザード", "maker": "トヨタ", "origin": "国産", "body_type": "クロカン・ＳＵＶ", "production_period": "1985年9月～1990年3月"}
 {"carsensor_code": "TO_S124", "model_name": "ブレビス", "maker": "トヨタ", "origin": "国産", "body_type": "セダン", "production_period": "2001年6月～2007年5月"}
 {"carsensor_code": "TO_S125", "model_name": "プレミオ", "maker": "トヨタ", "origin": "国産", "body_type": "セダン", "production_period": "2007年6月～2021年3月"}
@@ -2124,6 +2125,7 @@
 {"carsensor_code": "TO_S266", "model_name": "C+pod", "maker": "トヨタ", "origin": "国産", "body_type": "ハッチバック", "production_period": "2020年12月～"}
 {"carsensor_code": "TO_S267", "model_name": "カリーナクーペ", "maker": "トヨタ", "origin": "国産", "body_type": null, "production_period": null}
 {"carsensor_code": "TO_S269", "model_name": "ランドクルーザー250", "maker": "トヨタ", "origin": "国産", "body_type": "クロカン・ＳＵＶ", "production_period": "2024年4月～"}
+{"carsensor_code": "TO_S270", "model_name": "bZ4Xツーリング", "maker": "トヨタ", "origin": "国産", "body_type": "クロカン・ＳＵＶ", "production_period": "2026年2月～"}
 {"carsensor_code": "TO_S271", "model_name": "ハイランダー", "maker": "トヨタ", "origin": "国産", "body_type": "クロカン・ＳＵＶ", "production_period": "2026年4月～"}
 {"carsensor_code": "TO_S272", "model_name": "ランドクルーザーFJ", "maker": "トヨタ", "origin": "国産", "body_type": "クロカン・ＳＵＶ", "production_period": "2026年5月～"}
 {"carsensor_code": "TO_S273", "model_name": "コンフォート教習車", "maker": "トヨタ", "origin": "国産", "body_type": null, "production_period": null}
